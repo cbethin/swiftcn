@@ -25,3 +25,4 @@ func savingVisualDiffs<Value>(_ strategy: Snapshotting<Value, NSImage>, name: St
     }
     return strategy
 }
+#endif
