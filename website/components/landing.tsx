@@ -5,21 +5,25 @@ import { useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { ArrowRight, Braces, Command, Layers, MoveUpRight, SlidersHorizontal } from 'lucide-react';
 
-const examples = [
-  { title: 'Style', tag: '01 / COMPOSE', code: 'Text("A little more native.")\n    .tw("text-lg font-semibold p-6 bg-surface rounded-xl")', note: 'Familiar utilities become real SwiftUI modifiers.', classes: ['text-lg', 'font-semibold', 'p-6', 'bg-surface', 'rounded-xl'] },
-  { title: 'State', tag: '02 / RESPOND', code: 'Button("Continue", action: next)\n    .buttonStyle(.tw("button-primary active:scale-[0.97] animate-spring duration-150"))', note: 'SwiftUI keeps the action, gestures, and keyboard behavior.', classes: ['button-primary', 'active:scale-[0.97]', 'animate-spring'] },
-  { title: 'Motion', tag: '03 / CONNECT', code: 'cover.tw("shared-[cover]/hero")\n\ncontainer.tw(\n    "group/hero animate-smooth",\n    value: expanded\n)', note: 'Persistent native namespaces. State you already own.', classes: ['group/hero', 'shared-[cover]', 'animate-smooth'] },
-];
+const demoCode = `@State private var expanded = false
+
+VStack(alignment: .leading) {
+    Text("A little more native.").tw("text-sm font-semibold")
+    Button(expanded ? "Back to simple" : "Make some room") {
+        expanded.toggle()
+    }.buttonStyle(.tw("button-primary"))
+}
+.tw(cn("p-5 bg-surface rounded-xl animate-spring",
+       expanded ? "w-[365]" : "w-[290]"), value: expanded)`;
+const demoClasses = ['cn', 'p-5', 'rounded-xl', 'w-[365]', 'animate-spring'];
 const guides = [
   { icon: Braces, title: 'Compose your styles', copy: 'Strings when you want them. Typed utilities when you need them.', href: '/docs/styling', number: '01' },
   { icon: SlidersHorizontal, title: 'Make it yours', copy: 'Adaptive colors, shared recipes, and custom argument factories.', href: '/docs/global-rules', number: '02' },
   { icon: Layers, title: 'Give state some motion', copy: 'Native springs and shared elements, composed in a few classes.', href: '/docs/shared-elements', number: '03' },
 ];
 export function Landing() {
-  const [selected, setSelected] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const reduced = useReducedMotion();
-  const example = examples[selected];
   return <div className="landing">
     <section className="hero" aria-labelledby="hero-title">
       <div className="hero-copy">
@@ -34,28 +38,26 @@ export function Landing() {
       </div>
       <div className="workbench">
         <div className="workbench-top"><div className="traffic-lights"><i /><i /><i /></div><span>Something familiar. Something native.</span><span className="file-label">.swift</span></div>
-        <div className="example-tabs" role="tablist" aria-label="Swift examples">
-          {examples.map((item, i) => <button key={item.title} role="tab" aria-selected={selected === i} aria-controls="example-panel" id={`example-tab-${i}`} tabIndex={selected === i ? 0 : -1} onClick={() => setSelected(i)} onKeyDown={(event) => {
-            if (['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) {
-              event.preventDefault();
-              const next = event.key === 'Home' ? 0 : event.key === 'End' ? 2 : (selected + (event.key === 'ArrowRight' ? 1 : 2)) % 3;
-              setSelected(next);
-              document.getElementById(`example-tab-${next}`)?.focus();
-            }
-          }}>{item.title}{selected === i && <motion.span className="tab-indicator" layoutId="active-tab" transition={{ duration: reduced ? 0 : .2 }} />}</button>)}
-        </div>
-        <div id="example-panel" role="tabpanel" aria-labelledby={`example-tab-${selected}`}>
-          <div className="example-code"><span className="example-kicker">{example.tag}</span><pre><code>{example.code}</code></pre></div>
+        <div className="example-demo" role="group" aria-label="Compose styles and animate state">
+          <div className="example-code"><span className="example-kicker">ONE VIEW. STYLES, STATE, AND MOTION.</span><pre><code>{demoCode}</code></pre></div>
           <div className="visual-example">
-            <motion.div className="illustration-card" initial={false} animate={{ width: expanded ? 365 : 290, padding: expanded ? 24 : 19 }} transition={{ type: 'spring', bounce: .05, duration: reduced ? 0 : .4 }}>
-              <div className="illustration-icon"><img className="bird-mark" src={sitePath('/brand/swiftcn-bird-v1.png')} alt="" width={36} height={36} /></div>
-              <div><strong>A little more native.</strong><p>Less ceremony. More SwiftUI.</p></div>
-              <motion.button type="button" onClick={() => setExpanded(!expanded)} animate={{ scale: 1 }} whileTap={reduced ? undefined : { scale: 0.97 }} aria-expanded={expanded}>{expanded ? 'Back to simple' : 'Make some room'} <ArrowRight size={14} /></motion.button>
-            </motion.div>
+            <div className="illustration-stage">
+              <motion.div className="illustration-card" initial={false} animate={{ width: expanded ? 365 : 290 }} transition={{ type: 'spring', bounce: 0, duration: reduced ? 0 : .4 }}>
+                <div className="illustration-icon"><img className="bird-mark" src={sitePath('/brand/swiftcn-bird-v1.png')} alt="" width={36} height={36} /></div>
+                <div className="illustration-copy"><strong>A little more native.</strong><p>Less ceremony. More SwiftUI.</p></div>
+                <button type="button" onClick={() => setExpanded(value => !value)} aria-expanded={expanded} aria-label={expanded ? 'Back to simple' : 'Make some room'}>
+                  <span className="illustration-button-label" aria-hidden="true">
+                    <motion.span initial={false} animate={{ opacity: expanded ? 0 : 1 }} transition={{ duration: reduced ? 0 : .15 }}>Make some room</motion.span>
+                    <motion.span initial={false} animate={{ opacity: expanded ? 1 : 0 }} transition={{ duration: reduced ? 0 : .15 }}>Back to simple</motion.span>
+                  </span>
+                  <motion.span className="illustration-button-arrow" initial={false} animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: reduced ? 0 : .2 }} aria-hidden="true"><ArrowRight size={14} /></motion.span>
+                </button>
+              </motion.div>
+            </div>
             <span className="illustration-caption">Interactive web illustration · native captures below</span>
           </div>
-          <div className="class-chips">{example.classes.map(cls => <code key={cls}>{cls}</code>)}</div>
-          <p className="example-note">{example.note}</p>
+          <div className="class-chips">{demoClasses.map(cls => <code key={cls}>{cls}</code>)}</div>
+          <p className="example-note">Compose the classes with cn. Let SwiftUI animate your state.</p>
         </div>
       </div>
     </section>
