@@ -83,6 +83,8 @@ struct MotionSurfaceTests {
 
     /// Read the native presentation pixels, not the target SwiftUI layout proposal.
     private func bounds<V: View>(_ host: NSHostingView<V>, name: String, contentFrames: inout [CGRect]) throws -> CGRect {
+        // Flush pending AppKit layout before each capture, including on older runners.
+        host.layoutSubtreeIfNeeded()
         let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
         host.cacheDisplay(in: host.bounds, to: bitmap)
         if let path = ProcessInfo.processInfo.environment["SWIFTCN_MOTION_ARTIFACTS"] {
@@ -101,14 +103,16 @@ struct MotionSurfaceTests {
         let scale = CGFloat(bitmap.pixelsWide) / host.bounds.width
         // Measure only the label's ink, excluding the independently animated symbol.
         // This central region stays inside the blue surface at both endpoint sizes.
-        let bytes = try #require(bitmap.bitmapData)
-        try #require(bitmap.bitsPerSample == 8 && !bitmap.isPlanar && bitmap.samplesPerPixel >= 3)
-        let littleEndian = bitmap.bitmapFormat.contains(.thirtyTwoBitLittleEndian)
-        let firstColor = bitmap.hasAlpha && (bitmap.bitmapFormat.contains(.alphaFirst) != littleEndian) ? 1 : 0
+        // AppKit chooses different bitmap channel layouts on different macOS releases.
+        let context = try #require(CGContext(data: nil, width: bitmap.pixelsWide, height: bitmap.pixelsHigh,
+            bitsPerComponent: 8, bytesPerRow: bitmap.pixelsWide * 4, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
+        context.draw(try #require(bitmap.cgImage), in: CGRect(x: 0, y: 0, width: bitmap.pixelsWide, height: bitmap.pixelsHigh))
+        let bytes = try #require(context.data).assumingMemoryBound(to: UInt8.self)
         var glyphX: [Int] = [], glyphY: [Int] = []
         for y in Int(76 * scale)..<Int(106 * scale) {
             for x in Int(165 * scale)..<Int(260 * scale) {
-                let offset = y * bitmap.bytesPerRow + x * bitmap.samplesPerPixel + firstColor
+                let offset = (y * bitmap.pixelsWide + x) * 4
                 let colors = [bytes[offset], bytes[offset + 1], bytes[offset + 2]]
                 // Black, white, and their interpolated grays differ from the blue background.
                 if colors.max()! - colors.min()! < 35 {
@@ -144,6 +148,7 @@ private struct SurfaceHarness: View {
                     Image(systemName: "sparkles").accessibilityHidden(true)
                     Text("Hello, SwiftUI").contentTransition(.identity)
                 }
+                .foregroundStyle(.black)
                 .padding(model.expanded ? 32 : 12)
                 .background(RoundedRectangle(cornerRadius: model.expanded ? 16 : 8).fill(.blue))
                 .animation(.linear(duration: 1), value: model.expanded)

@@ -102,6 +102,11 @@ VStack {
 
 Use `.twAnimation("animate-smooth duration-300", value: expanded)` when you only need an animation wrapper.
 
+The wrapper also accepts a shared recipe containing source-specific tags.
+It validates the classes and extracts motion without applying the recipe's styling or source transforms.
+For example, an image recipe containing `resize animate-spring` can also supply its animation through `.twAnimation`.
+Unknown classes and invalid arguments still reject the recipe.
+
 Without `value:`, animation classes affect the styling properties owned by `.tw`. With `value:`, the explicit wrapper animates the subtree when the value changes.
 
 ## Choose the animation scope
