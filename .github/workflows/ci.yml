@@ -1,0 +1,32 @@
+name: Swift package
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Toolchain
+        run: swift --version
+      - name: Native tests
+        run: swift test
+      - name: Release build
+        run: swift build -c release
+      - name: Source ownership
+        run: bash Scripts/check-source-copy.sh
+      - name: iOS simulator compilation
+        run: bash Scripts/check-ios.sh
+      - name: Render catalog
+        run: swift run --package-path Examples/Catalog SwiftCNCatalog --render artifacts
+      - name: Upload catalog images
+        uses: actions/upload-artifact@v7
+        with:
+          name: swiftcn-catalog
+          path: artifacts/catalog-*.png
