@@ -24,7 +24,14 @@ jobs:
       - name: Toolchain
         run: swift --version
       - name: Native tests
-        run: swift test --skip SwiftCNVisualTests
+        env:
+          SWIFTCN_EXPECT_MOTION: "1"
+        run: |
+          # Hosted macOS images enable Reduce Motion. Restore it before image comparisons.
+          swiftcn_motion_setting="$(defaults read com.apple.universalaccess reduceMotion 2>/dev/null || echo 0)"
+          trap 'defaults write com.apple.universalaccess reduceMotion -bool "$swiftcn_motion_setting"' EXIT
+          defaults write com.apple.universalaccess reduceMotion -bool false
+          swift test --skip SwiftCNVisualTests
       - name: Verify visual baselines
         run: bash Scripts/visual-test.sh verify ci
       - name: Verify iOS visual baselines

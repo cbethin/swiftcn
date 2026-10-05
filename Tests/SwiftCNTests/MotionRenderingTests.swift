@@ -16,16 +16,19 @@ struct MotionRenderingTests {
         let recorder = ContentRecorder()
         withHost(MotionHarness(model: model, recorder: recorder, dynamicString: dynamicString).twRules(rules)) { host in
             #expect(samples.times.isEmpty) // Mounting the surface does not start an animation.
+            if ProcessInfo.processInfo.environment["SWIFTCN_EXPECT_MOTION"] == "1" {
+                #expect(recorder.reduceMotion == false, "The interpolation job requires Reduce Motion off.")
+            }
             model.active = true
             settle(host, seconds: 0.6)
-            #expect(samples.times.contains { $0 > 0 && $0 < 0.4 }, "Native sample times: \(samples.times)")
+            expectMotion(samples, reduceMotion: recorder.reduceMotion)
             #expect(!recorder.animations.isEmpty)
             #expect(recorder.animations.allSatisfy { $0 == nil })
             #expect(Set(recorder.identities).count == 1)
             samples.clear()
             model.active = false
             settle(host, seconds: 0.6)
-            #expect(samples.times.contains { $0 > 0 && $0 < 0.4 }, "Native sample times: \(samples.times)")
+            expectMotion(samples, reduceMotion: recorder.reduceMotion)
             #expect(Set(recorder.identities).count == 1)
         }
     }
@@ -66,7 +69,7 @@ struct MotionRenderingTests {
         host.frame = CGRect(x: 0, y: 0, width: 160, height: 100)
         let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = host
-        // Older SwiftUI hosts need a visible window to schedule native animation frames.
+        // Present the native host so frame scheduling does not depend on offscreen rendering.
         window.orderFront(nil)
         settle(host, seconds: 0.05)
         run(host)
@@ -77,6 +80,14 @@ struct MotionRenderingTests {
     private func settle<V: View>(_ host: NSHostingView<V>, seconds: TimeInterval) {
         host.layoutSubtreeIfNeeded()
         RunLoop.main.run(until: Date(timeIntervalSinceNow: seconds))
+    }
+
+    private func expectMotion(_ samples: MotionSamples, reduceMotion: Bool?) {
+        if reduceMotion == true {
+            #expect(samples.times.isEmpty)
+        } else {
+            #expect(samples.times.contains { $0 > 0 && $0 < 0.4 }, "Native sample times: \(samples.times)")
+        }
     }
 }
 
@@ -106,6 +117,7 @@ private struct MotionProbeAnimation: CustomAnimation {
 @MainActor private final class ContentRecorder {
     var animations: [Animation?] = []
     var identities: [UUID] = []
+    var reduceMotion: Bool?
 }
 
 private struct MotionHarness: View {
@@ -126,8 +138,10 @@ private struct MotionContent: View {
     let recorder: ContentRecorder
     let active: Bool
     @State private var identity = UUID()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         recorder.identities.append(identity)
+        recorder.reduceMotion = reduceMotion
         return Rectangle().fill(.blue).frame(width: active ? 40 : 20, height: 20)
     }
 }

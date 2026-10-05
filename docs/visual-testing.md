@@ -76,6 +76,11 @@ The iOS references use `Tests/SwiftCNVisualTests/__Snapshots__/ios-18.5-iphone-1
 The normal CI job verifies these references on each main push and pull request.
 The job uploads visual evidence even when verification fails.
 
+The hosted macOS image enables Reduce Motion.
+The behavior step turns it off to check native interpolation.
+The step restores the previous setting before image comparisons.
+Local behavior tests respect the current accessibility setting and check suppression when Reduce Motion is on.
+
 GitHub updates runner images over time.
 A runner update can change native pixels without a source change.
 Check the runner version before accepting a new reference after an unexpected failure.
