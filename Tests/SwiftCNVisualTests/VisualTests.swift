@@ -45,7 +45,7 @@ struct VisualTests {
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05))
         // Never auto-record a missing baseline in verification mode.
         let failure = withSnapshotTesting(record: record ? .all : .never) {
-            verifySnapshot(of: host as NSView, as: .image(precision: 1, perceptualPrecision: 1),
+            verifySnapshot(of: host as NSView, as: savingVisualDiffs(.image, name: name),
                            named: name, snapshotDirectory: directory, testName: "matrix")
         }
         if record {

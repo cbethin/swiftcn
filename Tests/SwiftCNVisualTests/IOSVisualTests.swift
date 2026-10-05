@@ -16,7 +16,8 @@ struct IOSVisualTests {
         let name = "\(scene)-\(configuration)"
         let image = try #require(NSImage(contentsOfFile: "\(directory)/\(name).png"))
         let failure = withSnapshotTesting(record: record ? .all : .never) {
-            verifySnapshot(of: image, as: .image, named: name, snapshotDirectory: references, testName: "ios")
+            verifySnapshot(of: image, as: savingVisualDiffs(.image, name: "ios-\(name)"),
+                           named: name, snapshotDirectory: references, testName: "ios")
         }
         if record {
             #expect(FileManager.default.fileExists(atPath: "\(references)/ios.\(name).png"))
