@@ -21,6 +21,7 @@ jobs:
     env:
       NEXT_PUBLIC_BASE_PATH: /swiftcn
       NEXT_PUBLIC_SITE_URL: https://cbethin.github.io
+      NEXT_PUBLIC_DOCS_VERSION: ${{ github.sha }}
     defaults:
       run:
         working-directory: website

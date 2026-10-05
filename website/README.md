@@ -55,6 +55,8 @@ Set `NEXT_PUBLIC_SITE_URL` to the intended origin before building on a host. It 
 
 `/search-index.json` serves the exported search index. Image, search, and Markdown download URLs use the configured base path.
 
+The workflow sets `NEXT_PUBLIC_DOCS_VERSION` to the commit SHA. Search uses it in the index URL so returning visitors load the current guides after deployment.
+
 The workflow builds and checks this output on documentation changes. It uploads the static site for review. The deploy job uses GitHub Pages with its deployment environment.
 
 To verify the GitHub project path locally:
