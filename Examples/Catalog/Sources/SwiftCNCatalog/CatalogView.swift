@@ -8,6 +8,7 @@ struct CatalogView: View {
     @State private var projectName = "My workspace"
     @State private var saves = 0
     @FocusState private var fieldFocused: Bool
+    private var motion = DemoMotion()
 
     var body: some View {
         VStack(alignment: .leading, spacing: theme.space(7)) {
@@ -20,21 +21,32 @@ struct CatalogView: View {
                 Text(scheme == .dark ? "DARK" : "LIGHT")
                     .tw(.text(.xs), .weight(.semibold), .px(3), .py(1.5), .bg(.accent), .fg(.onAccent), .rounded(.full))
             }
+            .demoEntrance()
 
             VStack(alignment: .leading, spacing: theme.space(4)) {
                 sectionLabel("01 / NATIVE BUTTONS")
                 HStack(spacing: theme.space(3)) {
-                    Button("Save changes") { saves += 1 }
-                        .buttonStyle(.tw("button-primary animate-spring duration-180"))
-                    Button("Preview") {}.buttonStyle(.tw(.secondaryButton))
-                    Button("Cancel") {}.buttonStyle(.tw(.outlineButton))
-                    Button("Delete", role: .destructive) {}.buttonStyle(.tw(.destructiveButton))
-                    Button("Disabled") {}.buttonStyle(.tw(.primaryButton)).disabled(true)
+                    Button { saves += 1 } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: saves == 0 ? "square.and.arrow.down" : "checkmark.circle.fill")
+                                .contentTransition(.symbolEffect(.replace))
+                                .symbolEffect(.bounce, options: .speed(1.5), value: saves)
+                                .symbolEffectsRemoved(!motion.isEnabled)
+                            Text("Save changes")
+                        }
+                    }
+                    .buttonStyle(.demo("button-primary animate-spring duration-180"))
+                    Button("Preview") {}.buttonStyle(.demo(.secondaryButton))
+                    Button("Cancel") {}.buttonStyle(.demo(.outlineButton))
+                    Button("Delete", role: .destructive) {}.buttonStyle(.demo(.destructiveButton))
+                    Button("Disabled") {}.buttonStyle(.demo(.primaryButton)).disabled(true)
                 }
                 Text(saves == 0 ? "Native activation, roles, and disabled state." : "Saved \(saves) time(s).")
                     .tw(.text(.sm), .fg(.mutedForeground))
+                    .demoNumber(saves)
             }
             .tw(.card, .fullWidth)
+            .demoEntrance(delay: 0.04)
 
             HStack(alignment: .top, spacing: theme.space(5)) {
                 VStack(alignment: .leading, spacing: theme.space(4)) {
@@ -46,12 +58,14 @@ struct CatalogView: View {
                         .textFieldStyle(.plain)
                         .focused($fieldFocused)
                         .tw(.px(3), .py(2), .bg(.background), .border(.border), .rounded(.md),
-                            .focus(.border(.primary, width: 2)), state: .init(isFocused: fieldFocused))
+                            .focus(.border(.primary, width: 2)), .animation(.smooth), .duration(0.18),
+                            state: .init(isFocused: fieldFocused))
                     Toggle("Notifications", isOn: $notifications).tint(theme.color(.primary, scheme: scheme))
                     Divider()
-                    Button("Create project") { saves += 1 }.buttonStyle(.tw(.primaryButton, .fullWidth))
+                    Button("Create project") { saves += 1 }.buttonStyle(.demo(.primaryButton, .fullWidth))
                 }
                 .tw(.card, .fullWidth)
+                .demoEntrance(delay: 0.08)
 
                 VStack(alignment: .leading, spacing: theme.space(4)) {
                     sectionLabel("03 / TYPED UTILITIES")
@@ -68,6 +82,7 @@ struct CatalogView: View {
                         .tw(.text(.base), .fg(.mutedForeground))
                 }
                 .tw(.card, .fullWidth)
+                .demoEntrance(delay: 0.12)
             }
 
             HStack {

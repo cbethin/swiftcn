@@ -303,6 +303,9 @@ Change animation presets and timing while toggling the styled surface.
 Edit shared classes, palettes, spacing, and subtree overrides in the global rules playground.
 The appearance picker selects system, light, or dark mode.
 
+The demo adds gentle entrances, hover and press feedback, animated counters, and native symbol effects.
+These effects respect Reduce Motion. Static image exports disable the demo effects.
+
 Run the executable directly with `swift run --package-path Examples/Catalog SwiftCNCatalog`.
 
 Render light and dark catalog images:

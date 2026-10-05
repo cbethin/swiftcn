@@ -12,7 +12,9 @@ struct CatalogLauncher {
             NSApplication.shared.setActivationPolicy(.prohibited)
             for scheme in [ColorScheme.light, .dark] {
                 // A native host also captures AppKit-backed controls such as TextField.
-                let host = NSHostingView(rootView: CatalogView().environment(\.colorScheme, scheme))
+                let host = NSHostingView(rootView: CatalogView()
+                    .environment(\.demoMotionEnabled, false)
+                    .environment(\.colorScheme, scheme))
                 host.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
                 host.setFrameSize(host.fittingSize)
                 let window = NSWindow(contentRect: host.bounds, styleMask: [.borderless], backing: .buffered, defer: false)

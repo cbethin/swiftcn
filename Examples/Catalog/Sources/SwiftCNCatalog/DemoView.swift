@@ -42,10 +42,14 @@ struct MotionPlayground: View {
     @State private var delay = 0.0
     @State private var presses = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private var motion = DemoMotion()
 
     private var motionClasses: String { "animate-\(preset) duration-\(Int(duration)) delay-\(Int(delay))" }
     private var surfaceClasses: String {
         "\(expanded ? "p-8 rounded-xl bg-primary text-primary-foreground" : "p-3 rounded-md bg-accent text-foreground") \(motionClasses)"
+    }
+    private var buttonClasses: String {
+        "button-primary active:opacity-80 hover:bg-accent hover:text-foreground \(motionClasses)"
     }
 
     var body: some View {
@@ -53,6 +57,7 @@ struct MotionPlayground: View {
             VStack(alignment: .leading, spacing: 24) {
                 DemoHeading(title: "Native motion, composed with strings",
                             subtitle: "Change state. SwiftUI animates the values that .tw owns.")
+                    .demoEntrance()
                 HStack(alignment: .top, spacing: 24) {
                     VStack(alignment: .leading, spacing: 20) {
                         Text("Animation settings").tw("text-lg font-semibold")
@@ -61,9 +66,9 @@ struct MotionPlayground: View {
                                 Text($0).tag($0)
                             }
                         }
-                        LabeledContent("Duration", value: "\(Int(duration)) ms")
+                        LabeledContent("Duration") { Text("\(Int(duration)) ms").demoNumber(Int(duration)) }
                         Slider(value: $duration, in: 100...1200, step: 50).accessibilityLabel("Duration")
-                        LabeledContent("Delay", value: "\(Int(delay)) ms")
+                        LabeledContent("Delay") { Text("\(Int(delay)) ms").demoNumber(Int(delay)) }
                         Slider(value: $delay, in: 0...500, step: 50).accessibilityLabel("Delay")
                         Toggle("Expanded", isOn: $expanded)
                         if reduceMotion {
@@ -73,30 +78,45 @@ struct MotionPlayground: View {
                     }
                     .frame(width: 260)
                     .tw("card")
+                    .demoEntrance(delay: 0.04)
 
                     VStack(alignment: .leading, spacing: 20) {
                         Text("State → native modifiers").tw("text-lg font-semibold")
                         ZStack {
-                            Text("Hello, SwiftUI")
-                                .tw(surfaceClasses)
+                            HStack(spacing: 8) {
+                                Image(systemName: "sparkles")
+                                    .symbolEffect(.bounce, options: .speed(1.4), value: expanded)
+                                    .symbolEffectsRemoved(!motion.isEnabled || preset == "none")
+                                    .accessibilityHidden(true)
+                                Text("Hello, SwiftUI")
+                            }
+                            .tw(surfaceClasses)
                         }
                         .frame(maxWidth: .infinity, minHeight: 180)
                         .tw("rounded-lg border")
                         Button(expanded ? "Collapse surface" : "Expand surface") { expanded.toggle() }
-                            .buttonStyle(.tw("button-outline"))
+                            .buttonStyle(.demo("button-outline animate-smooth duration-180"))
                         DemoCode(text: ".tw(\"\(surfaceClasses)\")")
                         Text("Press and hover") .tw("text-lg font-semibold")
                         HStack {
-                            Button("Press me") { presses += 1 }
-                                .buttonStyle(.tw("button-primary active:opacity-60 hover:bg-accent hover:text-foreground \(motionClasses)"))
-                            Text("\(presses) activations").tw("text-sm text-muted-foreground")
+                            Button { presses += 1 } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "hand.tap")
+                                        .symbolEffect(.bounce, options: .speed(1.5), value: presses)
+                                        .symbolEffectsRemoved(!motion.isEnabled || preset == "none")
+                                    Text("Press me")
+                                }
+                            }
+                            .buttonStyle(.demo(buttonClasses, feedback: preset != "none"))
+                            Text("\(presses) activations").tw("text-sm text-muted-foreground").demoNumber(presses)
                         }
-                        DemoCode(text: ".buttonStyle(.tw(\"button-primary active:opacity-60 \(motionClasses)\"))")
+                        DemoCode(text: ".buttonStyle(.tw(\"\(buttonClasses)\"))")
                         Text("The settle preset comes from a custom native spring in global rules.")
                             .tw("text-sm text-muted-foreground")
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .tw("card")
+                    .demoEntrance(delay: 0.08)
                 }
             }
             .padding(32)
@@ -114,6 +134,7 @@ struct GlobalRulesPlayground: View {
     @State private var name = "My workspace"
     @State private var enabled = true
     @State private var saves = 0
+    private var motion = DemoMotion()
 
     private var customTheme: TWTheme {
         TWTheme(spacingUnit: spacing, colors: [.primary: palette.color])
@@ -126,6 +147,7 @@ struct GlobalRulesPlayground: View {
 
     private var rules: TWGlobalRules {
         TWGlobalRules(
+            view: "animate-smooth duration-220",
             button: "animate-snappy duration-200",
             named: [
                 "demo-card": validationError == nil ? .classes(cardClasses) : "p-6 rounded-lg border bg-surface",
@@ -139,13 +161,14 @@ struct GlobalRulesPlayground: View {
             VStack(alignment: .leading, spacing: 24) {
                 DemoHeading(title: "Your rules, across native views",
                             subtitle: "Edit shared classes, change the theme, and override one subtree.")
+                    .demoEntrance()
                 HStack(alignment: .top, spacing: 24) {
                     VStack(alignment: .leading, spacing: 20) {
                         Text("Global settings").tw("text-lg font-semibold")
                         Picker("Palette", selection: $palette) {
                             ForEach(DemoPalette.allCases) { item in Text(item.rawValue).tag(item) }
                         }
-                        LabeledContent("Spacing unit", value: "\(Int(spacing)) pt")
+                        LabeledContent("Spacing unit") { Text("\(Int(spacing)) pt").demoNumber(Int(spacing)) }
                         Slider(value: $spacing, in: 3...6, step: 1).accessibilityLabel("Spacing unit")
                         Toggle("Pill buttons", isOn: $pillButtons)
                         Toggle("Compact second card", isOn: $compactScope)
@@ -162,14 +185,24 @@ struct GlobalRulesPlayground: View {
                     }
                     .frame(width: 260)
                     .tw("card")
+                    .demoEntrance(delay: 0.04)
 
                     VStack(alignment: .leading, spacing: 20) {
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Workspace").tw("text-xl font-semibold")
                             TextField("Workspace name", text: $name).textFieldStyle(.roundedBorder)
                             Toggle("Notifications", isOn: $enabled)
-                            Button("Save workspace") { saves += 1 }.buttonStyle(.tw("demo-button"))
-                            Text("Saved \(saves) times").tw("text-sm text-muted-foreground")
+                            Button { saves += 1 } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: saves == 0 ? "square.and.arrow.down" : "checkmark.circle.fill")
+                                        .contentTransition(.symbolEffect(.replace))
+                                        .symbolEffect(.bounce, options: .speed(1.5), value: saves)
+                                        .symbolEffectsRemoved(!motion.isEnabled)
+                                    Text("Save workspace")
+                                }
+                            }
+                            .buttonStyle(.demo("demo-button"))
+                            Text("Saved \(saves) times").tw("text-sm text-muted-foreground").demoNumber(saves)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .tw("demo-card")
@@ -178,7 +211,7 @@ struct GlobalRulesPlayground: View {
                             Text("Scoped card").tw("text-lg font-semibold")
                             Text("This card has a local rule. The workspace card keeps the shared rule.")
                                 .tw("text-sm text-muted-foreground")
-                            Button("Native button") {}.buttonStyle(.tw("demo-button"))
+                            Button("Native button") {}.buttonStyle(.demo("demo-button"))
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .tw("demo-card")
@@ -190,6 +223,8 @@ struct GlobalRulesPlayground: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .twTheme(customTheme)
                     .twRules(rules)
+                    .animation(motion.soft, value: compactScope)
+                    .demoEntrance(delay: 0.08)
                 }
             }
             .padding(32)
@@ -212,9 +247,22 @@ private enum DemoPalette: String, CaseIterable, Identifiable {
 private struct DemoHeading: View {
     let title: String
     let subtitle: String
+    private var motion = DemoMotion()
+
+    init(title: String, subtitle: String) {
+        self.title = title
+        self.subtitle = subtitle
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).tw("text-2xl font-semibold")
+            HStack(spacing: 10) {
+                Image(systemName: "sparkles")
+                    .font(.title2)
+                    .symbolEffect(.pulse, options: .repeating.speed(0.3), isActive: motion.isEnabled)
+                    .accessibilityHidden(true)
+                Text(title).tw("text-2xl font-semibold")
+            }
             Text(subtitle).tw("text-base text-muted-foreground")
         }
     }
