@@ -13,6 +13,8 @@ struct CatalogLauncher {
             for scheme in [ColorScheme.light, .dark] {
                 let appearance = scheme == .dark ? "dark" : "light"
                 try render(CatalogView(), scheme: scheme, name: "catalog-\(appearance).png", directory: directory)
+                try render(ComponentPlayground().frame(width: 720, height: 820), scheme: scheme,
+                           name: "components-\(appearance).png", directory: directory)
                 try render(ArgumentPlayground().frame(width: 1040, height: 800), scheme: scheme,
                            name: "arguments-\(appearance).png", directory: directory)
                 for expanded in [false, true] {

@@ -8,6 +8,8 @@ struct DemoView: View {
         TabView {
             ScrollView { CatalogView().frame(maxWidth: .infinity) }
                 .tabItem { Label("Components", systemImage: "square.grid.2x2") }
+            ComponentPlayground()
+                .tabItem { Label("Composition", systemImage: "rectangle.3.group") }
             MotionPlayground()
                 .tabItem { Label("Motion", systemImage: "waveform.path") }
             SharedElementPlayground()

@@ -38,7 +38,8 @@ jobs:
           trap 'defaults write com.apple.universalaccess reduceMotion -bool "$swiftcn_motion_setting"' EXIT
           defaults write com.apple.universalaccess reduceMotion -bool false
           # Keep these hosted probes separate from other suites that pump the main run loop.
-          swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests'
+          swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests|ComponentRenderingTests'
+          swift test --filter ComponentRenderingTests
           swift test --filter NativeUtilityRenderingTests
       - name: Verify visual baselines
         run: bash Scripts/visual-test.sh verify ci
@@ -66,6 +67,8 @@ jobs:
             artifacts/arguments-*.png
             artifacts/arguments/
             artifacts/native-modifiers/
+            artifacts/components/
+            artifacts/components-*.png
             artifacts/visual-diffs/
             artifacts/ios-visual/*.png
             artifacts/ios-visual/*-launch.log

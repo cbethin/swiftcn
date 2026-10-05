@@ -63,6 +63,18 @@ struct FocusExample: View {
 
 ## Other native controls
 
+Use native style adapters when you want shared control defaults:
+
+```swift
+TextField("Email", text: $email).textFieldStyle(.tw())
+SecureField("Password", text: $password).textFieldStyle(.tw())
+Toggle("Notifications", isOn: $notifications).toggleStyle(.tw(base: .switch))
+Label("Workspace", systemImage: "folder").labelStyle(.tw())
+```
+
+See [composable components](/docs/components) for card parts, field validation, custom control content, and editable rules.
+General `.tw` decoration remains available alongside these adapters:
+
 ```swift
 TextField("Email", text: $email)
     .textFieldStyle(.plain)

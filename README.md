@@ -269,6 +269,35 @@ Text("Brand").tw(.fg(.brand)).twTheme(theme)
 Register custom colors in the theme before using them.
 Unregistered colors fall back to SwiftUI's semantic primary foreground.
 
+## Composable components and controls
+
+```swift
+CNCard {
+    CNCardHeader {
+        CNCardTitle("Workspace")
+        CNCardDescription("Native editing, shared defaults.")
+    }
+    CNCardContent {
+        CNField(isInvalid: invalid) {
+            CNFieldLabel("Email").accessibilityHidden(true)
+            TextField("Email", text: $email).textFieldStyle(.tw())
+            if invalid { CNFieldError("Enter an email address.") }
+        }
+        Toggle("Updates", isOn: $updates).toggleStyle(.tw(base: .switch))
+    }
+    CNCardFooter {
+        Button("Save", action: save).buttonStyle(.tw("button-primary"))
+    }
+}
+```
+
+Parts accept arbitrary SwiftUI content and extra classes composed with `cn`.
+Named rules such as `card-content`, `input`, and `field-invalid` remain editable globally or in a subtree.
+Native text-field, toggle, and label adapters keep bindings and control behavior in SwiftUI.
+Use `CNFieldControl` to decorate other controls, including sliders, pickers, or your own views.
+Your application owns validation, native accessibility labels, focus, and actions.
+See [composable components](website/content/docs/components.mdx) for a complete compiled form and customization examples.
+
 ## Native buttons and state variants
 
 ```swift
@@ -500,7 +529,8 @@ bash Scripts/run-demo.sh
 ```
 
 The script builds and opens `artifacts/SwiftCN Demo.app`.
-The app includes components, motion, shared elements, and global rules playgrounds.
+The app includes components, composition, motion, shared elements, arguments, and global rules playgrounds.
+The Composition tab demonstrates editable fields, validation, native style adapters, card parts, and scoped defaults.
 Change animation presets and timing while toggling the styled surface.
 Edit shared classes, palettes, spacing, and subtree overrides in the global rules playground.
 The appearance picker selects system, light, or dark mode.

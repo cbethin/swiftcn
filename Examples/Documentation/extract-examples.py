@@ -12,6 +12,7 @@ expected = {
     "installation": {"Package.swift"},
     "quick-start": {"ContentView.swift", "SwiftCNDemoApp.swift"},
     "native-controls": {"FocusExample.swift"},
+    "components": {"ComponentPartsExample.swift"},
     "interpolation": {"TypedInterpolationExample.swift"},
     "native-modifiers": {"NativeRegistryExample.swift"},
     "troubleshooting": {"StyleValidation.swift"},

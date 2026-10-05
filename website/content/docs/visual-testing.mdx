@@ -29,6 +29,12 @@ They cover computed strings, state variants, child identity, transaction scope, 
 The resolver tests check Reduce Motion, timing, and custom presets.
 The image suite does not compare intermediate animation frames.
 
+Component tests check native editor bindings and identity across validation changes.
+They verify toggle binding and disabled-environment forwarding, native label style equivalence, part overrides, and field isolation.
+They export eight component images across both appearances, widths, and text-size environments in `artifacts/components`.
+These new component images are review artifacts; the 42 committed baseline comparisons remain separate.
+The native catalog also exports the interactive composition form in both appearances.
+
 Shared element tests measure the rendered size of a native follower with a typed ID.
 They check matching within one namespace and isolation between namespaces.
 Class tests also cover local groups, nested groups, named ancestor selection, and sibling isolation.
