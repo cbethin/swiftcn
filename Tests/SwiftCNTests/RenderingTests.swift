@@ -124,6 +124,39 @@ struct RenderingTests {
         #expect(try pixel(image, x: 10, y: 1).blue > 0.9)
     }
 
+    @Test func globalDefaultsAffectOnlyExplicitSurfacesAndLocalPaddingWins() throws {
+        let rules = TWGlobalRules(view: TWStyle(.p(3), .bgColor(.red)))
+        let plain = try render(Color.clear.frame(width: 20, height: 20).twRules(rules))
+        #expect(plain.width == 20)
+        let styled = try render(Color.clear.frame(width: 20, height: 20).tw(TWStyle()).twRules(rules))
+        #expect(styled.width == 44)
+        let local = try render(Color.clear.frame(width: 20, height: 20).tw("p-1").twRules(rules))
+        #expect(local.width == 28)
+    }
+
+    @Test func subtreeRulesPreserveInheritedNamesWithoutLeakingToSiblings() throws {
+        let rules = TWGlobalRules(named: ["tile": .classes("p-1 bg-primary"), "other": .classes("p-3")])
+        let view = HStack(spacing: 0) {
+            Color.clear.frame(width: 20, height: 20).tw("tile")
+                .twRules { $0.named["tile"] = .classes("p-2") }
+            Color.clear.frame(width: 20, height: 20).tw("tile")
+            Color.clear.frame(width: 20, height: 20).tw("other")
+                .twRules { $0.named["tile"] = .classes("p-2") }
+        }.twRules(rules)
+        #expect(try render(view).width == 36 + 28 + 44)
+    }
+
+    @Test func buttonDefaultsDoNotDecorateOrdinaryStyledViews() throws {
+        let rules = TWGlobalRules(button: TWStyle(.minH(60), .p(2)))
+        let plain = try render(Color.clear.frame(width: 20, height: 20).tw("").twRules(rules))
+        #expect(plain.height == 20)
+        let button = Button {} label: { Color.clear.frame(width: 20, height: 20) }
+            .buttonStyle(.tw("")).twRules(rules)
+        let image = try render(button)
+        #expect(image.height == 60)
+        #expect(image.width == 36)
+    }
+
     private func render<V: View>(_ view: V, scheme: ColorScheme = .light) throws -> CGImage {
         let renderer = ImageRenderer(content: view.environment(\.colorScheme, scheme))
         renderer.scale = 1

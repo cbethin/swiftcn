@@ -4,3 +4,4 @@
 DerivedData/
 *.xcuserstate
 artifacts/
+__pycache__/
