@@ -1,6 +1,6 @@
 # swiftcn
 
-Typed utility styling and editable recipes for native SwiftUI.
+String and typed utility styling with editable recipes for native SwiftUI.
 
 ![swiftcn catalog in light mode](docs/images/catalog-light.png)
 
@@ -17,7 +17,7 @@ Button("Save", action: save)
 ```
 
 swiftcn starts with a small styling layer for SwiftUI.
-Compose typed utilities, share theme values, and edit named styles in ordinary Swift.
+Compose string or typed utilities, share theme values, and edit named styles in ordinary Swift.
 Keep native controls, layout, state, and interaction in your application.
 
 Requires Swift 6, iOS 17 or later, or macOS 14 or later.
@@ -43,9 +43,10 @@ Add the product to your target:
 ```
 
 You can also copy `Sources/SwiftCN` into your application or a local package that you own.
-Copy all eight files for the initial styling layer.
+Copy all Swift files in that directory.
 Keep the MIT license with copied source.
-There are no external package dependencies or generated files.
+The library source has no external runtime dependencies or generated files.
+The test target uses Point-Free SnapshotTesting.
 
 ## Utilities
 
@@ -246,3 +247,100 @@ See [the dark catalog](docs/images/catalog-dark.png) for the alternate appearanc
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+## String classes and global rules
+
+Compose classes with ordinary Swift strings:
+
+```swift
+let emphasis = isImportant ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"
+
+Text("Status").tw("px-4 py-2 rounded-md \(emphasis)")
+Button("Save") { save() }
+    .buttonStyle(.tw("button-primary px-6 hover:opacity-90 disabled:opacity-40"))
+```
+
+Strings and typed utilities use the same resolver. Later classes replace earlier values for the same property.
+State variants keep their existing priority: hover, focus, press, then disabled.
+Use `active:` or `pressed:` for the pressed appearance. Combine variants with colons, such as `disabled:hover:opacity-20`.
+
+Pass focus through `TWState`. SwiftUI owns button activation and gesture recognition.
+
+Supported classes include:
+
+| Kind | Classes |
+| --- | --- |
+| Spacing | `p-4`, `px-2.5`, `py-2`, `pt-1`, `pb-1`, `ps-2`, `pe-2` |
+| Size | `w-12`, `h-10`, `min-h-11`, `w-full` |
+| Typography | `text-xs` through `text-3xl`, `font-medium`, `font-semibold`, `font-bold` |
+| Colors | `bg-primary`, `text-foreground`, `text-muted-foreground`, `text-primary-foreground` |
+| Decoration | `rounded-md`, `rounded-full`, `border`, `border-2`, `border-primary`, `shadow-sm`, `opacity-80` |
+| Recipes | `card`, `button-primary`, `button-secondary`, `button-outline`, `button-destructive` |
+
+Numeric sizes use the theme spacing scale, as Tailwind does. Typed `.w()`, `.h()`, and `.minH()` continue to accept points.
+Border widths use points. `pl-` and `pr-` alias logical leading and trailing spacing.
+
+Custom color tokens also work in strings. Use adaptive theme colors for light and dark appearances.
+This grammar covers native decoration. It does not implement CSS layout, responsive breakpoints, or arbitrary CSS values.
+
+Set rules at the app root:
+
+```swift
+let brand = TWColor("brand")
+let theme = TWTheme(colors: [
+    brand: TWAdaptiveColor(light: .indigo, dark: .mint)
+])
+let rules = TWGlobalRules(
+    view: "text-sm",
+    button: "min-h-12",
+    named: [
+        "brand-button": TWStyle(.primaryButton, .bg(brand), .rounded(.full)),
+        "compact-card": "card p-3"
+    ]
+)
+
+ContentView()
+    .twTheme(theme)
+    .twRules(rules)
+
+// Inside ContentView:
+Button("Continue") { continueAction() }
+    .buttonStyle(.tw("brand-button px-8"))
+Text("Details").tw("compact-card")
+```
+
+Global view defaults affect each explicit `.tw` surface and each `TWButtonStyle` label.
+Button defaults affect only `TWButtonStyle` labels. Local styles override these defaults within the same state.
+Unstyled descendants receive no extra padding, backgrounds, or gesture recognizers.
+
+Replace a built-in recipe for both typed and string callers:
+
+```swift
+var rules = TWGlobalRules()
+let base = TWStyle.defaultStyle(for: "button-primary")!
+rules.named["button-primary"] = TWStyle(base, .rounded(.full), .minH(48))
+```
+
+Use `defaultStyle(for:)` when extending the same recipe. Referencing `.primaryButton` inside its own replacement creates a cycle.
+Change selected inherited rules in a subtree:
+
+```swift
+SettingsView().twRules { rules in
+    rules.named["card"] = .classes("p-3 rounded-sm border bg-surface")
+}
+```
+
+The closure preserves other inherited rules. Passing a `TWGlobalRules` value replaces the configuration for that subtree.
+Rules use SwiftUI's environment and stay isolated between windows and previews.
+
+Validate generated strings with `try TWStyle.parse(classes, rules: rules, theme: theme)`.
+Unknown classes, unknown variants, and recursive named classes throw `TWClassError`.
+The convenient view API logs invalid styles through the system logger and leaves that surface undecorated.
+Use strict parsing in tests to catch spelling errors. `.classes()` resolves strings against the current environment during rendering.
+
+## Visual regression tests
+
+The visual suite compares 42 images with exact pixels: 34 macOS views and eight iOS simulator screenshots.
+It covers themes, widths, text-size environments, state appearances, native controls, global rules, and right-to-left layout.
+The CI job fails on missing or changed references and uploads difference images.
+See [the visual testing guide](docs/visual-testing.md) for local commands and baseline updates.

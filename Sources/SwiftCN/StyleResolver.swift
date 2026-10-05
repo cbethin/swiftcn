@@ -1,4 +1,5 @@
 import SwiftUI
+import os
 
 struct TWResolvedStyle {
     var padding = EdgeInsets()
@@ -18,8 +19,16 @@ struct TWResolvedStyle {
 }
 
 enum TWStyleResolver {
-    static func resolve(_ style: TWStyle, theme: TWTheme, scheme: ColorScheme, state: TWState) -> TWResolvedStyle {
-        let rules = style.rules.enumerated()
+    static func resolve(_ style: TWStyle, theme: TWTheme, scheme: ColorScheme, state: TWState,
+                        globalRules: TWGlobalRules = TWGlobalRules()) -> TWResolvedStyle {
+        let expanded: TWStyle
+        do {
+            expanded = try TWClassParser.expand(style, rules: globalRules, theme: theme)
+        } catch {
+            Logger(subsystem: "swiftcn", category: "classes").error("\(String(describing: error), privacy: .public)")
+            return TWResolvedStyle()
+        }
+        let rules = expanded.rules.enumerated()
             .filter { $0.element.conditions.allSatisfy { $0.matches(state) } }
             .sorted { lhs, rhs in
                 if lhs.element.priority != rhs.element.priority {
@@ -61,14 +70,18 @@ enum TWStyleResolver {
             case .border(let source, let width):
                 result.border = color(source, theme: theme, scheme: scheme)
                 result.borderWidth = width
+            case .borderColor(let source): result.border = color(source, theme: theme, scheme: scheme)
+            case .borderWidth(let width): result.borderWidth = width
             case .shadow(let token): result.shadow = theme.shadow(token)
             case .opacity(let opacity): result.opacity = opacity
             case .width(let width): result.width = width; result.expandsWidth = false
             case .height(let height): result.height = height
             case .minimumHeight(let height): result.minimumHeight = height
             case .fullWidth: result.width = nil; result.expandsWidth = true
+            case .classes: break // Expansion removes these before resolution.
             }
         }
+        if result.borderWidth > 0, result.border == nil { result.border = theme.color(.border, scheme: scheme) }
         return result
     }
 

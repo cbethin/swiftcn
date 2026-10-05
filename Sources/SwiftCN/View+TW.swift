@@ -1,6 +1,9 @@
 import SwiftUI
 
 extension View {
+    public func tw(_ classes: String, state: TWState = TWState()) -> some View {
+        modifier(TWModifier(style: .classes(classes), state: state))
+    }
     /// Apply one styled surface. Later utilities replace earlier values by property.
     public func tw(_ styles: TWStyle..., state: TWState = TWState()) -> some View {
         modifier(TWModifier(style: TWStyle(styles), state: state))
@@ -15,7 +18,9 @@ extension View {
 struct TWModifier: ViewModifier {
     let style: TWStyle
     var state: TWState
+    var isButton = false
     @Environment(\.twTheme) private var theme
+    @Environment(\.twRules) private var rules
     @Environment(\.colorScheme) private var scheme
     @Environment(\.isEnabled) private var isEnabled
     @State private var isHovered = false
@@ -24,7 +29,8 @@ struct TWModifier: ViewModifier {
         var activeState = state
         activeState.isDisabled = activeState.isDisabled || !isEnabled
         activeState.isHovered = activeState.isHovered || isHovered
-        let appearance = TWStyleResolver.resolve(style, theme: theme, scheme: scheme, state: activeState)
+        let combined = TWStyle(rules.view, isButton ? rules.button : TWStyle(), style)
+        let appearance = TWStyleResolver.resolve(combined, theme: theme, scheme: scheme, state: activeState, globalRules: rules)
         return content
             .modifier(TWAppearanceModifier(appearance: appearance, scheme: scheme))
             .onHover { isHovered = $0 }

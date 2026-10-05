@@ -1,0 +1,36 @@
+name: Record visual baselines
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['visual-baselines/**']
+
+permissions:
+  contents: read
+
+jobs:
+  record:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+      - name: Native tests
+        run: swift test --skip SwiftCNVisualTests
+      - name: Record candidates
+        run: bash Scripts/visual-test.sh record ci
+      - name: Verify candidates
+        run: bash Scripts/visual-test.sh verify ci
+      - name: Record iOS candidates
+        run: python3 Scripts/ios-visual-test.py record ci
+      - name: Verify iOS candidates
+        run: python3 Scripts/ios-visual-test.py verify ci
+      - name: Upload candidates for review
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: swiftcn-baseline-candidates
+          path: |
+            Tests/SwiftCNVisualTests/__Snapshots__/macos-15-xcode-16.4/
+            Tests/SwiftCNVisualTests/__Snapshots__/ios-18.5-iphone-16/
+            artifacts/visual-diffs/

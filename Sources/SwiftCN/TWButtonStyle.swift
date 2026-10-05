@@ -5,6 +5,11 @@ public struct TWButtonStyle: ButtonStyle {
     public var style: TWStyle
     public var state: TWState
 
+    public init(_ classes: String, state: TWState = TWState()) {
+        style = .classes(classes)
+        self.state = state
+    }
+
     public init(_ styles: TWStyle..., state: TWState = TWState()) {
         style = TWStyle(styles)
         self.state = state
@@ -14,11 +19,14 @@ public struct TWButtonStyle: ButtonStyle {
         var activeState = state
         activeState.isPressed = configuration.isPressed
         return configuration.label
-            .modifier(TWModifier(style: style, state: activeState))
+            .modifier(TWModifier(style: style, state: activeState, isButton: true))
     }
 }
 
 extension ButtonStyle where Self == TWButtonStyle {
+    public static func tw(_ classes: String, state: TWState = TWState()) -> TWButtonStyle {
+        TWButtonStyle(classes, state: state)
+    }
     public static func tw(_ styles: TWStyle..., state: TWState = TWState()) -> TWButtonStyle {
         TWButtonStyle(TWStyle(styles), state: state)
     }

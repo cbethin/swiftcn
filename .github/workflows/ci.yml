@@ -13,10 +13,16 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v7
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
       - name: Toolchain
         run: swift --version
       - name: Native tests
-        run: swift test
+        run: swift test --skip SwiftCNVisualTests
+      - name: Verify visual baselines
+        run: bash Scripts/visual-test.sh verify ci
+      - name: Verify iOS visual baselines
+        run: python3 Scripts/ios-visual-test.py verify ci
       - name: Release build
         run: swift build -c release
       - name: Source ownership
@@ -25,8 +31,14 @@ jobs:
         run: bash Scripts/check-ios.sh
       - name: Render catalog
         run: swift run --package-path Examples/Catalog SwiftCNCatalog --render artifacts
-      - name: Upload catalog images
+      - name: Upload visual evidence
+        if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: swiftcn-catalog
-          path: artifacts/catalog-*.png
+          name: swiftcn-visual-evidence
+          path: |
+            artifacts/catalog-*.png
+            artifacts/visual-diffs/
+            artifacts/ios-visual/*.png
+            Tests/SwiftCNVisualTests/__Snapshots__/macos-15-xcode-16.4/
+            Tests/SwiftCNVisualTests/__Snapshots__/ios-18.5-iphone-16/

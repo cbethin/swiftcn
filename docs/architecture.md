@@ -1,6 +1,6 @@
 # Architecture
 
-swiftcn supplies typed appearance values for native SwiftUI views.
+swiftcn supplies appearance values for native SwiftUI views through typed utilities and string classes.
 Its initial scope includes a theme, utilities, a resolver, a renderer, and a native button adapter.
 
 ## Ownership
@@ -16,6 +16,19 @@ Build source distribution from these boundaries when the catalog grows.
 Utilities and named recipes produce the same value type.
 Each conditional rule stores its active state requirements.
 Nested conditions require all their states to match.
+
+Expand string classes through the same utilities before property resolution.
+Resolve named classes through environment rules at render time.
+Reject unknown classes, unknown variants, and recursive definitions during strict parsing.
+
+## Global rules
+
+Store view defaults, button defaults, and named classes in `TWGlobalRules`.
+Pass rules through the SwiftUI environment.
+Apply defaults only to explicit styled surfaces.
+Apply local utilities after global defaults within each state.
+Use named recipe replacements to change built-in appearances across the application.
+Keep subtree changes separate from sibling views.
 
 ## Resolution
 
@@ -49,6 +62,16 @@ Check appearance and inheritance through rendered native views.
 Check child state identity through a hosted SwiftUI view.
 Compile the library for an iOS simulator.
 Copy the library sources into a clean package to check dependency boundaries.
+
+Compare native hosted views against committed visual baselines.
+Capture iOS simulator screenshots for native controls and Dynamic Type.
+Cover both themes, two widths, text-size environments, control states, and directional layout.
+Use exact pixel comparison on the selected continuous integration toolchain.
+Keep local baselines separate from the continuous integration baselines.
+
+Upload reference images, actual images, and differences after failures.
+Record candidate baselines through a separate workflow.
+Review candidate images before committing changes to the baselines.
 
 ## Next steps
 
