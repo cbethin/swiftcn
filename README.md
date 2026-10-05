@@ -2,7 +2,7 @@
 
 <img src="website/public/brand/swiftcn-logo-preview-v1.svg" alt="swiftcn bird logo" width="96">
 
-[Documentation](https://cbethin.github.io/swiftcn/) · [Get started](https://cbethin.github.io/swiftcn/docs/installation/)
+[Documentation](https://cbethin.github.io/swiftcn/) · [Quick start](https://cbethin.github.io/swiftcn/docs/quick-start/) · [Installation](https://cbethin.github.io/swiftcn/docs/installation/)
 
 String and typed utility styling with editable recipes for native SwiftUI.
 
@@ -494,6 +494,7 @@ Run checks:
 swift test
 swift build -c release
 bash Scripts/check-source-copy.sh
+bash Scripts/check-doc-examples.sh
 bash Scripts/check-ios.sh
 ```
 

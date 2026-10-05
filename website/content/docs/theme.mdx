@@ -47,7 +47,9 @@ Text("Brand").tw(.fg(.brand)).twTheme(theme)
 ```
 
 Register custom colors in the theme before using them.
-Unregistered colors fall back to SwiftUI's semantic primary foreground.
+Typed color utilities fall back to SwiftUI's semantic primary foreground for an unregistered token.
+String color classes require registration; an unknown token rejects the complete style for that surface.
+See [color troubleshooting](/docs/troubleshooting#a-custom-color-works-in-typed-styles-but-fails-in-strings).
 
 ## Scale and typography
 

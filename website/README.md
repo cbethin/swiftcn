@@ -29,6 +29,14 @@ Open http://localhost:3100. Verify search against the static production output.
 
 Write guides in `content/docs/*.mdx`. Update `content/docs/meta.json` to change navigation. The index includes page text and section headings.
 
+Complete Swift examples use titled code blocks, such as `swift title="ContentView.swift"`. Run the consumer check from the repository root after editing an example:
+
+```bash
+bash Scripts/check-doc-examples.sh
+```
+
+It extracts the documented manifest, starter app, focus view, and diagnostic helper. It checks package imports and copied-source consumers against macOS 14 and iOS 17 with Swift 6. CI runs the same check.
+
 Use `components/landing.tsx` for the landing page and `app/global.css` for appearance. Motion respects the user's Reduce Motion preference.
 
 Native screenshots live in `public/native`. Regenerate them from the SwiftUI catalog before replacing them:

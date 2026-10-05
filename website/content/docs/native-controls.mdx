@@ -36,16 +36,29 @@ Use native `.disabled(...)` to disable a control.
 
 Hover follows native pointer events.
 General view styling does not recognize presses or assign focus.
-Supply explicit focus state when a control owns it:
 
-```swift
-@FocusState private var emailFocused: Bool
+## Focus
 
-TextField("Email", text: $email)
-    .focused($emailFocused)
-    .tw(.border(.border), .rounded(.md),
-        .focus(.border(.primary, width: 2)),
-        state: TWState(isFocused: emailFocused))
+Supply explicit focus state when a control owns it.
+This complete view keeps focus and text editing native:
+
+```swift title="FocusExample.swift"
+import SwiftUI
+import SwiftCN
+
+struct FocusExample: View {
+    @State private var email = ""
+    @FocusState private var emailFocused: Bool
+
+    var body: some View {
+        TextField("Email", text: $email)
+            .textFieldStyle(.plain)
+            .focused($emailFocused)
+            .tw(.p(3), .border(.border), .rounded(.md),
+                .focus(.border(.primary, width: 2)),
+                state: TWState(isFocused: emailFocused))
+    }
+}
 ```
 
 ## Other native controls

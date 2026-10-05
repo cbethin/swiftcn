@@ -45,6 +45,8 @@ jobs:
         run: swift build -c release
       - name: Source ownership
         run: bash Scripts/check-source-copy.sh
+      - name: Compile documentation examples
+        run: bash Scripts/check-doc-examples.sh
       - name: iOS simulator compilation
         run: bash Scripts/check-ios.sh
       - name: Render catalog

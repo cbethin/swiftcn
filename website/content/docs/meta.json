@@ -2,6 +2,7 @@
   "pages": [
     "index",
     "installation",
+    "quick-start",
     "---Styling---",
     "styling",
     "utilities",
@@ -14,6 +15,7 @@
     "animations",
     "shared-elements",
     "---Development---",
-    "visual-testing"
+    "visual-testing",
+    "troubleshooting"
   ]
 }

@@ -1,5 +1,6 @@
 import { llms, loader } from 'fumadocs-core/source';
-import { docsContentRoute, docsImageRoute, docsRoute } from './shared';
+import { docsRoute } from './shared';
+import { sitePath } from './site-path';
 import { defineDocs } from 'fumadocs-mdx/macro';
 import { metaSchema, pageSchema } from 'fumadocs-core/source/schema';
 
@@ -23,8 +24,19 @@ export const source = loader({
   plugins: [],
 });
 
-export const docsLlms = llms(source, {
-  renderPage: async (page) => `# ${page.data.title} (${page.url})
+// Plain Markdown URLs do not pass through the Next.js router.
+const markdownSource = loader({
+  baseUrl: sitePath(docsRoute),
+  source: docs.toFumadocsSource(),
+});
 
-${await page.data.getText('processed')}`,
+export const docsLlms = llms(markdownSource, {
+  renderPage: async (page) => {
+    const url = sitePath([docsRoute, ...page.slugs].join('/'));
+    const markdown = (await page.data.getText('processed')).replace(
+      /\]\((\/docs(?=[/#)]))/g,
+      (_, path: string) => `](${sitePath(path)}`,
+    );
+    return `# ${page.data.title} (${url})\n\n${markdown}`;
+  },
 });

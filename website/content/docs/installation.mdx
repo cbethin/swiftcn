@@ -19,19 +19,60 @@ Select the `main` branch and add the `SwiftCN` product to your app target. The p
 
 ## Swift Package Manager
 
-```swift
-.package(url: "https://github.com/cbethin/swiftcn.git", branch: "main")
+Add the package dependency and its product to your target.
+This complete manifest uses a library target named `ProjectUI`:
+
+```swift title="Package.swift"
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "ProjectUI",
+    platforms: [.iOS(.v17), .macOS(.v14)],
+    products: [.library(name: "ProjectUI", targets: ["ProjectUI"])],
+    dependencies: [
+        .package(url: "https://github.com/cbethin/swiftcn.git", branch: "main")
+    ],
+    targets: [
+        .target(
+            name: "ProjectUI",
+            dependencies: [.product(name: "SwiftCN", package: "swiftcn")]
+        )
+    ]
+)
 ```
 
-Add the product to your target dependencies:
+Put your views in `Sources/ProjectUI`.
+For an existing package, keep its products and targets, then add the matching dependency entries.
+The Xcode workflow above adds SwiftCN directly to a SwiftUI app target.
 
-```swift
-.product(name: "SwiftCN", package: "swiftcn")
-```
+The `main` branch can change between package resolutions.
+Commit your app's `Package.resolved` to share the selected revision.
+For a fixed dependency, replace `branch: "main"` with `revision: "<full commit SHA>"`.
 
 ## Copy the source
 
-Copy all Swift files from `Sources/SwiftCN` into your target. Keep the MIT license with the source. Omit `import SwiftCN` when the files belong to your app module.
+Clone the repository and copy every Swift file from `Sources/SwiftCN` into your app target.
+Keep its MIT license beside the copied source.
+Omit `import SwiftCN` when the files belong to your app module.
+
+For example, run these commands from your app repository.
+Choose an unused clone destination:
+
+```bash
+git clone https://github.com/cbethin/swiftcn.git ../swiftcn-source
+mkdir -p Vendor/SwiftCN
+cp ../swiftcn-source/Sources/SwiftCN/*.swift Vendor/SwiftCN/
+cp ../swiftcn-source/LICENSE Vendor/SwiftCN/LICENSE
+```
+
+Add `Vendor/SwiftCN` to your Xcode project and select your app target for all Swift files.
+Review source changes when you update your copy.
+Keep your app's recipes in a separate file to simplify those updates.
+
+The library has no runtime dependencies.
+The repository's snapshot dependency belongs to its test targets.
+Source ownership requires the complete runtime source, not the demo or tests.
 
 ## Your first view
 
@@ -47,4 +88,5 @@ struct Welcome: View {
 }
 ```
 
-Continue with [styling and composition](/docs/styling).
+Continue with the [complete quick start](/docs/quick-start), including native state, a button, and app-wide rules.
+See [troubleshooting](/docs/troubleshooting#the-compiler-cannot-find-swiftcn) if the import fails.

@@ -75,4 +75,10 @@ let style = try TWStyle.parse(classes, rules: rules, theme: theme)
 
 Strict parsing throws `TWClassError` for unknown classes, unknown variants, invalid arguments, and recursive rules.
 
-The convenient view API logs invalid styles through the system logger and leaves the surface undecorated. Use strict parsing in tests to catch mistakes.
+The convenient view API logs invalid styles through the system logger and leaves the surface undecorated.
+One invalid class rejects the complete style for that surface, including its global defaults.
+Use strict parsing in tests to catch mistakes.
+
+`parse` expands recipes and utility factories against the supplied rules and theme immediately.
+Use `.classes(classes)` or a string `.tw(classes)` to keep reading inherited definitions when the view renders.
+See [troubleshooting](/docs/troubleshooting) for a complete diagnostic helper and common fixes.
