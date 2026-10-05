@@ -47,7 +47,7 @@ struct NativeUtilityRenderingTests {
             rules.modifiers["shift"] = .argument(default: CGFloat.zero,
                 parse: { argument, _ in argument.points }) { view, distance in view.offset(x: distance) }
         }
-        let view = NativeUtilityHarness(model: model, identities: identities)
+        let view = NativeUtilityHarness(model: model, identities: identities, samples: samples)
             .twRules(rules)
         withHost(view) { host in
             #expect(samples.times.isEmpty)
@@ -182,6 +182,7 @@ private struct NativeUtilityHarness: View {
     @ObservedObject var model: NativeUtilityModel
     let identities: NativeIdentityRecorder
     var callerAnimation = false
+    var samples: NativeMotionSamples? = nil
     var body: some View {
         NativeUtilityChild(phase: model.phase, identities: identities)
             .tw(cn {
@@ -192,6 +193,12 @@ private struct NativeUtilityHarness: View {
                     if model.phase != 0 { "glass shift-[\(model.phase * 40)]" }
                 }
             }, value: model.phase)
+            .twRules { rules in
+                if let samples {
+                    // Distinguish each transition from the previous probe's completed timeline.
+                    rules.animations["probe"] = TWAnimation(Animation(NativeMotionProbe(samples: samples, generation: model.phase)))
+                }
+            }
     }
 }
 private struct TypedMotionHarness: View {
@@ -232,8 +239,9 @@ private final class NativeMotionSamples: @unchecked Sendable {
 }
 private struct NativeMotionProbe: CustomAnimation {
     let samples: NativeMotionSamples
-    static func == (lhs: Self, rhs: Self) -> Bool { lhs.samples === rhs.samples }
-    func hash(into hasher: inout Hasher) { hasher.combine(ObjectIdentifier(samples)) }
+    var generation = 0
+    static func == (lhs: Self, rhs: Self) -> Bool { lhs.samples === rhs.samples && lhs.generation == rhs.generation }
+    func hash(into hasher: inout Hasher) { hasher.combine(ObjectIdentifier(samples)); hasher.combine(generation) }
     func animate<V: VectorArithmetic>(value: V, time: TimeInterval, context: inout AnimationContext<V>) -> V? {
         samples.append(time)
         guard time < 0.3 else { return nil }
