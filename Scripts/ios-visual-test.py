@@ -42,7 +42,8 @@ def main():
     run(XCRUN, "swiftc", "-sdk", sdk, "-target", f"{architecture}-apple-ios17.0-simulator",
         "-swift-version", "6", "-warnings-as-errors", "-parse-as-library", "-module-name", "SwiftCNVisualHost",
         *map(str, sorted((REPO / "Sources/SwiftCN").glob("*.swift"))),
-        str(REPO / "Examples/iOSVisualHost/VisualHost.swift"), "-o", str(app / "SwiftCNVisualHost"))
+        str(REPO / "Examples/iOSVisualHost/VisualHost.swift"), "-o", str(app / "SwiftCNVisualHost"),
+        env=dict(os.environ, SDKROOT=sdk))
     run("/usr/bin/codesign", "--force", "--sign", "-", str(app))
     runtimes = json.loads(run(XCRUN, "simctl", "list", "runtimes", "-j", capture=True))["runtimes"]
     sdk_version = run(XCRUN, "--sdk", "iphonesimulator", "--show-sdk-version", capture=True)
@@ -87,8 +88,9 @@ def main():
     references.mkdir(parents=True, exist_ok=True)
     environment = dict(os.environ, SWIFTCN_IOS_SCREENSHOTS=str(artifacts),
                        SWIFTCN_VISUAL_MODE=args.mode, SWIFTCN_SNAPSHOT_DIRECTORY=str(references),
-                       SNAPSHOT_ARTIFACTS=str(REPO / "artifacts/visual-diffs"))
-    run("swift", "test", "--filter", "IOSVisualTests", cwd=REPO, env=environment)
+                       SNAPSHOT_ARTIFACTS=str(REPO / "artifacts/visual-diffs"),
+                       SDKROOT=run(XCRUN, "--sdk", "macosx", "--show-sdk-path", capture=True))
+    run(XCRUN, "swift", "test", "--sdk", environment["SDKROOT"], "--filter", "IOSVisualTests", cwd=REPO, env=environment)
 
 
 if __name__ == "__main__":
