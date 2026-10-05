@@ -23,6 +23,8 @@ struct MotionSurface: View {
                 .symbolEffectsRemoved(!motion.isEnabled || motionClasses.split(separator: " ").contains("animate-none"))
                 .accessibilityHidden(true)
             Text("Hello, SwiftUI")
+                // Keep the label's ink fixed while its foreground and surrounding layout change.
+                .contentTransition(.identity)
         }
         .tw(Self.classes(expanded: expanded, motion: motionClasses), value: expanded)
     }

@@ -20,7 +20,8 @@ struct MotionSurfaceTests {
         let recorder = SurfaceEnvironment()
         let blue = TWAdaptiveColor(light: .blue, dark: .blue)
         let host = NSHostingView(rootView: SurfaceHarness(model: model, recorder: recorder, preset: preset)
-            .twTheme(TWTheme(colors: [.primary: blue, .accent: blue, .onPrimary: .init(light: .white, dark: .white)]))
+            .twTheme(TWTheme(colors: [.primary: blue, .accent: blue,
+                .onPrimary: .init(light: .white, dark: .white), .foreground: .init(light: .black, dark: .black)]))
             .environment(\.colorScheme, .light)
             .environment(\.demoMotionEnabled, false))
         host.frame = CGRect(x: 0, y: 0, width: 400, height: 180)
@@ -30,12 +31,13 @@ struct MotionSurfaceTests {
         defer { window.orderOut(nil); window.contentView = nil }
         host.layoutSubtreeIfNeeded()
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
-        let compact = try bounds(host, name: "\(preset)-compact")
+        var contentFrames: [CGRect] = []
+        let compact = try bounds(host, name: "\(preset)-compact", contentFrames: &contentFrames)
         var expansion: [CGRect] = []
         model.expanded = true
         for frame in 0..<12 {
             RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
-            expansion.append(try bounds(host, name: "\(preset)-expand-\(frame)"))
+            expansion.append(try bounds(host, name: "\(preset)-expand-\(frame)", contentFrames: &contentFrames))
         }
         let expanded = try #require(expansion.last)
         #expect(expanded.width > compact.width + 30)
@@ -44,8 +46,12 @@ struct MotionSurfaceTests {
         model.expanded = false
         for frame in 0..<12 {
             RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
-            collapse.append(try bounds(host, name: "\(preset)-collapse-\(frame)"))
+            collapse.append(try bounds(host, name: "\(preset)-collapse-\(frame)", contentFrames: &contentFrames))
         }
+        let restingContent = try #require(contentFrames.first)
+        #expect(contentFrames.allSatisfy {
+            abs($0.midX - restingContent.midX) < 1 && abs($0.midY - restingContent.midY) < 1
+        }, "Content centers: \(contentFrames.map { CGPoint(x: $0.midX, y: $0.midY) })")
         #expect(abs(try #require(collapse.last).width - compact.width) < 1)
         #expect(abs(try #require(collapse.last).height - compact.height) < 1)
         for frames in [expansion, collapse] {
@@ -66,7 +72,7 @@ struct MotionSurfaceTests {
     }
 
     /// Read the native presentation pixels, not the target SwiftUI layout proposal.
-    private func bounds<V: View>(_ host: NSHostingView<V>, name: String) throws -> CGRect {
+    private func bounds<V: View>(_ host: NSHostingView<V>, name: String, contentFrames: inout [CGRect]) throws -> CGRect {
         let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
         host.cacheDisplay(in: host.bounds, to: bitmap)
         if let path = ProcessInfo.processInfo.environment["SWIFTCN_MOTION_ARTIFACTS"] {
@@ -83,6 +89,27 @@ struct MotionSurfaceTests {
         let left = try #require(xs.first), right = try #require(xs.last)
         let top = try #require(ys.first), bottom = try #require(ys.last)
         let scale = CGFloat(bitmap.pixelsWide) / host.bounds.width
+        // Measure only the label's ink, excluding the independently animated symbol.
+        // This central region stays inside the blue surface at both endpoint sizes.
+        let bytes = try #require(bitmap.bitmapData)
+        try #require(bitmap.bitsPerSample == 8 && !bitmap.isPlanar && bitmap.samplesPerPixel >= 3)
+        let littleEndian = bitmap.bitmapFormat.contains(.thirtyTwoBitLittleEndian)
+        let firstColor = bitmap.hasAlpha && (bitmap.bitmapFormat.contains(.alphaFirst) != littleEndian) ? 1 : 0
+        var glyphX: [Int] = [], glyphY: [Int] = []
+        for y in Int(76 * scale)..<Int(106 * scale) {
+            for x in Int(165 * scale)..<Int(260 * scale) {
+                let offset = y * bitmap.bytesPerRow + x * bitmap.samplesPerPixel + firstColor
+                let colors = [bytes[offset], bytes[offset + 1], bytes[offset + 2]]
+                // Black, white, and their interpolated grays differ from the blue background.
+                if colors.max()! - colors.min()! < 35 {
+                    glyphX.append(x); glyphY.append(y)
+                }
+            }
+        }
+        let glyphLeft = try #require(glyphX.min()), glyphRight = try #require(glyphX.max())
+        let glyphTop = try #require(glyphY.min()), glyphBottom = try #require(glyphY.max())
+        contentFrames.append(CGRect(x: CGFloat(glyphLeft) / scale, y: CGFloat(glyphTop) / scale,
+            width: CGFloat(glyphRight - glyphLeft + 1) / scale, height: CGFloat(glyphBottom - glyphTop + 1) / scale))
         return CGRect(x: CGFloat(left) / scale, y: CGFloat(top) / scale,
                       width: CGFloat(right - left + 1) / scale, height: CGFloat(bottom - top + 1) / scale)
     }
