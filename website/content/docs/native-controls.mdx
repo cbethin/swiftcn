@@ -1,0 +1,69 @@
+---
+title: "Native controls & state"
+description: "Keep SwiftUI actions, roles, focus, and gestures."
+---
+
+```swift
+Button("Save", action: save)
+    .buttonStyle(.tw(.primaryButton))
+    .disabled(isSaving)
+
+Button("Delete", role: .destructive, action: delete)
+    .buttonStyle(.tw(.destructiveButton))
+```
+
+Built-in recipes include `card`, `primaryButton`, `secondaryButton`, `outlineButton`, and `destructiveButton`.
+The button adapter uses `ButtonStyle.Configuration.isPressed`.
+SwiftUI retains the button's action, semantic role, and activation behavior.
+Appearance variants do not set semantic roles.
+Button recipes use a minimum height of 44 points on iOS and 32 points on macOS.
+Large text can increase that height.
+
+```swift
+TWStyle(
+    .opacity(1),
+    .hover(.bg(.accent)),
+    .pressed(.opacity(0.8)),
+    .disabled(.opacity(0.45))
+)
+```
+
+Active patches apply after base utilities.
+State precedence is hover, focus, pressed, then disabled.
+For equal precedence, more specific nested conditions win before declaration order.
+Conditions affect appearance only.
+Use native `.disabled(...)` to disable a control.
+
+Hover follows native pointer events.
+General view styling does not recognize presses or assign focus.
+Supply explicit focus state when a control owns it:
+
+```swift
+@FocusState private var emailFocused: Bool
+
+TextField("Email", text: $email)
+    .focused($emailFocused)
+    .tw(.border(.border), .rounded(.md),
+        .focus(.border(.primary, width: 2)),
+        state: TWState(isFocused: emailFocused))
+```
+
+## Other native controls
+
+```swift
+TextField("Email", text: $email)
+    .textFieldStyle(.plain)
+    .tw("p-3 rounded-md border bg-surface")
+
+Toggle("Notifications", isOn: $notifications)
+    .tw("p-3 rounded-lg bg-surface")
+
+Slider(value: $volume)
+    .tw("p-4")
+```
+
+Use `.buttonStyle(.tw(...))` for a button's pressed appearance. A general `.tw(...)` surface does not invent press gestures.
+
+Use native gesture modifiers, accessibility labels, bindings, and presentation APIs alongside your styles.
+
+<NativeCapture name="catalog" alt="Native SwiftUI text fields, toggles, sliders, and buttons." />

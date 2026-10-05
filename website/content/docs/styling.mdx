@@ -1,0 +1,78 @@
+---
+title: "Styling & composition"
+description: "Compose string classes or typed utilities over native views."
+---
+
+## String classes
+
+```swift
+Text("Workspace")
+    .tw("text-lg font-semibold p-4 bg-surface rounded-lg")
+```
+
+The parser maps documented classes to native styling properties. Those properties generate SwiftUI modifiers in a stable rendering pipeline.
+
+Compose strings with ordinary Swift:
+
+```swift
+let base = "p-4 rounded-lg"
+let selectedStyle = selected ? "bg-primary text-primary-foreground" : "bg-surface"
+Text("Workspace").tw("\(base) \(selectedStyle)")
+```
+
+## Typed utilities
+
+```swift
+Text("Workspace")
+    .tw(.text(.lg), .weight(.semibold), .p(4), .bg(.surface), .rounded(.lg))
+```
+
+Strings and typed utilities use the same resolver. Use [arbitrary arguments](/docs/arguments) for explicit values.
+
+## Composition and overrides
+
+```swift
+extension TWStyle {
+    static var projectCard: TWStyle {
+        TWStyle(.card, .p(5), .rounded(.xl))
+    }
+}
+
+VStack(alignment: .leading) {
+    Text("Workspace")
+    Text("Three active projects")
+}
+.tw(.projectCard, .p(8))
+```
+
+Within one `.tw(...)` call, later base utilities replace earlier values by property.
+Padding resolves separately for each edge.
+`.p(4), .px(6)` produces 16 points vertically and 24 points horizontally.
+Utility order resolves properties; it does not reorder the rendering pipeline.
+
+Separate `.tw(...)` calls create separate styled surfaces.
+For example, `.tw(.p(2)).tw(.p(3))` adds both layers of padding.
+Native modifiers retain their order around each surface.
+
+## State variants
+
+```swift
+Button("Save", action: save)
+    .buttonStyle(.tw("button-primary hover:opacity-90 active:scale-[0.98] disabled:opacity-45"))
+    .disabled(isSaving)
+```
+
+Hover, focus, pressed, and disabled patches apply after base values, in that order. More specific conditions win before declaration order when precedence is equal.
+
+Variants only affect appearance. Native `.disabled(...)` controls whether a control is disabled. See [native controls and state](/docs/native-controls).
+
+
+## Validate generated strings
+
+```swift
+let style = try TWStyle.parse(classes, rules: rules, theme: theme)
+```
+
+Strict parsing throws `TWClassError` for unknown classes, unknown variants, invalid arguments, and recursive rules.
+
+The convenient view API logs invalid styles through the system logger and leaves the surface undecorated. Use strict parsing in tests to catch mistakes.

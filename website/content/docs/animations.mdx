@@ -1,0 +1,105 @@
+---
+title: "Animations"
+description: "Let SwiftUI interpolate state changes with familiar animation classes."
+---
+
+Use animation classes to animate changes to the modifiers that `.tw` owns:
+
+```swift
+Button("Save", action: save)
+    .buttonStyle(.tw("button-primary active:opacity-80 animate-spring duration-150"))
+
+Text("Details")
+    .tw("\(expanded ? "p-6 rounded-xl" : "p-3 rounded-md") bg-surface animate-ease-out duration-200")
+```
+
+SwiftUI owns the state and interpolates the native modifier values.
+Button press and release, hover, explicit focus, and computed strings use the same animation rules.
+You do not need an extra `.animation(..., value:)` call for these styled values.
+The modifier structure stays stable during these changes.
+
+## Native presets
+
+| Class | Native animation |
+| --- | --- |
+| `animate-linear` | `.linear(duration:)` |
+| `animate-ease-in`, `animate-ease-out`, `animate-ease-in-out` | Native timing curves |
+| `animate-spring` | `.spring(duration:)` |
+| `animate-smooth`, `animate-snappy`, `animate-bouncy` | Native spring presets |
+| `animate-none` | Disable animation for the styled modifiers |
+| `duration-200`, `delay-100` | Duration and delay in milliseconds |
+
+The default duration is 300 milliseconds. The default delay is zero.
+Timing utilities accept finite, nonnegative decimal values.
+Later utilities override the same property. State variants use the normal precedence rules.
+
+The destination state selects the animation, including during release or focus loss.
+Keep a base animation class when both entry and exit need animation.
+
+## Transactions and accessibility
+
+Without an animation class, `.tw` preserves the caller's transaction.
+Duration and delay alone do not enable animation.
+Explicit animation classes respect Reduce Motion and `Transaction.disablesAnimations`.
+The scoped transaction affects the styled modifiers and preserves the content's existing transaction.
+Native modifiers outside `.tw` keep their own animation settings.
+
+Animation classes configure value changes; they do not start a repeating animation on appearance.
+View insertion and removal continue to use native `.transition` and application transactions.
+
+## Custom presets
+
+Set custom presets through global rules:
+
+```swift
+let rules = TWGlobalRules(
+    named: ["motion-card": "card animate-settle duration-250"],
+    animations: [
+        "settle": TWAnimation { duration in
+            .spring(duration: duration, bounce: 0.15)
+        },
+        "press": TWAnimation(.interactiveSpring(response: 0.25, dampingFraction: 0.8))
+    ]
+)
+
+ContentView().twRules(rules)
+// Inside ContentView:
+Text("Details").tw("motion-card")
+Button("Save", action: save).buttonStyle(.tw("button-primary animate-press"))
+```
+
+Preset factories receive the resolved duration in seconds.
+A fixed native preset keeps its own duration; `duration-*` does not retime it.
+Both forms accept `delay-*`. Partial preset dictionaries preserve built-in presets.
+Subtree updates can replace individual presets through `rules.animations`.
+String presets resolve against the current rules during rendering.
+
+## Typed animation utilities
+
+Typed utilities use the same rules:
+
+```swift
+Text("Details").tw(.p(4), .animation(.spring), .duration(0.2), .delay(0.05))
+```
+
+Typed duration and delay utilities accept seconds.
+
+## Animate the subtree
+
+Pass a watched value when changes include child content or native layout:
+
+```swift
+VStack {
+    if expanded {
+        Text("More details").transition(.opacity)
+    }
+    Button("Toggle") { expanded.toggle() }
+}
+.tw("animate-smooth duration-300", value: expanded)
+```
+
+Use `.twAnimation("animate-smooth duration-300", value: expanded)` when you only need an animation wrapper.
+
+Without `value:`, animation classes affect the styling properties owned by `.tw`. With `value:`, the explicit wrapper animates the subtree when the value changes.
+
+Continue with [shared elements](/docs/shared-elements) to connect geometry between states.

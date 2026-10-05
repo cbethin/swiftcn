@@ -1,0 +1,50 @@
+---
+title: "Installation"
+description: "Add SwiftCN as a package, or copy the source into your project."
+---
+
+## Requirements
+
+Use Swift 6 with iOS 17 or macOS 14 and later.
+
+## Xcode
+
+Open **File → Add Package Dependencies**. Enter this repository URL:
+
+```text
+https://github.com/cbethin/swiftcn.git
+```
+
+Select the `main` branch and add the `SwiftCN` product to your app target. The project has no stable release tag yet.
+
+## Swift Package Manager
+
+```swift
+.package(url: "https://github.com/cbethin/swiftcn.git", branch: "main")
+```
+
+Add the product to your target dependencies:
+
+```swift
+.product(name: "SwiftCN", package: "swiftcn")
+```
+
+## Copy the source
+
+Copy all Swift files from `Sources/SwiftCN` into your target. Keep the MIT license with the source. Omit `import SwiftCN` when the files belong to your app module.
+
+## Your first view
+
+```swift
+import SwiftUI
+import SwiftCN
+
+struct Welcome: View {
+    var body: some View {
+        Text("Hello, SwiftUI.")
+            .tw("text-lg font-semibold p-4 bg-surface rounded-lg")
+    }
+}
+```
+
+Continue with [styling and composition](/docs/styling).

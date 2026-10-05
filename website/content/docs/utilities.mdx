@@ -1,0 +1,72 @@
+---
+title: "Utility reference"
+description: "The supported vocabulary and its native SwiftUI mappings."
+---
+
+```swift
+Text("Project settings")
+    .tw(
+        .text(.xl),
+        .weight(.semibold),
+        .fg(.foreground),
+        .px(6),
+        .py(4),
+        .bg(.surface),
+        .border(.border),
+        .rounded(.lg),
+        .shadow(.sm)
+    )
+```
+
+| Utility | Description |
+| --- | --- |
+| `.p`, `.px`, `.py`, `.pt`, `.pb`, `.ps`, `.pe` | Padding in theme units; `ps` and `pe` use leading and trailing edges |
+| `.paddingPoints(12)` | Padding in explicit points |
+| `.text(.lg)`, `.font(.headline)`, `.weight(.bold)` | Scalable font tokens, native fonts, and weights |
+| `.fg(.foreground)`, `.bg(.surface)` | Semantic theme colors |
+| `.fgColor(.blue)`, `.bgColor(.orange)` | Native color overrides |
+| `.rounded(.lg)`, `.radius(12)` | Corners for the surface background and border |
+| `.border(.border, width: 1)` | Semantic border color and width in points |
+| `.borderColor(.blue, width: 2)` | Native border color |
+| `.shadow(.sm)` | Shadow on the surface background |
+| `.opacity(0.8)` | Opacity for the complete surface |
+| `.w(200)`, `.h(44)`, `.minW(80)`, `.maxW(300)`, `.minH(44)`, `.maxH(200)`, `.fullWidth` | Outer dimensions, size limits, or available width |
+| `.fontSize(18)`, `.tracking(0.5)`, `.lineSpacing(4)`, `.textAlignment(.center)`, `.lineLimit(2)` | Fixed font size, text attributes, and line limits |
+| `.offset(x: 12, y: -4)`, `.scale(1.05)`, `.rotate(3)`, `.blur(2)` | Native visual transforms and blur |
+
+The default spacing unit is four points.
+`.p(4)` selects 16 points.
+Typography tokens use scalable SwiftUI font roles.
+Padding, radius, width, and height inputs must be finite and nonnegative.
+Opacity inputs must lie between zero and one.
+
+## String utility reference
+
+| Classes | Native behavior |
+| --- | --- |
+| `p-4`, `px-3`, `py-2`, `pt-1`, `pb-1`, `ps-1`, `pe-1` | Theme spacing on selected edges |
+| `w-20`, `h-12`, `w-full`, `min-h-10` | Theme size units or available width |
+| `text-xs` through `text-3xl`, `font-semibold`, `font-bold` | Native font roles and weights |
+| `text-foreground`, `text-muted-foreground`, `bg-surface`, `bg-primary` | Adaptive theme colors |
+| `rounded-none`, `rounded-sm`, `rounded-md`, `rounded-lg`, `rounded-xl`, `rounded-full` | Surface background and border corners |
+| `border`, `border-2`, `border-border`, `shadow-sm`, `shadow-md`, `shadow-lg` | Surface border and background shadow |
+| `opacity-80`, `opacity-50` | Whole-surface opacity |
+| `hover:`, `focus:`, `active:`, `pressed:`, `disabled:` | Appearance conditions |
+| `animate-smooth`, `animate-spring`, `animate-none`, `duration-200`, `delay-50` | Native animation configuration |
+| `group`, `group/hero`, `shared-[cover]/hero` | Persistent groups and matched geometry |
+| `group-hover/hero:`, `group-active/hero:`, `group-disabled/hero:` | Named ancestor state conditions |
+| `card`, `button-primary`, `button-secondary`, `button-outline`, `button-destructive` | Editable native recipes |
+
+## Explicit values and extensions
+
+See [arbitrary arguments](/docs/arguments) for bracket sizes, colors, tracking, line limits, transforms, and timing.
+
+See [global rules](/docs/global-rules) to add named classes or argument factories.
+
+## Native boundaries
+
+Not every Tailwind CSS utility has a SwiftUI mapping. CSS selectors, browser breakpoints, `rem`, percentages, `calc`, and CSS variables are not part of this parser.
+
+Corner utilities decorate backgrounds and borders. They do not clip content. Use native `.clipShape(...)` if clipping is your intent.
+
+Use `HStack`, `VStack`, `Grid`, layout protocols, and native modifiers for layout and behavior beyond the documented utilities.

@@ -1,5 +1,9 @@
 # swiftcn
 
+<img src="website/public/brand/swiftcn-logo-preview-v1.svg" alt="swiftcn bird logo" width="96">
+
+[Documentation](https://cbethin.github.io/swiftcn/) · [Get started](https://cbethin.github.io/swiftcn/docs/installation/)
+
 String and typed utility styling with editable recipes for native SwiftUI.
 
 ![swiftcn catalog in light mode](docs/images/catalog-light.png)
@@ -604,3 +608,14 @@ The visual suite compares 42 images with exact pixels: 34 macOS views and eight 
 It covers themes, widths, text-size environments, state appearances, native controls, global rules, and right-to-left layout.
 The CI job fails on missing or changed references and uploads difference images.
 See [the visual testing guide](docs/visual-testing.md) for local commands and baseline updates.
+
+## Documentation site
+
+The searchable documentation site lives in [`website`](website/README.md).
+It uses Fumadocs, Next.js, MDX, and Motion with static export.
+
+```bash
+cd website
+npm ci
+npm run dev
+```
