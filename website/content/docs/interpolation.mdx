@@ -1,0 +1,149 @@
+---
+title: "Typed interpolation"
+description: "Compose class strings with native Swift values and animations."
+---
+
+`.tw` accepts interpolated class literals as `TWClasses`.
+Values inside brackets keep their Swift types.
+`cn` preserves those values when it combines classes.
+
+## A complete example
+
+Register a native modifier with `.value(default:)`.
+The default value applies when the tag is absent.
+Pass state through bracket interpolation and watch it with `value:`.
+
+```swift title="TypedInterpolationExample.swift"
+import SwiftUI
+import SwiftCN
+
+struct TypedInterpolationExample: View {
+    @State private var expanded = false
+    private let accent = Color.indigo
+    private let motion = Animation.spring(response: 0.4, dampingFraction: 0.8)
+
+    private var rules: TWGlobalRules {
+        TWGlobalRules(modifiers: [
+            "tilt": .value(default: Angle.zero) { view, angle in
+                view.rotation3DEffect(angle, axis: (x: 0, y: 1, z: 0))
+            }
+        ])
+    }
+
+    private var classes: TWClasses {
+        let angle = Angle.degrees(expanded ? 8 : 0)
+        let width = CGFloat(expanded ? 280 : 220)
+        return cn(
+            "p-6 rounded-xl text-[#fff]",
+            "bg-[\(accent)] w-[\(width)] tilt-[\(angle)]",
+            "animate-[\(motion)]",
+            expanded ? "shadow-lg" : nil
+        )
+    }
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Text("Room for ideas")
+                .tw(classes, value: expanded)
+            Button("Change perspective") { expanded.toggle() }
+                .buttonStyle(.tw("button-primary"))
+        }
+        .padding(32)
+        .twRules(rules)
+    }
+}
+```
+
+Use `TypedInterpolationExample()` in your app or preview.
+This complete example compiles for macOS and iOS with package imports and copied source.
+
+## Compose fragments
+
+Between classes, interpolation combines class fragments.
+Inside brackets, interpolation passes argument values.
+
+```swift
+let base: TWClasses = "p-4 bg-[\(accent)]"
+let classes = cn(base, selected ? "border-primary" : nil)
+Text("Hello").tw("\(classes) tilt-[\(angle)]")
+```
+
+Arrays and optional fragments also work between classes:
+
+```swift
+let fragments: [TWClasses?] = [base, selected ? "shadow-md" : nil]
+Text("Hello").tw("\(fragments) rounded-lg")
+```
+
+Annotate stored interpolated literals with `TWClasses`.
+Swift otherwise infers `String` and converts native values to text before swiftcn receives them.
+Existing runtime strings still work with `.tw(runtimeString)`.
+
+For runtime string variables in `cn`, use its builder or wrap them in `TWClasses`:
+
+```swift
+let classes = cn {
+    runtimeString
+    "bg-[\(accent)]"
+    if selected { "shadow-md" }
+}
+let other = cn(TWClasses(runtimeString), "tilt-[\(angle)]")
+```
+
+`cn` keeps class order and omits nil fragments.
+State variants and normal conflict rules still apply.
+String arguments inside brackets keep spaces, underscores, and brackets as data.
+They cannot inject extra classes.
+Exact named bracket aliases match literal arguments; interpolated arguments resolve through their utility prefix.
+
+## Native arguments
+
+| Class | Value |
+| --- | --- |
+| `w-[\(width)]`, `p-[\(inset)]` | Finite native numbers in points |
+| `bg-[\(accent)]`, `text-[color:\(accent)]` | Native `Color` or registered `TWColor` |
+| `rotate-[\(angle)]` | Native `Angle`, or a number in degrees |
+| `offset-[\(point)]`, `scale-[\(size)]` | `CGPoint` or `CGSize` pairs |
+| `duration-[\(seconds)s]` | Native number with an explicit unit |
+| `animate-[\(motion)]` | Native `Animation` or `TWAnimation` |
+| `custom-[\(payload)]` | Your registration's `Sendable` value |
+
+Numeric interpolation outside brackets follows ordinary class syntax.
+For example, `w-\(12)` uses the theme scale; `w-[\(12)]` uses 12 points.
+Range and unit validation still apply.
+
+`.value(default:)` reads your registered Swift type.
+It also decodes standard scalar types from literal arguments such as `tilt-[8]`.
+Custom parsers can read values with `argument.value(as: Payload.self)`.
+Use `number`, `points`, `degrees`, `seconds`, and `components` for scalar grammars.
+`rawValue` shows native type labels instead of serializing native objects.
+
+Keep bindings, gesture closures, and actions in the registration's native factory.
+Interpolation accepts `Sendable` values.
+It does not create or bind state.
+
+## Native animation
+
+Pass the state that triggers motion through `value:`:
+
+```swift
+Text("Hello")
+    .tw("rotate-[\(angle)] animate-[\(Animation.default)]", value: angle)
+```
+
+A native `Animation` keeps its own timing.
+Duration classes do not change its spring parameters or duration.
+Delay classes still add a delay.
+For a preset that responds to duration classes, interpolate a `TWAnimation` factory:
+
+```swift
+let motion = TWAnimation { .smooth(duration: $0) }
+Text("Hello").tw("animate-[\(motion)] duration-250", value: selected)
+```
+
+`.twAnimation("animate-[\(motion)]", value: state)` also animates a subtree without applying decoration.
+Without `value:`, `.tw` scopes animation to its own styling and registered native modifiers.
+Explicit presets respect Reduce Motion and disabled animation transactions.
+Without a preset, caller animations such as `withAnimation(.default)` remain native.
+
+See [native modifier plugins](/docs/native-modifiers) for registration and identity rules.

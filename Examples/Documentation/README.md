@@ -10,7 +10,7 @@ bash Scripts/check-doc-examples.sh
 ```
 
 The script checks the installation manifest without fetching its remote dependency.
-It extracts the quick-start app, native focus view, and diagnostic helper from MDX.
+It extracts the quick-start app, native focus view, native modifier plugin, typed interpolation view, and diagnostic helper from MDX.
 It compiles them with Swift 6 and warnings as errors for macOS 14 and the iOS 17 simulator.
 
 Each platform checks two ways to consume the library:

@@ -51,7 +51,10 @@ struct TWResolvedMotion {
 extension View {
     /// Animate a subtree when a native state value changes, using the shared preset registry.
     /// Unlike `.tw`, this affects layout, transitions, and content as well as styled values.
-    public func twAnimation<Value: Equatable>(_ classes: String, value: Value) -> some View {
+    @_disfavoredOverload public func twAnimation<Value: Equatable>(_ classes: String, value: Value) -> some View {
+        modifier(TWValueAnimationModifier(style: .classes(classes), value: value))
+    }
+    public func twAnimation<Value: Equatable>(_ classes: TWClasses, value: Value) -> some View {
         modifier(TWValueAnimationModifier(style: .classes(classes), value: value))
     }
 

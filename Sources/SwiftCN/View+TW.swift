@@ -2,12 +2,19 @@ import SwiftUI
 import os
 
 extension View {
-    public func tw(_ classes: String, state: TWState = TWState()) -> some View {
+    @_disfavoredOverload public func tw(_ classes: String, state: TWState = TWState()) -> some View {
+        modifier(TWModifier(style: .classes(classes), state: state, text: self as? Text))
+    }
+    public func tw(_ classes: TWClasses, state: TWState = TWState()) -> some View {
         modifier(TWModifier(style: .classes(classes), state: state, text: self as? Text))
     }
 
     /// Watch native state for layout and shared-element animation using these classes.
-    public func tw<Value: Equatable>(_ classes: String, value: Value, state: TWState = TWState()) -> some View {
+    @_disfavoredOverload public func tw<Value: Equatable>(_ classes: String, value: Value, state: TWState = TWState()) -> some View {
+        modifier(TWModifier(style: .classes(classes), state: state, text: self as? Text))
+            .modifier(TWValueAnimationModifier(style: .classes(classes), value: value, state: state))
+    }
+    public func tw<Value: Equatable>(_ classes: TWClasses, value: Value, state: TWState = TWState()) -> some View {
         modifier(TWModifier(style: .classes(classes), state: state, text: self as? Text))
             .modifier(TWValueAnimationModifier(style: .classes(classes), value: value, state: state))
     }
@@ -49,6 +56,7 @@ struct TWModifier: ViewModifier {
             } body: { surface in
                 surface.modifier(TWClassSharedElementModifier(appearance: appearance, groups: groups))
                     .modifier(TWAppearanceModifier(appearance: appearance, scheme: scheme))
+                    .modifier(TWNativeChainModifier(slots: appearance.nativeSlots, theme: theme))
             }
             .onHover { isHovered = $0 }
             .transformEnvironment(\.twGroups) { inherited in

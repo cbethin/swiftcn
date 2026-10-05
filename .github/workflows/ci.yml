@@ -28,6 +28,7 @@ jobs:
           SWIFTCN_EXPECT_MOTION: "1"
           SWIFTCN_SHARED_ARTIFACTS: artifacts/shared-elements
           SWIFTCN_ARGUMENT_ARTIFACTS: artifacts/arguments
+          SWIFTCN_NATIVE_ARTIFACTS: artifacts/native-modifiers
         run: |
           # Hosted macOS images enable Reduce Motion. Restore it before image comparisons.
           swiftcn_motion_setting=false
@@ -62,6 +63,7 @@ jobs:
             artifacts/shared-elements/
             artifacts/arguments-*.png
             artifacts/arguments/
+            artifacts/native-modifiers/
             artifacts/visual-diffs/
             artifacts/ios-visual/*.png
             artifacts/ios-visual/*-launch.log

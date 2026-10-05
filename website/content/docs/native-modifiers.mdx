@@ -1,0 +1,166 @@
+---
+title: "Native modifier plugins"
+description: "Register real SwiftUI modifiers as classes and compose them with cn."
+---
+
+Register exact tags and bracket utilities through `TWGlobalRules.modifiers`.
+Each registration produces native SwiftUI views or modifiers.
+Use `cn` to compose the classes with ordinary Swift state.
+
+## A complete example
+
+This view registers a material background and a native 3D rotation modifier.
+Its state changes the rotation argument, while the animation classes select native motion.
+
+```swift title="NativeRegistryExample.swift"
+import SwiftUI
+import SwiftCN
+
+struct NativeRegistryExample: View {
+    @State private var expanded = false
+
+    private var rules: TWGlobalRules {
+        TWGlobalRules(modifiers: [
+            "glass": .view { view, active in
+                view.background {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(.ultraThinMaterial)
+                        .opacity(active ? 1 : 0)
+                }
+            },
+            "tilt": .value(default: 0.0, order: 10) { view, degrees in
+                view.rotation3DEffect(
+                    .degrees(degrees), axis: (x: 0, y: 1, z: 0)
+                )
+            }
+        ])
+    }
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Text("Room for ideas")
+                .tw(cn(
+                    "text-xl font-semibold p-6 glass",
+                    "tilt-[\(expanded ? 8.0 : 0.0)]",
+                    "animate-[\(Animation.default)]"
+                ), value: expanded)
+
+            Button("Change perspective") { expanded.toggle() }
+                .buttonStyle(.tw("button-primary"))
+        }
+        .padding(32)
+        .twRules(rules)
+    }
+}
+```
+
+Use `NativeRegistryExample()` in your app or preview.
+The documentation compiler check compiles this complete file for macOS and iOS, with both installation methods.
+
+## Registration forms
+
+| Registration | Class | Factory |
+| --- | --- | --- |
+| `.view { view, active in ... }` | `glass` | Transform a view; use `active` to select neutral values when absent. |
+| `.modifier { active, theme in ... }` | `lifted` | Return one concrete native `ViewModifier` type for both states. |
+| `.value(default: 0.0) { view, degrees in ... }` | `tilt-[\(angle)]` | Read a native value; standard scalar text also works. |
+| `.argument(default: 0.0, parse: ...) { view, degrees in ... }` | `tilt-[8deg]` | Decode a typed value, then use native modifiers directly. |
+| `.argument(default: "0") { argument, theme in ... }` | `tilt-[8deg]` | Return a modifier, or nil for an invalid argument. |
+
+The argument factory receives `TWArgument` and the current theme.
+Its helpers include `number`, `points`, `degrees`, `seconds`, and `components`.
+The default argument supplies the inactive modifier; zero degrees is neutral for rotation.
+Use one as the default for a scale modifier.
+
+Typed parsers and modifier argument factories are pure, `Sendable` closures.
+They can run during strict parsing and rendering; do not perform effects in them.
+Native view transforms and exact modifier factories run on the main actor.
+They can capture native bindings for controls and gestures.
+Disable those behaviors when the tag is inactive.
+
+Named recipes can contain registered classes.
+The existing `hover:`, `focus:`, `active:`, `disabled:`, and group variants also apply.
+Native button styles supply press state; other views require explicit `TWState` for press or focus.
+
+## Compose with cn
+
+`cn` returns `TWClasses` and preserves native interpolation values.
+It accepts optional class arguments or an array of optional classes:
+
+```swift
+let classes = cn("card glass", selected ? "border-primary" : nil)
+let shared = cn(["glass", "p-4", TWClasses(extraClasses)])
+```
+
+Its builder form accepts strings, arrays, conditions, and loops:
+
+```swift
+let classes = cn {
+    "card glass"
+    sharedClasses
+    if selected { "border-primary" }
+    "tilt-[\(angle)]"
+}
+```
+
+`cn` preserves order and does not remove conflicting classes.
+The resolver applies the same property and state precedence as other utilities.
+Bracket underscores represent spaces; escape literal underscores with `\_`.
+Use bracket interpolation to pass native values without converting them to text.
+Use `TWClasses` for stored class values, or use the builder for runtime `String` variables.
+See [typed interpolation](/docs/interpolation) for composition and native animation examples.
+Bindings and actions stay in Swift factories.
+
+## Conflicts and application order
+
+Each registered name has its own conflict key by default.
+Repeated arguments for that name select one modifier value.
+Set `conflictKey:` when different registrations represent the same effect:
+
+```swift
+"tilt": .argument(default: 0.0, conflictKey: "orientation",
+    parse: { argument, _ in argument.degrees }) { view, degrees in
+    view.rotation3DEffect(.degrees(degrees), axis: (x: 0, y: 1, z: 0))
+}
+```
+
+Within the same state and specificity, the later class wins.
+State variants retain their usual priority over base classes.
+These rules select a winner; they do not rearrange the native modifier chain.
+Custom conflict keys apply within the native registry, separately from built-in styling properties.
+
+Native modifiers run after built-in decoration, from lower to higher `order:`.
+Equal orders use registration names in alphabetical order.
+The order stays fixed when class order, arguments, or active state change.
+Exact named recipes take precedence over registrations.
+Registered tags take precedence over built-in tags outside named recipes.
+Registered bracket prefixes take precedence over style utility factories and built-in decoration arguments.
+Shared-element classes retain their special grammar.
+
+## Keep state and animation native
+
+Every explicit `.tw` surface retains a slot for every inherited native registration, even when its tag is absent.
+An inactive slot applies its neutral modifier instead of removing a wrapper.
+This keeps child state and modifier structure stable during class changes.
+Scope large registries to the subtree that needs them.
+
+Keep the same concrete modifier type for each registration.
+In `.view` factories, change modifier values rather than branching between differently wrapped content.
+The inactive factory must leave layout, appearance, and interaction unchanged.
+Its default argument must remain valid in every inherited theme.
+
+Changing the registry's names, order, or returned view structure changes the chain and can reset child state.
+Treat those changes as structural configuration changes.
+The runtime registry uses type erasure; it cannot preserve identity through arbitrary structural changes inside a factory.
+
+Animation classes apply to the native modifiers in these slots.
+Use `.tw(classes, value: state)` when child layout or content must also animate.
+Without a preset, swiftcn preserves the caller's transaction, including native `withAnimation(.default)`.
+Custom modifiers still need animatable properties or an `Animatable` implementation for interpolation.
+Explicit swiftcn presets respect Reduce Motion and disabled animation transactions.
+
+Strict parsing rejects unregistered tags and invalid arguments.
+It also checks string inactive defaults for selected modifier factories.
+Typed inactive values must be safe for their native API.
+One invalid class leaves the complete surface undecorated, with native slots inactive.
+See [troubleshooting](/docs/troubleshooting) for diagnostics and [animations](/docs/animations) for transaction scope.

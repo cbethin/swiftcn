@@ -50,7 +50,7 @@ export function Landing() {
             <motion.div className={`illustration-card ${expanded ? 'expanded' : ''}`} layout transition={{ type: 'spring', bounce: .1, duration: reduced ? 0 : .4 }}>
               <motion.div layout className="illustration-icon" transition={{ duration: reduced ? 0 : .3 }}><img className="bird-mark" src={sitePath('/brand/swiftcn-bird-v1.png')} alt="" width={36} height={36} /></motion.div>
               <div><strong>A little more native.</strong><p>Less ceremony. More SwiftUI.</p></div>
-              <motion.button type="button" onClick={() => setExpanded(!expanded)} whileTap={reduced ? undefined : { transform: 'scale(0.97)' }} aria-expanded={expanded}>{expanded ? 'Back to simple' : 'Make some room'} <ArrowRight size={14} /></motion.button>
+              <motion.button type="button" onClick={() => setExpanded(!expanded)} animate={{ scale: 1 }} whileTap={reduced ? undefined : { scale: 0.97 }} aria-expanded={expanded}>{expanded ? 'Back to simple' : 'Make some room'} <ArrowRight size={14} /></motion.button>
             </motion.div>
             <span className="illustration-caption">Interactive web illustration · native captures below</span>
           </div>

@@ -7,14 +7,17 @@ public struct TWGlobalRules: Sendable {
     public var named: [String: TWStyle]
     public var animations: [String: TWAnimation]
     public var utilities: [String: TWUtility]
+    public var modifiers: [String: TWNativeUtility]
 
     public init(view: TWStyle = TWStyle(), button: TWStyle = TWStyle(), named: [String: TWStyle] = [:],
-                animations: [String: TWAnimation] = [:], utilities: [String: TWUtility] = [:]) {
+                animations: [String: TWAnimation] = [:], utilities: [String: TWUtility] = [:],
+                modifiers: [String: TWNativeUtility] = [:]) {
         self.view = view
         self.button = button
         self.named = named
         self.animations = TWAnimation.defaults.merging(animations) { _, override in override }
         self.utilities = utilities
+        self.modifiers = modifiers
     }
 }
 

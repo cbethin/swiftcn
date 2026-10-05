@@ -12,6 +12,8 @@ expected = {
     "installation": {"Package.swift"},
     "quick-start": {"ContentView.swift", "SwiftCNDemoApp.swift"},
     "native-controls": {"FocusExample.swift"},
+    "interpolation": {"TypedInterpolationExample.swift"},
+    "native-modifiers": {"NativeRegistryExample.swift"},
     "troubleshooting": {"StyleValidation.swift"},
 }
 pattern = re.compile(r'^```swift title="([^"\n]+\.swift)"\n(.*?)^```\s*$', re.M | re.S)

@@ -139,6 +139,32 @@ Use comma-separated scalar values for offset and scale arguments.
 Numeric helpers reject invalid numbers, unsupported units, and nonfinite values.
 Percentages, `rem`, `calc`, and CSS variables have no native mappings and fail validation.
 
+## Typed interpolation
+
+Bracket interpolation retains native Swift values through `.tw` and `cn`:
+
+```swift
+let classes: TWClasses = "bg-[\(accent)] rotate-[\(angle)]"
+Text("Room for ideas")
+    .tw(cn(classes, "animate-[\(Animation.default)]"), value: angle)
+```
+
+Register a generic native modifier with `.value(default:)`:
+
+```swift
+let rules = TWGlobalRules(modifiers: [
+    "tilt": .value(default: Angle.zero) { view, angle in
+        view.rotation3DEffect(angle, axis: (x: 0, y: 1, z: 0))
+    }
+])
+Text("Hello").tw("tilt-[\(angle)]", value: angle).twRules(rules)
+```
+
+Stored interpolated literals need a `TWClasses` annotation; inferred `String` values use Swift's text interpolation.
+Existing runtime strings still work with `.tw`.
+Use the `cn` builder for runtime string variables, or wrap them with `TWClasses(runtimeString)`.
+See [typed interpolation](website/content/docs/interpolation.mdx) for native values, composition, and animation timing.
+
 ## Custom argument utilities
 
 Register a prefix in global rules. Its factory receives a `TWArgument` and the current theme.
@@ -170,7 +196,9 @@ Subtree overrides retain other inherited utility factories.
 Exact named classes take precedence over factories. A registered prefix overrides the built-in bracket utility for that prefix.
 Factory output can contain named classes and state variants. Recursive output fails validation.
 Factories generate the styling properties that `TWStyle` supports.
-Use native SwiftUI modifiers alongside `.tw` for other behavior.
+Use `TWGlobalRules.modifiers` to register actual SwiftUI modifiers as tags and bracket utilities.
+Compose them with `cn("card glass", selected ? "tilt-[8]" : nil)`.
+See [native modifier plugins](website/content/docs/native-modifiers.mdx) for a complete example, inactive values, ordering, and animation.
 
 ## Composition and overrides
 

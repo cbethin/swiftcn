@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Composable style values. Define your own named styles in ordinary Swift extensions.
-public struct TWStyle: Sendable, ExpressibleByStringLiteral {
+public struct TWStyle: Sendable, ExpressibleByStringInterpolation {
     let rules: [TWRule]
 
     public init(_ styles: TWStyle...) { self.init(styles) }
@@ -9,14 +9,24 @@ public struct TWStyle: Sendable, ExpressibleByStringLiteral {
     init(rules: [TWRule]) { self.rules = rules }
 
     public init(stringLiteral value: String) { self = .classes(value) }
+    public init(stringInterpolation: TWClasses.StringInterpolation) {
+        self = .classes(TWClasses(stringInterpolation: stringInterpolation))
+    }
 
     /// Resolve class strings against the nearest theme and rules when the view renders.
-    public static func classes(_ classes: String) -> Self {
+    @_disfavoredOverload public static func classes(_ classes: String) -> Self {
         Self(rules: [TWRule(property: .classes(classes))])
+    }
+    public static func classes(_ classes: TWClasses) -> Self {
+        Self(rules: [TWRule(property: .interpolated(classes))])
     }
 
     /// Validate and expand classes ahead of time, for tooling and generated styles.
-    public static func parse(_ classes: String, rules: TWGlobalRules = TWGlobalRules(),
+    @_disfavoredOverload public static func parse(_ classes: String, rules: TWGlobalRules = TWGlobalRules(),
+                             theme: TWTheme = .standard) throws -> Self {
+        try TWClassParser.expand(.classes(classes), rules: rules, theme: theme)
+    }
+    public static func parse(_ classes: TWClasses, rules: TWGlobalRules = TWGlobalRules(),
                              theme: TWTheme = .standard) throws -> Self {
         try TWClassParser.expand(.classes(classes), rules: rules, theme: theme)
     }
@@ -66,6 +76,8 @@ enum TWRadiusSource: Sendable { case token(TWRadius), points(CGFloat) }
 
 enum TWProperty: Sendable {
     case classes(String)
+    case interpolated(TWClasses)
+    case native(String, TWArgument?)
     case padding(TWEdge, TWLength)
     case font(TWFontSource)
     case weight(Font.Weight)

@@ -33,6 +33,7 @@ struct TWResolvedStyle {
     var sharedGroup: String?
     var sharedProperties = TWSharedProperties.frame
     var sharedSource = true
+    var nativeSlots: [TWNativeSlot] = []
 }
 
 enum TWStyleResolver {
@@ -43,7 +44,9 @@ enum TWStyleResolver {
             expanded = try TWClassParser.expand(style, rules: globalRules, theme: theme)
         } catch {
             Logger(subsystem: "swiftcn", category: "classes").error("\(String(describing: error), privacy: .public)")
-            return TWResolvedStyle()
+            var invalid = TWResolvedStyle()
+            invalid.nativeSlots = nativeSlots(globalRules)
+            return invalid
         }
         let rules = expanded.rules.enumerated()
             .filter {
@@ -62,8 +65,12 @@ enum TWStyleResolver {
                 return lhs.offset < rhs.offset
             }
         var result = TWResolvedStyle()
+        var selectedNative: [String: (name: String, argument: TWArgument?)] = [:]
         for entry in rules {
             switch entry.element.property {
+            case .native(let name, let argument):
+                let key = globalRules.modifiers[name]?.conflictKey ?? name
+                selectedNative[key] = (name, argument)
             case .padding(let edge, let length):
                 let value: CGFloat
                 switch length {
@@ -118,11 +125,26 @@ enum TWStyleResolver {
             case .sharedID(let id, let group): result.sharedID = id; result.sharedGroup = group
             case .sharedProperties(let properties): result.sharedProperties = properties
             case .sharedSource(let source): result.sharedSource = source
-            case .classes: break // Expansion removes these before resolution.
+            case .classes, .interpolated: break // Expansion removes these before resolution.
             }
         }
         if result.borderWidth > 0, result.border == nil { result.border = theme.color(.border, scheme: scheme) }
+        result.nativeSlots = nativeSlots(globalRules).map { slot in
+            var slot = slot
+            if let selection = selectedNative[slot.utility.conflictKey ?? slot.name], selection.name == slot.name {
+                slot.active = true
+                slot.argument = selection.argument
+            }
+            return slot
+        }
         return result
+    }
+
+    private static func nativeSlots(_ rules: TWGlobalRules) -> [TWNativeSlot] {
+        rules.modifiers.map { TWNativeSlot(name: $0.key, utility: $0.value) }.sorted {
+            if $0.utility.order != $1.utility.order { return $0.utility.order < $1.utility.order }
+            return $0.name < $1.name
+        }
     }
 
     private static func color(_ source: TWColorSource, theme: TWTheme, scheme: ColorScheme) -> Color {

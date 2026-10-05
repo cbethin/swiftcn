@@ -5,6 +5,7 @@ public enum TWClassError: Error, Equatable, CustomStringConvertible {
     case unknownVariant(String)
     case recursiveClass(String)
     case expansionLimit
+    case invalidInterpolation(String)
 
     public var description: String {
         switch self {
@@ -12,6 +13,7 @@ public enum TWClassError: Error, Equatable, CustomStringConvertible {
         case .unknownVariant(let name): "Unknown swiftcn variant: \(name)"
         case .recursiveClass(let name): "Recursive swiftcn class: \(name)"
         case .expansionLimit: "swiftcn class expansion exceeds 32 levels"
+        case .invalidInterpolation(let type): "Unsupported swiftcn interpolation: \(type)"
         }
     }
 }
@@ -22,12 +24,22 @@ enum TWClassParser {
         guard depth < 32 else { throw TWClassError.expansionLimit }
         var result: [TWRule] = []
         for rule in style.rules {
-            guard case .classes(let classes) = rule.property else {
+            let tokens: [TWClassToken]
+            switch rule.property {
+            case .classes(let classes):
+                tokens = classes.split(whereSeparator: { $0.isWhitespace }).map { TWClassToken(text: String($0), argument: nil) }
+            case .interpolated(let classes): tokens = try classes.tokens()
+            default:
+                if case .native(let name, let argument) = rule.property {
+                    guard let utility = rules.modifiers[name], utility.validate(argument, theme: theme) else {
+                        throw TWClassError.unknownClass(name)
+                    }
+                }
                 result.append(rule)
                 continue
             }
-            for token in classes.split(whereSeparator: { $0.isWhitespace }) {
-                let parts = try variants(String(token))
+            for token in tokens {
+                let parts = try variants(token.text)
                 let name = parts.last!
                 var conditions = rule.conditions
                 var groupConditions = rule.groupConditions
@@ -50,11 +62,11 @@ enum TWClassParser {
                     }
                 }
                 let expanded: TWStyle
-                if let named = rules.named[name] ?? TWStyle.defaultClasses[name] {
+                if token.argument == nil, let named = rules.named[name] ?? TWStyle.defaultClasses[name] {
                     guard !stack.contains(name) else { throw TWClassError.recursiveClass(name) }
                     expanded = try expand(named, rules: rules, theme: theme, stack: stack + [name], depth: depth + 1)
                 } else {
-                    guard let utility = utility(name, theme: theme, rules: rules) else { throw TWClassError.unknownClass(name) }
+                    guard let utility = utility(name, suppliedArgument: token.argument, theme: theme, rules: rules) else { throw TWClassError.unknownClass(name) }
                     guard !stack.contains(name) else { throw TWClassError.recursiveClass(name) }
                     expanded = try expand(utility, rules: rules, theme: theme, stack: stack + [name], depth: depth + 1)
                 }
@@ -69,7 +81,11 @@ enum TWClassParser {
         return TWStyle(rules: result)
     }
 
-    private static func utility(_ name: String, theme: TWTheme, rules: TWGlobalRules) -> TWStyle? {
+    private static func utility(_ name: String, suppliedArgument: TWArgument?, theme: TWTheme, rules: TWGlobalRules) -> TWStyle? {
+        if let native = rules.modifiers[name] {
+            guard native.validate(nil, theme: theme) else { return nil }
+            return TWStyle(rules: [TWRule(property: .native(name, nil))])
+        }
         if name == "group" { return TWStyle(rules: [TWRule(property: .group(""))]) }
         if name.hasPrefix("group/"), identifier(String(name.dropFirst(6))) {
             return TWStyle(rules: [TWRule(property: .group(String(name.dropFirst(6))))])
@@ -78,7 +94,11 @@ enum TWClassParser {
             let pieces = name.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
             guard pieces.count <= 2, pieces[0].hasSuffix("]"),
                   pieces.count == 1 || identifier(pieces[1]) else { return nil }
-            let id = String(pieces[0].dropFirst(8).dropLast())
+            let id: String
+            if let suppliedArgument {
+                guard let value = suppliedArgument.value(as: String.self) else { return nil }
+                id = value
+            } else { id = String(pieces[0].dropFirst(8).dropLast()) }
             guard identifier(id) else { return nil }
             return TWStyle(rules: [TWRule(property: .sharedID(id, group: pieces.count == 2 ? pieces[1] : nil))])
         }
@@ -90,7 +110,12 @@ enum TWClassParser {
         case "shared-follower": return TWStyle(rules: [TWRule(property: .sharedSource(false))])
         default: break
         }
-        if let (prefix, argument) = argument(name) {
+        if let (prefix, decoded) = argument(name) {
+            let argument = suppliedArgument ?? decoded
+            if let native = rules.modifiers[prefix] {
+                guard native.validate(argument, theme: theme) else { return nil }
+                return TWStyle(rules: [TWRule(property: .native(prefix, argument))])
+            }
             if let custom = rules.utilities[prefix] { return custom.resolve(argument, theme: theme) }
             return TWArgumentUtilities.resolve(prefix, argument: argument, theme: theme)
         }

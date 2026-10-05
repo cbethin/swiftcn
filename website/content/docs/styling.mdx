@@ -20,6 +20,16 @@ let selectedStyle = selected ? "bg-primary text-primary-foreground" : "bg-surfac
 Text("Workspace").tw("\(base) \(selectedStyle)")
 ```
 
+## Native values in class strings
+
+```swift
+let classes: TWClasses = "bg-[\(accent)] rotate-[\(angle)]"
+Text("Workspace").tw(cn(classes, "animate-[\(Animation.default)]"), value: angle)
+```
+
+`TWClasses` preserves native values through interpolation and `cn`.
+See [typed interpolation](/docs/interpolation) for complete examples and runtime string composition.
+
 ## Typed utilities
 
 ```swift
@@ -80,5 +90,6 @@ One invalid class rejects the complete style for that surface, including its glo
 Use strict parsing in tests to catch mistakes.
 
 `parse` expands recipes and utility factories against the supplied rules and theme immediately.
-Use `.classes(classes)` or a string `.tw(classes)` to keep reading inherited definitions when the view renders.
+Registered native modifiers retain references to their names and resolve through the inherited registry during rendering.
+Use `.classes(classes)` or a string `.tw(classes)` to keep reading inherited recipe and style utility definitions when the view renders.
 See [troubleshooting](/docs/troubleshooting) for a complete diagnostic helper and common fixes.

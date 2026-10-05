@@ -2,10 +2,12 @@ import SwiftUI
 
 enum TWArgumentUtilities {
     static func resolve(_ prefix: String, argument: TWArgument, theme: TWTheme) -> TWStyle? {
-        let raw = argument.rawValue
-        let hinted = raw.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
-        let hint = hinted.count == 2 ? String(hinted[0]) : nil
-        let value = hint == nil ? argument : TWArgument(String(hinted[1]))
+        if prefix == "animate" {
+            if let native = argument.value(as: Animation.self) { return .animation(TWAnimation(native)) }
+            if let preset = argument.value(as: TWAnimation.self) { return .animation(preset) }
+            return nil
+        }
+        let (hint, value) = argument.hinted
         if ["text", "bg", "border"].contains(prefix), hint == nil || hint == "color" {
             if let color = value.hexColor {
                 switch prefix {
@@ -14,7 +16,7 @@ enum TWArgumentUtilities {
                 default: return TWStyle(rules: [TWRule(property: .borderColor(.color(color)))])
                 }
             }
-            let token = TWColor(value.rawValue)
+            let token = value.value(as: TWColor.self) ?? TWColor(value.rawValue)
             if theme.colors[token] != nil {
                 switch prefix {
                 case "text": return .fg(token)
@@ -47,7 +49,7 @@ enum TWArgumentUtilities {
             guard parts.count == 2, let x = parts[0].points, let y = parts[1].points else { return nil }
             return .offset(x: x, y: y)
         case "line-clamp":
-            guard hint == nil, let count = Int(raw), count > 0 else { return nil }
+            guard hint == nil, let count = value.value(as: Int.self), count > 0 else { return nil }
             return .lineLimit(count)
         default: break
         }

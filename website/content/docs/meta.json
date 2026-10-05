@@ -7,6 +7,8 @@
     "styling",
     "utilities",
     "arguments",
+    "interpolation",
+    "native-modifiers",
     "---Design system---",
     "theme",
     "global-rules",

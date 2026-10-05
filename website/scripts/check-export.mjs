@@ -28,7 +28,7 @@ for (const page of pages) {
 }
 const index = JSON.parse(await readFile(join(root, 'search-index.json'), 'utf8'));
 const text = JSON.stringify(index).toLowerCase();
-for (const term of ['shared elements', 'global rules', 'tracking', 'installation', 'quick start', 'troubleshooting']) {
+for (const term of ['shared elements', 'global rules', 'tracking', 'installation', 'quick start', 'troubleshooting', 'native modifier plugins', 'typed interpolation']) {
   assert(text.includes(term), `Missing search content: ${term}`);
 }
 for (const filename of ['llms.txt', 'llms-full.txt', 'llms.mdx/docs/quick-start/content.md']) {

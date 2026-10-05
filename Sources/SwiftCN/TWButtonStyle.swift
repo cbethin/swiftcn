@@ -5,7 +5,11 @@ public struct TWButtonStyle: ButtonStyle {
     public var style: TWStyle
     public var state: TWState
 
-    public init(_ classes: String, state: TWState = TWState()) {
+    @_disfavoredOverload public init(_ classes: String, state: TWState = TWState()) {
+        style = .classes(classes)
+        self.state = state
+    }
+    public init(_ classes: TWClasses, state: TWState = TWState()) {
         style = .classes(classes)
         self.state = state
     }
@@ -24,7 +28,10 @@ public struct TWButtonStyle: ButtonStyle {
 }
 
 extension ButtonStyle where Self == TWButtonStyle {
-    public static func tw(_ classes: String, state: TWState = TWState()) -> TWButtonStyle {
+    @_disfavoredOverload public static func tw(_ classes: String, state: TWState = TWState()) -> TWButtonStyle {
+        TWButtonStyle(classes, state: state)
+    }
+    public static func tw(_ classes: TWClasses, state: TWState = TWState()) -> TWButtonStyle {
         TWButtonStyle(classes, state: state)
     }
     public static func tw(_ styles: TWStyle..., state: TWState = TWState()) -> TWButtonStyle {
