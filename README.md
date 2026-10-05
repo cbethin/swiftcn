@@ -354,7 +354,7 @@ Button("Save", action: save)
     .buttonStyle(.tw("button-primary active:opacity-80 animate-spring duration-150"))
 
 Text("Details")
-    .tw("\(expanded ? "p-6 rounded-xl" : "p-3 rounded-md") bg-surface animate-ease-out duration-200")
+    .tw("\(expanded ? "p-6 rounded-xl" : "p-3 rounded-md") bg-surface animate-ease-out duration-200", value: expanded)
 ```
 
 SwiftUI owns the state and interpolates the native modifier values.
@@ -532,6 +532,7 @@ The script builds and opens `artifacts/SwiftCN Demo.app`.
 The app includes components, composition, motion, shared elements, arguments, and global rules playgrounds.
 The Composition tab demonstrates editable fields, validation, native style adapters, card parts, and scoped defaults.
 Change animation presets and timing while toggling the styled surface.
+The Motion surface uses `.tw(classes, value: expanded)` so its intrinsic size follows the selected animation.
 Edit shared classes, palettes, spacing, and subtree overrides in the global rules playground.
 The appearance picker selects system, light, or dark mode.
 
@@ -550,6 +551,7 @@ Run checks:
 
 ```sh
 swift test
+swift test --package-path Examples/Catalog
 swift build -c release
 bash Scripts/check-source-copy.sh
 bash Scripts/check-doc-examples.sh

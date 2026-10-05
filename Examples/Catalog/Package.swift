@@ -6,6 +6,7 @@ let package = Package(
     platforms: [.macOS(.v14)],
     dependencies: [.package(path: "../..")],
     targets: [
-        .executableTarget(name: "SwiftCNCatalog", dependencies: [.product(name: "SwiftCN", package: "swiftcn")])
+        .executableTarget(name: "SwiftCNCatalog", dependencies: [.product(name: "SwiftCN", package: "swiftcn")]),
+        .testTarget(name: "SwiftCNCatalogTests", dependencies: ["SwiftCNCatalog"])
     ]
 )

@@ -40,6 +40,8 @@ jobs:
           # Keep these hosted probes separate from other suites that pump the main run loop.
           swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests|ComponentRenderingTests'
           swift test --filter ComponentRenderingTests
+          SWIFTCN_MOTION_ARTIFACTS="$PWD/artifacts/motion-size" \
+            swift test --package-path Examples/Catalog --filter MotionSurfaceTests
           swift test --filter NativeUtilityRenderingTests
       - name: Verify visual baselines
         run: bash Scripts/visual-test.sh verify ci
@@ -69,6 +71,7 @@ jobs:
             artifacts/native-modifiers/
             artifacts/components/
             artifacts/components-*.png
+            artifacts/motion-size/
             artifacts/visual-diffs/
             artifacts/ios-visual/*.png
             artifacts/ios-visual/*-launch.log

@@ -28,6 +28,9 @@ Hosted behavior tests check native interpolation during state entry and exit.
 They cover computed strings, state variants, child identity, transaction scope, and disabled transactions.
 The resolver tests check Reduce Motion, timing, and custom presets.
 The image suite does not compare intermediate animation frames.
+The Motion catalog has a separate geometry regression test that samples its native rendered pixels during expansion and collapse.
+It checks intermediate widths and heights, a stable center, and immediate changes with `animate-none`.
+CI uploads the sampled frames in `artifacts/motion-size`.
 
 Component tests check native editor bindings and identity across validation changes.
 They verify toggle binding and disabled-environment forwarding, native label style equivalence, part overrides, and field isolation.

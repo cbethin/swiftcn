@@ -52,7 +52,7 @@ struct MotionPlayground: View {
 
     private var motionClasses: String { "animate-\(preset) duration-\(Int(duration)) delay-\(Int(delay))" }
     private var surfaceClasses: String {
-        "\(expanded ? "p-8 rounded-xl bg-primary text-primary-foreground" : "p-3 rounded-md bg-accent text-foreground") \(motionClasses)"
+        MotionSurface.classes(expanded: expanded, motion: motionClasses)
     }
     private var buttonClasses: String {
         "button-primary active:opacity-80 hover:bg-accent hover:text-foreground \(motionClasses)"
@@ -62,7 +62,7 @@ struct MotionPlayground: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 DemoHeading(title: "Native motion, composed with strings",
-                            subtitle: "Change state. SwiftUI animates the values that .tw owns.")
+                            subtitle: "Watch native state to animate the surface and its layout.")
                     .demoEntrance()
                 HStack(alignment: .top, spacing: 24) {
                     VStack(alignment: .leading, spacing: 20) {
@@ -89,20 +89,13 @@ struct MotionPlayground: View {
                     VStack(alignment: .leading, spacing: 20) {
                         Text("State → native modifiers").tw("text-lg font-semibold")
                         ZStack {
-                            HStack(spacing: 8) {
-                                Image(systemName: "sparkles")
-                                    .symbolEffect(.bounce, options: .speed(1.4), value: expanded)
-                                    .symbolEffectsRemoved(!motion.isEnabled || preset == "none")
-                                    .accessibilityHidden(true)
-                                Text("Hello, SwiftUI")
-                            }
-                            .tw(surfaceClasses)
+                            MotionSurface(expanded: expanded, motionClasses: motionClasses)
                         }
                         .frame(maxWidth: .infinity, minHeight: 180)
                         .tw("rounded-lg border")
                         Button(expanded ? "Collapse surface" : "Expand surface") { expanded.toggle() }
                             .buttonStyle(.demo("button-outline animate-smooth duration-180"))
-                        DemoCode(text: ".tw(\"\(surfaceClasses)\")")
+                        DemoCode(text: ".tw(\"\(surfaceClasses)\", value: expanded)")
                         Text("Press and hover") .tw("text-lg font-semibold")
                         HStack {
                             Button { presses += 1 } label: {
