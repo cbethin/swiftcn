@@ -8,6 +8,10 @@ struct SwiftCNVisualHost: App {
     private var dark: Bool { arguments.contains("--dark") }
     private var large: Bool { arguments.contains("--large-text") }
     private var rulesScene: Bool { arguments.contains("--rules") }
+    private var captureID: String {
+        guard let index = arguments.firstIndex(of: "--capture-id"), arguments.indices.contains(index + 1) else { return "manual" }
+        return arguments[index + 1]
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -31,7 +35,7 @@ struct SwiftCNVisualHost: App {
                     }
                     do {
                         try image.write(to: directory.appendingPathComponent("visual-snapshot.png"))
-                        try Data("ready".utf8).write(to: directory.appendingPathComponent("visual-ready"))
+                        try Data(captureID.utf8).write(to: directory.appendingPathComponent("visual-ready"), options: .atomic)
                     } catch { print("Visual capture failed: \(error)") }
                 }
         }

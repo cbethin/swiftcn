@@ -8,6 +8,7 @@ import plistlib
 import shutil
 import subprocess
 import time
+import uuid
 
 REPO = Path(__file__).resolve().parent.parent
 XCRUN = "/usr/bin/xcrun"
@@ -16,6 +17,36 @@ XCRUN = "/usr/bin/xcrun"
 def run(*args, capture=False, **kwargs):
     result = subprocess.run(args, check=True, text=True, capture_output=capture, **kwargs)
     return result.stdout.strip() if capture else None
+
+
+def launch_capture(device, bundle_id, flags, ready, artifacts, name):
+    # The host's per-launch marker proves rendering finished, even if simctl has not returned.
+    capture_id = uuid.uuid4().hex
+    command = [XCRUN, "simctl", "launch", "--terminate-running-process", device, bundle_id,
+               *flags, "--capture-id", capture_id]
+    log = artifacts / f"{name}-launch.log"
+    with log.open("w") as output:
+        process = subprocess.Popen(command, stdout=output, stderr=subprocess.STDOUT, text=True)
+        try:
+            deadline = time.monotonic() + 120
+            while True:
+                if ready.exists() and ready.read_text() == capture_id:
+                    return
+                status = process.poll()
+                if status is not None and status != 0:
+                    raise RuntimeError(f"Simulator launch failed with status {status}; see {log}")
+                if time.monotonic() > deadline:
+                    raise RuntimeError(f"The visual host did not signal readiness for {name}; see {log}")
+                time.sleep(0.1)
+        finally:
+            if process.poll() is None:
+                # Stop only our launch command. The simulator and app stay alive for the next capture.
+                process.terminate()
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=5)
 
 
 def main():
@@ -71,13 +102,8 @@ def main():
             for dark, large in [(False, False), (True, False), (False, True), (True, True)]:
                 ready.unlink(missing_ok=True)
                 flags = (["--rules"] if scene == "rules" else []) + (["--dark"] if dark else []) + (["--large-text"] if large else [])
-                run(XCRUN, "simctl", "launch", "--terminate-running-process", device, bundle_id, *flags, timeout=120)
-                deadline = time.monotonic() + 30
-                while not ready.exists():
-                    if time.monotonic() > deadline:
-                        raise RuntimeError("The visual host did not signal readiness")
-                    time.sleep(0.1)
                 name = f"{scene}-{'dark' if dark else 'light'}-{'large-text' if large else 'standard'}"
+                launch_capture(device, bundle_id, flags, ready, artifacts, name)
                 shutil.copyfile(container / "Documents/visual-snapshot.png", artifacts / f"{name}.png")
                 print(f"Captured {name}", flush=True)
     finally:
