@@ -17,15 +17,15 @@ struct MotionRenderingTests {
         withHost(MotionHarness(model: model, recorder: recorder, dynamicString: dynamicString).twRules(rules)) { host in
             #expect(samples.times.isEmpty) // Mounting the surface does not start an animation.
             model.active = true
-            settle(host, seconds: 0.25)
-            #expect(samples.times.contains { $0 > 0 && $0 < 0.15 })
+            settle(host, seconds: 0.6)
+            #expect(samples.times.contains { $0 > 0 && $0 < 0.4 }, "Native sample times: \(samples.times)")
             #expect(!recorder.animations.isEmpty)
             #expect(recorder.animations.allSatisfy { $0 == nil })
             #expect(Set(recorder.identities).count == 1)
             samples.clear()
             model.active = false
-            settle(host, seconds: 0.25)
-            #expect(samples.times.contains { $0 > 0 && $0 < 0.15 })
+            settle(host, seconds: 0.6)
+            #expect(samples.times.contains { $0 > 0 && $0 < 0.4 }, "Native sample times: \(samples.times)")
             #expect(Set(recorder.identities).count == 1)
         }
     }
@@ -66,8 +66,11 @@ struct MotionRenderingTests {
         host.frame = CGRect(x: 0, y: 0, width: 160, height: 100)
         let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = host
+        // Older SwiftUI hosts need a visible window to schedule native animation frames.
+        window.orderFront(nil)
         settle(host, seconds: 0.05)
         run(host)
+        window.orderOut(nil)
         window.contentView = nil
     }
 
@@ -91,8 +94,8 @@ private struct MotionProbeAnimation: CustomAnimation {
     func hash(into hasher: inout Hasher) { hasher.combine(ObjectIdentifier(samples)) }
     func animate<V: VectorArithmetic>(value: V, time: TimeInterval, context: inout AnimationContext<V>) -> V? {
         samples.append(time)
-        guard time < 0.15 else { return nil }
-        return value.scaled(by: max(0, time / 0.15))
+        guard time < 0.4 else { return nil }
+        return value.scaled(by: max(0, time / 0.4))
     }
 }
 
