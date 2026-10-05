@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // Compiled with the copied library sources, so this host needs no Xcode project.
 @main
@@ -19,7 +20,19 @@ struct SwiftCNVisualHost: App {
                     // Signal only after the native controls settle. The capture script polls this file.
                     try? await Task.sleep(for: .seconds(1))
                     let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                    try? Data("ready".utf8).write(to: directory.appendingPathComponent("visual-ready"))
+                    guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first,
+                          let window = scene.windows.first(where: \.isKeyWindow),
+                          let view = window.rootViewController?.view else { return }
+                    let format = UIGraphicsImageRendererFormat()
+                    format.scale = view.traitCollection.displayScale
+                    format.preferredRange = .standard
+                    let image = UIGraphicsImageRenderer(bounds: view.bounds, format: format).pngData { _ in
+                        view.drawHierarchy(in: view.bounds, afterScreenUpdates: true)
+                    }
+                    do {
+                        try image.write(to: directory.appendingPathComponent("visual-snapshot.png"))
+                        try Data("ready".utf8).write(to: directory.appendingPathComponent("visual-ready"))
+                    } catch { print("Visual capture failed: \(error)") }
                 }
         }
     }

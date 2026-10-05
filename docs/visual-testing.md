@@ -26,6 +26,7 @@ The iOS suite captures eight screenshots from a dedicated iPhone 16 simulator.
 It covers native controls and global rules in both themes with standard and accessibility3 text sizes.
 The host uses iOS 18.5 in CI.
 The capture script waits for the host to signal readiness.
+The host captures its native view hierarchy and excludes system status icons and the Dynamic Island.
 The script deletes its own simulator after each run.
 
 Keyboard, touch, and VoiceOver behavior still require an application host.

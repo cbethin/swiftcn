@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: visual-baselines-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   record:
     runs-on: macos-15

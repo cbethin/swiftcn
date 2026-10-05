@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import plistlib
+import shutil
 import subprocess
 import time
 
@@ -62,8 +63,6 @@ def main():
         run(XCRUN, "simctl", "boot", device)
         run(XCRUN, "simctl", "bootstatus", device, "-b", capture=True, timeout=180)
         print("Booted the dedicated visual simulator", flush=True)
-        run(XCRUN, "simctl", "status_bar", device, "override", "--time", "9:41", "--dataNetwork", "wifi",
-            "--wifiMode", "active", "--wifiBars", "3", "--batteryState", "charged", "--batteryLevel", "100")
         run(XCRUN, "simctl", "install", device, str(app))
         container = Path(run(XCRUN, "simctl", "get_app_container", device, bundle_id, "data", capture=True))
         ready = container / "Documents/visual-ready"
@@ -78,7 +77,8 @@ def main():
                         raise RuntimeError("The visual host did not signal readiness")
                     time.sleep(0.1)
                 name = f"{scene}-{'dark' if dark else 'light'}-{'large-text' if large else 'standard'}"
-                run(XCRUN, "simctl", "io", device, "screenshot", str(artifacts / f"{name}.png"))
+                shutil.copyfile(container / "Documents/visual-snapshot.png", artifacts / f"{name}.png")
+                print(f"Captured {name}", flush=True)
     finally:
         # Delete only the simulator created by this run.
         subprocess.run([XCRUN, "simctl", "shutdown", device], check=False)
