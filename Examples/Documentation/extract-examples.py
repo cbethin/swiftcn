@@ -14,7 +14,7 @@ expected = {
     "native-controls": {"FocusExample.swift"},
     "components": {"ComponentPartsExample.swift"},
     "interpolation": {"TypedInterpolationExample.swift"},
-    "native-modifiers": {"NativeRegistryExample.swift"},
+    "native-modifiers": {"NativeRegistryExample.swift", "NativeCompositionExample.swift"},
     "troubleshooting": {"StyleValidation.swift"},
 }
 pattern = re.compile(r'^```swift title="([^"\n]+\.swift)"\n(.*?)^```\s*$', re.M | re.S)

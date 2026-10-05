@@ -5,11 +5,13 @@ import SwiftCN
 struct MotionSurface: View {
     let expanded: Bool
     let motionClasses: String
+    let animationScope: TWAnimationScope
     private var motion = DemoMotion()
 
-    init(expanded: Bool, motionClasses: String) {
+    init(expanded: Bool, motionClasses: String, animationScope: TWAnimationScope = .all) {
         self.expanded = expanded
         self.motionClasses = motionClasses
+        self.animationScope = animationScope
     }
 
     static func classes(expanded: Bool, motion: String) -> String {
@@ -26,6 +28,6 @@ struct MotionSurface: View {
                 // Keep the label's ink fixed while its foreground and surrounding layout change.
                 .contentTransition(.identity)
         }
-        .tw(Self.classes(expanded: expanded, motion: motionClasses), value: expanded)
+        .tw(Self.classes(expanded: expanded, motion: motionClasses), value: expanded, animationScope: animationScope)
     }
 }

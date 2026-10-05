@@ -6,6 +6,7 @@ public enum TWClassError: Error, Equatable, CustomStringConvertible {
     case recursiveClass(String)
     case expansionLimit
     case invalidInterpolation(String)
+    case unsupportedTarget(String, expected: TWTarget)
 
     public var description: String {
         switch self {
@@ -13,6 +14,7 @@ public enum TWClassError: Error, Equatable, CustomStringConvertible {
         case .unknownVariant(let name): "Unknown swiftcn variant: \(name)"
         case .recursiveClass(let name): "Recursive swiftcn class: \(name)"
         case .expansionLimit: "swiftcn class expansion exceeds 32 levels"
+        case .unsupportedTarget(let name, let target): "swiftcn class \(name) requires .tw directly on a native \(target.rawValue)"
         case .invalidInterpolation(let type): "Unsupported swiftcn interpolation: \(type)"
         }
     }
@@ -20,7 +22,7 @@ public enum TWClassError: Error, Equatable, CustomStringConvertible {
 
 enum TWClassParser {
     static func expand(_ style: TWStyle, rules: TWGlobalRules, theme: TWTheme,
-                       stack: [String] = [], depth: Int = 0) throws -> TWStyle {
+                       stack: [String] = [], depth: Int = 0, target: TWTarget? = nil) throws -> TWStyle {
         guard depth < 32 else { throw TWClassError.expansionLimit }
         var result: [TWRule] = []
         for rule in style.rules {
@@ -33,6 +35,9 @@ enum TWClassParser {
                 if case .native(let name, let argument) = rule.property {
                     guard let utility = rules.modifiers[name], utility.validate(argument, theme: theme) else {
                         throw TWClassError.unknownClass(name)
+                    }
+                    if let target, utility.target != .view && utility.target != target {
+                        throw TWClassError.unsupportedTarget(name, expected: utility.target)
                     }
                 }
                 result.append(rule)
@@ -64,11 +69,11 @@ enum TWClassParser {
                 let expanded: TWStyle
                 if token.argument == nil, let named = rules.named[name] ?? TWStyle.defaultClasses[name] {
                     guard !stack.contains(name) else { throw TWClassError.recursiveClass(name) }
-                    expanded = try expand(named, rules: rules, theme: theme, stack: stack + [name], depth: depth + 1)
+                    expanded = try expand(named, rules: rules, theme: theme, stack: stack + [name], depth: depth + 1, target: target)
                 } else {
                     guard let utility = utility(name, suppliedArgument: token.argument, theme: theme, rules: rules) else { throw TWClassError.unknownClass(name) }
                     guard !stack.contains(name) else { throw TWClassError.recursiveClass(name) }
-                    expanded = try expand(utility, rules: rules, theme: theme, stack: stack + [name], depth: depth + 1)
+                    expanded = try expand(utility, rules: rules, theme: theme, stack: stack + [name], depth: depth + 1, target: target)
                 }
                 result += expanded.rules.map {
                     var value = $0

@@ -104,4 +104,48 @@ Use `.twAnimation("animate-smooth duration-300", value: expanded)` when you only
 
 Without `value:`, animation classes affect the styling properties owned by `.tw`. With `value:`, the explicit wrapper animates the subtree when the value changes.
 
+## Choose the animation scope
+
+Pass `animationScope:` to select where the preset applies:
+
+```swift
+Text("A steady label")
+    .tw("p-[\(CGFloat(expanded ? 32 : 12))] rounded-xl bg-accent animate-spring",
+        value: expanded, animationScope: .layout)
+```
+
+| Scope | Receives the explicit preset |
+| --- | --- |
+| `.surface` | Owned text attributes, layout, decoration, effects, and general registered modifiers |
+| `.layout` | Owned padding, frames, shared geometry, and `.layout` registrations |
+| `.content` | Child content, native source changes, text attributes, and `.content` registrations |
+| `.all` | Both the surface and child content |
+
+The defaults stay compatible: `.surface` without `value:`, and `.all` with `value:`.
+Explicit `.surface`, `.layout`, and `.content` scopes watch only the supplied value.
+Unrelated state changes do not enable their preset.
+The compatible `.all` scope continues to animate owned styling changes and watches the value for child animation.
+
+Layout animation also drives native child placement so content stays aligned with its surface.
+Watched `.surface` and `.layout` scopes set the inherited content transition to `.identity`.
+A descendant can choose its own explicit content transition.
+The `.content` scope includes child-owned layout, while the surrounding surface changes immediately.
+Use it on a stable surface when you want a counter or another content transition.
+
+Scopes select where swiftcn applies its preset.
+They do not cancel an ancestor's native animation.
+With no preset, the native caller transaction remains unchanged.
+Every explicit preset respects Reduce Motion and disabled animation transactions.
+
+Content transitions remain native and explicit:
+
+```swift
+Text("\(count)")
+    .contentTransition(.numericText())
+    .tw("text-xl animate-smooth", value: count, animationScope: .content)
+```
+
+Use `.contentTransition(.identity)` on a label when its content changes should appear immediately.
+This does not cancel the surrounding surface's size animation.
+
 Continue with [shared elements](/docs/shared-elements) to connect geometry between states.

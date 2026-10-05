@@ -15,11 +15,16 @@ struct MotionSurfaceTests {
         try check(preset: "none", expectsMotion: false)
     }
 
-    private func check(preset: String, expectsMotion: Bool) throws {
+    @Test(arguments: [TWAnimationScope.surface, .layout])
+    func scopedMotionKeepsTheLabelFixed(scope: TWAnimationScope) throws {
+        try check(preset: "linear", expectsMotion: scope != .content, animationScope: scope)
+    }
+
+    private func check(preset: String, expectsMotion: Bool, animationScope: TWAnimationScope = .all) throws {
         let model = SurfaceModel()
         let recorder = SurfaceEnvironment()
         let blue = TWAdaptiveColor(light: .blue, dark: .blue)
-        let host = NSHostingView(rootView: SurfaceHarness(model: model, recorder: recorder, preset: preset)
+        let host = NSHostingView(rootView: SurfaceHarness(model: model, recorder: recorder, preset: preset, animationScope: animationScope)
             .twTheme(TWTheme(colors: [.primary: blue, .accent: blue,
                 .onPrimary: .init(light: .white, dark: .white), .foreground: .init(light: .black, dark: .black)]))
             .environment(\.colorScheme, .light)
@@ -32,12 +37,12 @@ struct MotionSurfaceTests {
         host.layoutSubtreeIfNeeded()
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
         var contentFrames: [CGRect] = []
-        let compact = try bounds(host, name: "\(preset)-compact", contentFrames: &contentFrames)
+        let compact = try bounds(host, name: "\(preset)-\(animationScope.rawValue)-compact", contentFrames: &contentFrames)
         var expansion: [CGRect] = []
         model.expanded = true
         for frame in 0..<12 {
             RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
-            expansion.append(try bounds(host, name: "\(preset)-expand-\(frame)", contentFrames: &contentFrames))
+            expansion.append(try bounds(host, name: "\(preset)-\(animationScope.rawValue)-expand-\(frame)", contentFrames: &contentFrames))
         }
         let expanded = try #require(expansion.last)
         #expect(expanded.width > compact.width + 30)
@@ -46,7 +51,7 @@ struct MotionSurfaceTests {
         model.expanded = false
         for frame in 0..<12 {
             RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
-            collapse.append(try bounds(host, name: "\(preset)-collapse-\(frame)", contentFrames: &contentFrames))
+            collapse.append(try bounds(host, name: "\(preset)-\(animationScope.rawValue)-collapse-\(frame)", contentFrames: &contentFrames))
         }
         let restingContent = try #require(contentFrames.first)
         #expect(contentFrames.allSatisfy {
@@ -123,10 +128,11 @@ private struct SurfaceHarness: View {
     @ObservedObject var model: SurfaceModel
     let recorder: SurfaceEnvironment
     let preset: String
+    let animationScope: TWAnimationScope
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         recorder.reduceMotion = reduceMotion
-        return MotionSurface(expanded: model.expanded, motionClasses: "animate-\(preset) duration-1000 delay-0")
+        return MotionSurface(expanded: model.expanded, motionClasses: "animate-\(preset) duration-1000 delay-0", animationScope: animationScope)
             .frame(width: 400, height: 180)
             .background(.white)
     }

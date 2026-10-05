@@ -2,30 +2,28 @@ import SwiftUI
 import os
 
 extension View {
-    @_disfavoredOverload public func tw(_ classes: String, state: TWState = TWState()) -> some View {
-        modifier(TWModifier(style: .classes(classes), state: state, text: self as? Text))
+    @_disfavoredOverload public func tw(_ classes: String, state: TWState = TWState(), animationScope: TWAnimationScope = .surface) -> some View {
+        modifier(TWModifier(style: .classes(classes), state: state, text: self as? Text, image: self as? Image, shape: twShape(self), animationScope: animationScope))
     }
-    public func tw(_ classes: TWClasses, state: TWState = TWState()) -> some View {
-        modifier(TWModifier(style: .classes(classes), state: state, text: self as? Text))
+    public func tw(_ classes: TWClasses, state: TWState = TWState(), animationScope: TWAnimationScope = .surface) -> some View {
+        modifier(TWModifier(style: .classes(classes), state: state, text: self as? Text, image: self as? Image, shape: twShape(self), animationScope: animationScope))
     }
 
     /// Watch native state for layout and shared-element animation using these classes.
-    @_disfavoredOverload public func tw<Value: Equatable>(_ classes: String, value: Value, state: TWState = TWState()) -> some View {
-        modifier(TWModifier(style: .classes(classes), state: state, text: self as? Text))
-            .modifier(TWValueAnimationModifier(style: .classes(classes), value: value, state: state))
+    @_disfavoredOverload public func tw<Value: Equatable>(_ classes: String, value: Value, state: TWState = TWState(), animationScope: TWAnimationScope = .all) -> some View {
+        modifier(TWModifier(style: .classes(classes), state: state, text: self as? Text, image: self as? Image, shape: twShape(self), animationScope: animationScope, animationValue: TWAnimationValue(value)))
     }
-    public func tw<Value: Equatable>(_ classes: TWClasses, value: Value, state: TWState = TWState()) -> some View {
-        modifier(TWModifier(style: .classes(classes), state: state, text: self as? Text))
-            .modifier(TWValueAnimationModifier(style: .classes(classes), value: value, state: state))
+    public func tw<Value: Equatable>(_ classes: TWClasses, value: Value, state: TWState = TWState(), animationScope: TWAnimationScope = .all) -> some View {
+        modifier(TWModifier(style: .classes(classes), state: state, text: self as? Text, image: self as? Image, shape: twShape(self), animationScope: animationScope, animationValue: TWAnimationValue(value)))
     }
     /// Apply one styled surface. Later utilities replace earlier values by property.
-    public func tw(_ styles: TWStyle..., state: TWState = TWState()) -> some View {
-        modifier(TWModifier(style: TWStyle(styles), state: state, text: self as? Text))
+    public func tw(_ styles: TWStyle..., state: TWState = TWState(), animationScope: TWAnimationScope = .surface) -> some View {
+        modifier(TWModifier(style: TWStyle(styles), state: state, text: self as? Text, image: self as? Image, shape: twShape(self), animationScope: animationScope))
     }
 
     /// Array overload for computed or shared style collections.
-    public func tw(_ styles: [TWStyle], state: TWState = TWState()) -> some View {
-        modifier(TWModifier(style: TWStyle(styles), state: state, text: self as? Text))
+    public func tw(_ styles: [TWStyle], state: TWState = TWState(), animationScope: TWAnimationScope = .surface) -> some View {
+        modifier(TWModifier(style: TWStyle(styles), state: state, text: self as? Text, image: self as? Image, shape: twShape(self), animationScope: animationScope))
     }
 }
 
@@ -34,6 +32,12 @@ struct TWModifier: ViewModifier {
     var state: TWState
     var isButton = false
     var text: Text? = nil
+    var image: Image? = nil
+    var shape: AnyShape? = nil
+    var animationScope: TWAnimationScope = .surface
+    var animationValue: TWAnimationValue? = nil
+    @State private var animationID = UUID()
+    private var target: TWTarget { text != nil ? .text : image != nil ? .image : shape != nil ? .shape : .view }
     @Environment(\.twTheme) private var theme
     @Environment(\.twRules) private var rules
     @Environment(\.colorScheme) private var scheme
@@ -49,14 +53,33 @@ struct TWModifier: ViewModifier {
         activeState.isHovered = activeState.isHovered || isHovered
         let combined = TWStyle(rules.view, isButton ? rules.button : TWStyle(), style)
         let appearance = TWStyleResolver.resolve(combined, theme: theme, scheme: scheme, state: activeState,
-            globalRules: rules, groupStates: groups.states)
+            globalRules: rules, groupStates: groups.states, target: target)
         return source(content, appearance: appearance)
             .transaction { transaction in
-                appearance.motion.update(&transaction, reduceMotion: reduceMotion)
-            } body: { surface in
-                surface.modifier(TWClassSharedElementModifier(appearance: appearance, groups: groups))
-                    .modifier(TWAppearanceModifier(appearance: appearance, scheme: scheme))
-                    .modifier(TWNativeChainModifier(slots: appearance.nativeSlots, theme: theme))
+                if (animationScope == .content || animationScope == .all),
+                   animationValue == nil || transaction[TWAnimationChangeKey.self] == animationID {
+                    appearance.motion.update(&transaction, reduceMotion: reduceMotion)
+                }
+            }
+            .transformEnvironment(\.contentTransition) { transition in
+                // Native placement must share layout motion; content morphing remains separate.
+                if animationValue != nil && appearance.motion.preset != nil && (animationScope == .surface || animationScope == .layout) {
+                    transition = .identity
+                }
+            }
+            .modifier(phase(.content, appearance: appearance))
+            .modifier(phase(.layout, appearance: appearance))
+            .modifier(phase(.decoration, appearance: appearance))
+            .modifier(phase(.effects, appearance: appearance))
+            .transaction(value: animationValue) { transaction in
+                if animationValue != nil {
+                    transaction[TWAnimationChangeKey.self] = animationID
+                    // Intrinsic size and placement interpolate at the surface boundary.
+                    if animationScope != .content { appearance.motion.update(&transaction, reduceMotion: reduceMotion) }
+                }
+            }
+            .transaction { transaction in
+                transaction[TWCallerAnimationKey.self] = TWCallerAnimation(animation: transaction.animation)
             }
             .onHover { isHovered = $0 }
             .transformEnvironment(\.twGroups) { inherited in
@@ -66,10 +89,26 @@ struct TWModifier: ViewModifier {
             }
     }
 
+    private func phase(_ phase: TWModifierPhase, appearance: TWResolvedStyle) -> TWPhaseModifier {
+        TWPhaseModifier(phase: phase, appearance: appearance, theme: theme, scheme: scheme,
+            groups: groups, scope: animationScope, watched: animationValue != nil, animationID: animationID,
+            reduceMotion: reduceMotion)
+    }
+
     @ViewBuilder private func source(_ content: Content, appearance: TWResolvedStyle) -> some View {
         if let text {
             // Text attributes return Text, so changing them preserves the view's structural type.
-            tracked(text, points: appearance.tracking)
+            appearance.nativeSlots.filter { $0.utility.target == .text }.reduce(tracked(text, points: appearance.tracking)) { text, slot in
+                slot.utility.apply(to: text, argument: slot.argument, active: slot.active, theme: theme)
+            }
+        } else if let image {
+            appearance.nativeSlots.filter { $0.utility.target == .image }.reduce(image) { image, slot in
+                slot.utility.apply(to: image, argument: slot.argument, active: slot.active, theme: theme)
+            }
+        } else if let shape {
+            appearance.nativeSlots.filter { $0.utility.target == .shape }.reduce(shape) { shape, slot in
+                slot.utility.apply(to: shape, argument: slot.argument, active: slot.active, theme: theme)
+            }
         } else {
             content.onAppear {
                 if appearance.tracking != nil {
@@ -87,9 +126,8 @@ struct TWModifier: ViewModifier {
 }
 
 /// Only decoration changes conditionally; the main content keeps the same structure.
-struct TWAppearanceModifier: ViewModifier {
+struct TWTextAttributesModifier: ViewModifier {
     let appearance: TWResolvedStyle
-    let scheme: ColorScheme
 
     func body(content: Content) -> some View {
         content
@@ -108,12 +146,25 @@ struct TWAppearanceModifier: ViewModifier {
             }
             // Hierarchical primary is relative to the parent's style, including gradients.
             .foregroundStyle(appearance.foreground.map(AnyShapeStyle.init) ?? AnyShapeStyle(HierarchicalShapeStyle.primary))
-            .padding(appearance.padding)
+    }
+}
+
+struct TWLayoutModifier: ViewModifier {
+    let appearance: TWResolvedStyle
+    func body(content: Content) -> some View {
+        content.padding(appearance.padding)
             .frame(width: appearance.width, height: appearance.height)
             .frame(minWidth: appearance.minimumWidth,
                    maxWidth: appearance.maximumWidth ?? (appearance.expandsWidth ? .infinity : nil),
                    minHeight: appearance.minimumHeight, maxHeight: appearance.maximumHeight)
-            .background {
+    }
+}
+
+struct TWDecorationModifier: ViewModifier {
+    let appearance: TWResolvedStyle
+    let scheme: ColorScheme
+    func body(content: Content) -> some View {
+        content.background {
                 RoundedRectangle(cornerRadius: appearance.radius, style: .continuous)
                     .fill(appearance.background ?? .clear)
                     .shadow(
@@ -129,10 +180,66 @@ struct TWAppearanceModifier: ViewModifier {
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }
-            .opacity(appearance.opacity)
+    }
+}
+
+struct TWEffectsModifier: ViewModifier {
+    let appearance: TWResolvedStyle
+    func body(content: Content) -> some View {
+        content.opacity(appearance.opacity)
             .blur(radius: appearance.blur)
             .scaleEffect(x: appearance.scale.width, y: appearance.scale.height)
             .rotationEffect(.degrees(appearance.rotation))
             .offset(appearance.offset)
+    }
+}
+
+private func twShape<V: View>(_ view: V) -> AnyShape? {
+    guard let shape = view as? any Shape else { return nil }
+    return AnyShape(shape)
+}
+
+struct TWPhaseModifier: ViewModifier {
+    let phase: TWModifierPhase
+    let appearance: TWResolvedStyle
+    let theme: TWTheme
+    let scheme: ColorScheme
+    let groups: TWGroupContext
+    let scope: TWAnimationScope
+    let watched: Bool
+    let animationID: UUID
+    let reduceMotion: Bool
+
+    private var enabled: Bool {
+        switch scope {
+        case .all, .surface: true
+        case .layout: phase == .layout
+        case .content: phase == .content
+        }
+    }
+
+    func body(content: Content) -> some View {
+        content.transaction { transaction in
+            // Restore the caller for stages outside the selected explicit preset.
+            guard enabled && (!watched || scope == .all || transaction[TWAnimationChangeKey.self] == animationID) else {
+                if let caller = transaction[TWCallerAnimationKey.self] { transaction.animation = caller.animation }
+                return
+            }
+            appearance.motion.update(&transaction, reduceMotion: reduceMotion)
+        } body: { surface in
+            stage(surface)
+                .modifier(TWNativeChainModifier(slots: appearance.nativeSlots, theme: theme, phase: phase))
+        }
+    }
+
+    @ViewBuilder private func stage<V: View>(_ view: V) -> some View {
+        switch phase {
+        case .content: view.modifier(TWTextAttributesModifier(appearance: appearance))
+        case .layout:
+            view.modifier(TWClassSharedElementModifier(appearance: appearance, groups: groups))
+                .modifier(TWLayoutModifier(appearance: appearance))
+        case .decoration: view.modifier(TWDecorationModifier(appearance: appearance, scheme: scheme))
+        case .effects: view.modifier(TWEffectsModifier(appearance: appearance))
+        }
     }
 }

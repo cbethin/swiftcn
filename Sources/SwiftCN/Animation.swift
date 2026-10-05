@@ -1,5 +1,32 @@
 import SwiftUI
 
+/// Which part of a styled view receives the explicit animation preset.
+public enum TWAnimationScope: String, Sendable, CaseIterable {
+    case surface, layout, content, all
+}
+
+// Preserve Equatable state without requiring bindings or state values to be Sendable.
+struct TWAnimationValue: Equatable {
+    let value: Any
+    private let equals: (Any) -> Bool
+    init<Value: Equatable>(_ value: Value) {
+        self.value = value
+        equals = { ($0 as? Value) == value }
+    }
+    static func == (lhs: Self, rhs: Self) -> Bool { lhs.equals(rhs.value) }
+}
+
+struct TWCallerAnimation {
+    let animation: Animation?
+}
+struct TWCallerAnimationKey: TransactionKey {
+    static let defaultValue: TWCallerAnimation? = nil
+}
+
+struct TWAnimationChangeKey: TransactionKey {
+    static let defaultValue: UUID? = nil
+}
+
 /// A native animation preset. Factories receive the duration selected by the style, in seconds.
 public struct TWAnimation: Sendable {
     private let makeAnimation: @Sendable (TimeInterval) -> Animation?

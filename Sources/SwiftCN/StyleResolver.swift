@@ -38,10 +38,10 @@ struct TWResolvedStyle {
 
 enum TWStyleResolver {
     static func resolve(_ style: TWStyle, theme: TWTheme, scheme: ColorScheme, state: TWState,
-                        globalRules: TWGlobalRules = TWGlobalRules(), groupStates: [String: TWState] = [:]) -> TWResolvedStyle {
+                        globalRules: TWGlobalRules = TWGlobalRules(), groupStates: [String: TWState] = [:], target: TWTarget = .view) -> TWResolvedStyle {
         let expanded: TWStyle
         do {
-            expanded = try TWClassParser.expand(style, rules: globalRules, theme: theme)
+            expanded = try TWClassParser.expand(style, rules: globalRules, theme: theme, target: target)
         } catch {
             Logger(subsystem: "swiftcn", category: "classes").error("\(String(describing: error), privacy: .public)")
             var invalid = TWResolvedStyle()
@@ -142,6 +142,7 @@ enum TWStyleResolver {
 
     private static func nativeSlots(_ rules: TWGlobalRules) -> [TWNativeSlot] {
         rules.modifiers.map { TWNativeSlot(name: $0.key, utility: $0.value) }.sorted {
+            if $0.utility.phase != $1.utility.phase { return $0.utility.phase.rawValue < $1.utility.phase.rawValue }
             if $0.utility.order != $1.utility.order { return $0.utility.order < $1.utility.order }
             return $0.name < $1.name
         }

@@ -39,6 +39,21 @@ struct NativeUtilityTests {
         #expect(cn { shared; "tilt-[0]" } == "glass p-4 tilt-[0]")
     }
 
+    @Test func phasesSortBeforeLocalOrderAndTargetValidationExpandsRecipes() throws {
+        let rules = TWGlobalRules(named: ["photo": "resize"], modifiers: [
+            "outer": .view(phase: .effects, order: -100) { view, _ in view },
+            "inner": .view(phase: .content, order: 100) { view, _ in view },
+            "resize": .image { image, active in active ? image.resizable() : image }
+        ])
+        let resolved = TWStyleResolver.resolve("inner outer", theme: .standard, scheme: .light,
+            state: .init(), globalRules: rules)
+        #expect(resolved.nativeSlots.map(\.name) == ["resize", "inner", "outer"])
+        _ = try TWStyle.parse("photo", rules: rules, target: .image)
+        #expect(throws: TWClassError.unsupportedTarget("resize", expected: .image)) {
+            try TWStyle.parse("photo", rules: rules, target: .text)
+        }
+    }
+
     @Test func aliasesAndArgumentsSelectOneStableOrderedSlot() throws {
         let resolved = try resolve(cn("lifted glass", "tilt-[12deg]"))
         #expect(resolved.nativeSlots.map(\.name) == ["lean", "tilt", "glass"])

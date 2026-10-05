@@ -129,17 +129,107 @@ State variants retain their usual priority over base classes.
 These rules select a winner; they do not rearrange the native modifier chain.
 Custom conflict keys apply within the native registry, separately from built-in styling properties.
 
-Native modifiers run after built-in decoration, from lower to higher `order:`.
+Native modifiers run in their selected phase, from lower to higher `order:`.
 Equal orders use registration names in alphabetical order.
+The default phase is `.effects`, which retains the existing application order.
 The order stays fixed when class order, arguments, or active state change.
 Exact named recipes take precedence over registrations.
 Registered tags take precedence over built-in tags outside named recipes.
 Registered bracket prefixes take precedence over style utility factories and built-in decoration arguments.
 Shared-element classes retain their special grammar.
 
+## Choose the modifier phase
+
+Register `phase:` to place a general view modifier around built-in styling:
+
+| Phase | Position |
+| --- | --- |
+| `.content` | After inherited text attributes, before padding and frames |
+| `.layout` | After padding and frames, before backgrounds and borders |
+| `.decoration` | After backgrounds and borders, before opacity and transforms |
+| `.effects` | After opacity, blur, scale, rotation, and offset; the default |
+
+Phase order takes priority over `order:`.
+Changing class order selects values; it does not rearrange the modifier chain.
+Use separate `.tw(...)` calls when you need another complete styling boundary.
+
+```swift
+let rules = TWGlobalRules(modifiers: [
+    "inset": .value(default: CGFloat.zero, phase: .content) { view, amount in
+        view.padding(amount)
+    }
+])
+// The blue background includes both padding values.
+Text("Inside").tw("inset-[8] p-4 bg-[#00f]").twRules(rules)
+```
+
+## Keep native source methods
+
+Use target-specific factories for methods available on `Text`, `Image`, or `Shape`.
+Text factories return `Text`; image factories return `Image`.
+Shape factories use SwiftUI's `AnyShape` and return `AnyShape`.
+These transformations run before general view modifiers and retain native source APIs.
+
+```swift title="NativeCompositionExample.swift"
+import SwiftUI
+import SwiftCN
+
+struct NativeCompositionExample: View {
+    @State private var expanded = false
+
+    private var rules: TWGlobalRules {
+        TWGlobalRules(modifiers: [
+            "kern": .textValue(default: CGFloat.zero) { text, points in
+                text.kerning(points)
+            },
+            "resize": .image { image, active in
+                active ? image.resizable() : image
+            },
+            "trim": .shapeValue(default: CGFloat(1)) { shape, end in
+                AnyShape(shape.trim(from: 0, to: end))
+            },
+            "inset": .value(default: CGFloat.zero, phase: .content) { view, amount in
+                view.padding(amount)
+            }
+        ])
+    }
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Native source methods")
+                .tw(cn("kern-[1.5]", "inset-[8] bg-accent rounded-md"))
+            Image(systemName: "bird.fill")
+                .tw("resize w-[60] h-[40] text-primary")
+            Circle().tw("trim-[0.7] w-[40] h-[40] text-primary")
+            Button("Resize") { expanded.toggle() }
+                .buttonStyle(.tw("button-primary"))
+        }
+        .tw("p-6 rounded-xl border w-[\(CGFloat(expanded ? 320 : 260))] animate-spring",
+            value: expanded, animationScope: .layout)
+        .twRules(rules)
+    }
+}
+```
+
+Use `.text`, `.image`, or `.shape` for an exact tag.
+Use `.textValue(default:)`, `.imageValue(default:)`, or `.shapeValue(default:)` for a typed bracket argument.
+Target factories support state variants, recipes, typed interpolation, and conflict keys.
+Their order is fixed before general `.content` registrations.
+
+Apply target-specific tags directly to the native source, before `.padding`, `.frame`, or another view wrapper.
+For example, `Image(...).padding().tw("resize")` reports an unsupported target.
+Validate this in tooling with `TWStyle.parse(classes, rules: rules, target: .image)`.
+An invalid target leaves the complete surface undecorated.
+Unselected registrations for other targets do not run on the source.
+
+`AnyShape` exposes general shape methods; it does not retain methods unique to a concrete shape or `InsettableShape`.
+Apply those methods in native Swift before `.tw`.
+Target-specific defaults must preserve the intended source appearance when their tags are absent.
+
 ## Keep state and animation native
 
-Every explicit `.tw` surface retains a slot for every inherited native registration, even when its tag is absent.
+Every explicit `.tw` surface retains a slot for each inherited general view registration, even when its tag is absent.
+Target-specific registrations run only on their matching native sources.
 An inactive slot applies its neutral modifier instead of removing a wrapper.
 This keeps child state and modifier structure stable during class changes.
 Scope large registries to the subtree that needs them.

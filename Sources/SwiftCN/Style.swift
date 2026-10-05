@@ -23,12 +23,12 @@ public struct TWStyle: Sendable, ExpressibleByStringInterpolation {
 
     /// Validate and expand classes ahead of time, for tooling and generated styles.
     @_disfavoredOverload public static func parse(_ classes: String, rules: TWGlobalRules = TWGlobalRules(),
-                             theme: TWTheme = .standard) throws -> Self {
-        try TWClassParser.expand(.classes(classes), rules: rules, theme: theme)
+                             theme: TWTheme = .standard, target: TWTarget? = nil) throws -> Self {
+        try TWClassParser.expand(.classes(classes), rules: rules, theme: theme, target: target)
     }
     public static func parse(_ classes: TWClasses, rules: TWGlobalRules = TWGlobalRules(),
-                             theme: TWTheme = .standard) throws -> Self {
-        try TWClassParser.expand(.classes(classes), rules: rules, theme: theme)
+                             theme: TWTheme = .standard, target: TWTarget? = nil) throws -> Self {
+        try TWClassParser.expand(.classes(classes), rules: rules, theme: theme, target: target)
     }
 
     func conditioned(on condition: TWCondition) -> TWStyle {

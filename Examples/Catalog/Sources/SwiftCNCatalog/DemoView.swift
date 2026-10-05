@@ -44,6 +44,7 @@ private enum DemoAppearance: String, CaseIterable, Identifiable {
 struct MotionPlayground: View {
     @State private var expanded = false
     @State private var preset = "spring"
+    @State private var animationScope = TWAnimationScope.all
     @State private var duration = 400.0
     @State private var delay = 0.0
     @State private var presses = 0
@@ -72,6 +73,11 @@ struct MotionPlayground: View {
                                 Text($0).tag($0)
                             }
                         }
+                        Picker("Animation scope", selection: $animationScope) {
+                            ForEach([TWAnimationScope.all, .surface, .layout], id: \.self) { scope in
+                                Text(scope.rawValue.capitalized).tag(scope)
+                            }
+                        }
                         LabeledContent("Duration") { Text("\(Int(duration)) ms").demoNumber(Int(duration)) }
                         Slider(value: $duration, in: 100...1200, step: 50).accessibilityLabel("Duration")
                         LabeledContent("Delay") { Text("\(Int(delay)) ms").demoNumber(Int(delay)) }
@@ -89,13 +95,13 @@ struct MotionPlayground: View {
                     VStack(alignment: .leading, spacing: 20) {
                         Text("State → native modifiers").tw("text-lg font-semibold")
                         ZStack {
-                            MotionSurface(expanded: expanded, motionClasses: motionClasses)
+                            MotionSurface(expanded: expanded, motionClasses: motionClasses, animationScope: animationScope)
                         }
                         .frame(maxWidth: .infinity, minHeight: 180)
                         .tw("rounded-lg border")
                         Button(expanded ? "Collapse surface" : "Expand surface") { expanded.toggle() }
                             .buttonStyle(.demo("button-outline animate-smooth duration-180"))
-                        DemoCode(text: ".tw(\"\(surfaceClasses)\", value: expanded)")
+                        DemoCode(text: ".tw(\"\(surfaceClasses)\", value: expanded, animationScope: .\(animationScope.rawValue))")
                         Text("Press and hover") .tw("text-lg font-semibold")
                         HStack {
                             Button { presses += 1 } label: {

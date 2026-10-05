@@ -29,7 +29,13 @@ They cover computed strings, state variants, child identity, transaction scope, 
 The resolver tests check Reduce Motion, timing, and custom presets.
 The image suite does not compare intermediate animation frames.
 The Motion catalog has a separate geometry regression test that samples its native rendered pixels during expansion and collapse.
-It checks intermediate widths and heights, a stable center, and immediate changes with `animate-none`.
+It checks intermediate widths and heights, stable card and label positions, and immediate changes with `animate-none`.
+It also checks surface and layout animation scopes.
+
+Composition tests compare native pixels for modifier phases and Text, Image, and Shape factories.
+Set `SWIFTCN_COMPOSITION_ARTIFACTS=artifacts/composition` to save both sides of each comparison.
+CI uploads these images alongside the Motion frame captures.
+Hosted probes check interpolation in each phase, child transactions, and state identity across all animation scopes.
 CI uploads the sampled frames in `artifacts/motion-size`.
 
 Component tests check native editor bindings and identity across validation changes.

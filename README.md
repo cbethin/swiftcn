@@ -200,6 +200,12 @@ Use `TWGlobalRules.modifiers` to register actual SwiftUI modifiers as tags and b
 Compose them with `cn("card glass", selected ? "tilt-[8]" : nil)`.
 See [native modifier plugins](website/content/docs/native-modifiers.mdx) for a complete example, inactive values, ordering, and animation.
 
+Register `phase: .content`, `.layout`, `.decoration`, or `.effects` to place a modifier around built-in styling.
+The default `.effects` phase retains the existing order.
+Use `.text`, `.image`, and `.shape` factories for native source methods.
+Their `.textValue(default:)`, `.imageValue(default:)`, and `.shapeValue(default:)` forms accept typed bracket arguments.
+Apply these tags directly to the native source; target validation reports incompatible wrappers.
+
 ## Composition and overrides
 
 ```swift
@@ -497,6 +503,19 @@ Matched geometry does not connect independent windows or presentation hosts.
 Reduce Motion suppresses the shared geometry animation while retaining its final geometry.
 
 `.tw(..., value:)` and `.twAnimation` use the same presets, timing classes, named rules, and custom animations as `.tw`.
+
+Choose `animationScope:` to apply a preset to `.surface`, `.layout`, `.content`, or `.all`:
+
+```swift
+Text("A steady label")
+    .tw("p-[\(CGFloat(expanded ? 32 : 12))] bg-accent rounded-xl animate-spring",
+        value: expanded, animationScope: .layout)
+```
+
+The defaults remain `.surface` without a watched value and `.all` with one.
+With an explicit preset, watched surface and layout scopes retain native placement animation and set the inherited content transition to `.identity`.
+Descendants can select an explicit content transition.
+See [animation scopes](website/content/docs/animations.mdx) for transaction boundaries and caller animation behavior.
 Both read animation defaults from `rules.view`.
 `.twAnimation` also accepts typed utilities: `.twAnimation(.animation(.smooth), .duration(0.4), value: expanded)`.
 Non-animation utilities in `.twAnimation` do not decorate the container.
@@ -532,6 +551,7 @@ The script builds and opens `artifacts/SwiftCN Demo.app`.
 The app includes components, composition, motion, shared elements, arguments, and global rules playgrounds.
 The Composition tab demonstrates editable fields, validation, native style adapters, card parts, and scoped defaults.
 Change animation presets and timing while toggling the styled surface.
+The Motion tab also selects all, surface, or layout animation scope.
 The Motion surface uses `.tw(classes, value: expanded)` so its intrinsic size follows the selected animation.
 Edit shared classes, palettes, spacing, and subtree overrides in the global rules playground.
 The appearance picker selects system, light, or dark mode.
