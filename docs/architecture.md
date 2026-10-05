@@ -55,6 +55,23 @@ Keep focus ownership explicit at the control.
 Use native appearance APIs for controls without a suitable adapter.
 Do not infer custom control semantics from appearance.
 
+## Animation
+
+Store native animation presets, duration, and delay as independent style properties.
+Resolve string presets through `TWGlobalRules.animations` at render time.
+Allow fixed native animations and factories that receive the selected duration.
+Keep global preset overrides inside the SwiftUI environment.
+
+Apply the selected animation through a scoped native transaction around the appearance modifiers.
+Preserve the content transaction across this scope.
+Keep the modifier structure stable when the animation changes.
+Let SwiftUI interpolate supported modifier values during state changes.
+Use the destination state's animation settings.
+
+Preserve the caller transaction when the style has no animation preset.
+Respect Reduce Motion and transactions that disable animations.
+Keep view insertion, removal, and repeating animation triggers in the application.
+
 ## Validation
 
 Check property resolution and variant conflicts through unit tests.

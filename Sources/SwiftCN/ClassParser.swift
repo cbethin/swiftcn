@@ -44,7 +44,7 @@ enum TWClassParser {
                     guard !stack.contains(name) else { throw TWClassError.recursiveClass(name) }
                     expanded = try expand(named, rules: rules, theme: theme, stack: stack + [name], depth: depth + 1)
                 } else {
-                    guard let utility = utility(name, theme: theme) else { throw TWClassError.unknownClass(name) }
+                    guard let utility = utility(name, theme: theme, rules: rules) else { throw TWClassError.unknownClass(name) }
                     expanded = utility
                 }
                 result += expanded.rules.map {
@@ -57,7 +57,16 @@ enum TWClassParser {
         return TWStyle(rules: result)
     }
 
-    private static func utility(_ name: String, theme: TWTheme) -> TWStyle? {
+    private static func utility(_ name: String, theme: TWTheme, rules: TWGlobalRules) -> TWStyle? {
+        if name.hasPrefix("animate-") {
+            guard let preset = rules.animations[String(name.dropFirst("animate-".count))] else { return nil }
+            return .animation(preset)
+        }
+        for prefix in ["duration-", "delay-"] where name.hasPrefix(prefix) {
+            guard let milliseconds = nonnegative(String(name.dropFirst(prefix.count))) else { return nil }
+            let seconds = Double(milliseconds) / 1000
+            return prefix == "duration-" ? .duration(seconds) : .delay(seconds)
+        }
         if name == "w-full" { return .fullWidth }
         if name == "border" { return .border(.border) }
         if name == "rounded" { return .rounded(.md) }

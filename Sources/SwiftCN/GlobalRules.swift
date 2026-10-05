@@ -5,11 +5,14 @@ public struct TWGlobalRules: Sendable {
     public var view: TWStyle
     public var button: TWStyle
     public var named: [String: TWStyle]
+    public var animations: [String: TWAnimation]
 
-    public init(view: TWStyle = TWStyle(), button: TWStyle = TWStyle(), named: [String: TWStyle] = [:]) {
+    public init(view: TWStyle = TWStyle(), button: TWStyle = TWStyle(), named: [String: TWStyle] = [:],
+                animations: [String: TWAnimation] = [:]) {
         self.view = view
         self.button = button
         self.named = named
+        self.animations = TWAnimation.defaults.merging(animations) { _, override in override }
     }
 }
 

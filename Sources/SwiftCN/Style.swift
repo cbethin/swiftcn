@@ -68,4 +68,5 @@ enum TWProperty: Sendable {
     case shadow(TWShadow)
     case opacity(Double)
     case width(CGFloat), height(CGFloat), minimumHeight(CGFloat), fullWidth
+    case animation(TWAnimation), animationDuration(TimeInterval), animationDelay(TimeInterval)
 }

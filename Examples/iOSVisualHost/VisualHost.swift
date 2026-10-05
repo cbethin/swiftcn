@@ -61,9 +61,9 @@ private struct IOSFixture: View {
             Text("Native controls and Dynamic Type").tw("text-lg")
             TextField("Name", text: .constant("Charles")).textFieldStyle(.plain)
                 .tw("px-3 py-2 rounded-md border bg-surface")
-            Button("String classes") {}.buttonStyle(.tw("button-primary w-full"))
-            Button("Typed utilities") {}.buttonStyle(.tw(.outlineButton, .fullWidth))
-            Button("Disabled button") {}.buttonStyle(.tw("button-primary w-full")).disabled(true)
+            Button("String classes") {}.buttonStyle(.tw("button-primary w-full animate-spring duration-150"))
+            Button("Typed utilities") {}.buttonStyle(.tw(.outlineButton, .fullWidth, .animation(.snappy)))
+            Button("Disabled button") {}.buttonStyle(.tw("button-primary w-full animate-none")).disabled(true)
             Toggle("Notifications", isOn: .constant(true))
             Slider(value: .constant(0.6)).accessibilityLabel("Volume")
             Text("Native text grows. The card and button heights follow the content.")
@@ -75,9 +75,9 @@ private struct IOSFixture: View {
         let brand = TWColor("brand")
         let customTheme = TWTheme(colors: [brand: TWAdaptiveColor(light: .indigo, dark: .mint)])
         let customRules = TWGlobalRules(named: [
-            "brand-button": TWStyle(.primaryButton, .bg(brand), .rounded(.full)),
+            "brand-button": TWStyle(.primaryButton, .bg(brand), .rounded(.full), "animate-settle duration-250"),
             "card": TWStyle(TWStyle.defaultStyle(for: "card")!, .p(3), .radius(20))
-        ])
+        ], animations: ["settle": TWAnimation { .spring(duration: $0, bounce: 0.15) }])
         return VStack(alignment: .leading, spacing: 16) {
             Text("Global rules").tw("text-lg")
             Text("A global card").tw("card w-full")

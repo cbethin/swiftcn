@@ -24,7 +24,8 @@ struct CatalogView: View {
             VStack(alignment: .leading, spacing: theme.space(4)) {
                 sectionLabel("01 / NATIVE BUTTONS")
                 HStack(spacing: theme.space(3)) {
-                    Button("Save changes") { saves += 1 }.buttonStyle(.tw(.primaryButton))
+                    Button("Save changes") { saves += 1 }
+                        .buttonStyle(.tw("button-primary animate-spring duration-180"))
                     Button("Preview") {}.buttonStyle(.tw(.secondaryButton))
                     Button("Cancel") {}.buttonStyle(.tw(.outlineButton))
                     Button("Delete", role: .destructive) {}.buttonStyle(.tw(.destructiveButton))
@@ -57,7 +58,7 @@ struct CatalogView: View {
                     Text("One design vocabulary").tw(.text(.xl), .weight(.semibold))
                     Text("p(4)   ·   rounded(lg)   ·   bg(surface)")
                         .font(.system(.caption, design: .monospaced))
-                        .tw(.p(3), .bg(.accent), .rounded(.md), .fullWidth)
+                        .tw("\(notifications ? "p-3 rounded-md" : "p-5 rounded-xl") bg-accent w-full animate-spring duration-300")
                     HStack(spacing: theme.space(2)) {
                         tokenTile("4", units: 4)
                         tokenTile("6", units: 6)

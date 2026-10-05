@@ -23,6 +23,7 @@ struct TWModifier: ViewModifier {
     @Environment(\.twRules) private var rules
     @Environment(\.colorScheme) private var scheme
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isHovered = false
 
     func body(content: Content) -> some View {
@@ -32,7 +33,11 @@ struct TWModifier: ViewModifier {
         let combined = TWStyle(rules.view, isButton ? rules.button : TWStyle(), style)
         let appearance = TWStyleResolver.resolve(combined, theme: theme, scheme: scheme, state: activeState, globalRules: rules)
         return content
-            .modifier(TWAppearanceModifier(appearance: appearance, scheme: scheme))
+            .transaction { transaction in
+                appearance.motion.update(&transaction, reduceMotion: reduceMotion)
+            } body: { surface in
+                surface.modifier(TWAppearanceModifier(appearance: appearance, scheme: scheme))
+            }
             .onHover { isHovered = $0 }
     }
 }

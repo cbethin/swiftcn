@@ -201,6 +201,81 @@ TextField("Email", text: $email)
         state: TWState(isFocused: emailFocused))
 ```
 
+## Native animation classes
+
+Use animation classes to animate changes to the modifiers that `.tw` owns:
+
+```swift
+Button("Save", action: save)
+    .buttonStyle(.tw("button-primary active:opacity-80 animate-spring duration-150"))
+
+Text("Details")
+    .tw("\(expanded ? "p-6 rounded-xl" : "p-3 rounded-md") bg-surface animate-ease-out duration-200")
+```
+
+SwiftUI owns the state and interpolates the native modifier values.
+Button press and release, hover, explicit focus, and computed strings use the same animation rules.
+You do not need an extra `.animation(..., value:)` call for these styled values.
+The modifier structure stays stable during these changes.
+
+| Class | Native animation |
+| --- | --- |
+| `animate-linear` | `.linear(duration:)` |
+| `animate-ease-in`, `animate-ease-out`, `animate-ease-in-out` | Native timing curves |
+| `animate-spring` | `.spring(duration:)` |
+| `animate-smooth`, `animate-snappy`, `animate-bouncy` | Native spring presets |
+| `animate-none` | Disable animation for the styled modifiers |
+| `duration-200`, `delay-100` | Duration and delay in milliseconds |
+
+The default duration is 300 milliseconds. The default delay is zero.
+Timing utilities accept finite, nonnegative decimal values.
+Later utilities override the same property. State variants use the normal precedence rules.
+
+The destination state selects the animation, including during release or focus loss.
+Keep a base animation class when both entry and exit need animation.
+
+Without an animation class, `.tw` preserves the caller's transaction.
+Duration and delay alone do not enable animation.
+Explicit animation classes respect Reduce Motion and `Transaction.disablesAnimations`.
+The scoped transaction affects the styled modifiers and preserves the content's existing transaction.
+Native modifiers outside `.tw` keep their own animation settings.
+
+Animation classes configure value changes; they do not start a repeating animation on appearance.
+View insertion and removal continue to use native `.transition` and application transactions.
+
+Set custom presets through global rules:
+
+```swift
+let rules = TWGlobalRules(
+    named: ["motion-card": "card animate-settle duration-250"],
+    animations: [
+        "settle": TWAnimation { duration in
+            .spring(duration: duration, bounce: 0.15)
+        },
+        "press": TWAnimation(.interactiveSpring(response: 0.25, dampingFraction: 0.8))
+    ]
+)
+
+ContentView().twRules(rules)
+// Inside ContentView:
+Text("Details").tw("motion-card")
+Button("Save", action: save).buttonStyle(.tw("button-primary animate-press"))
+```
+
+Preset factories receive the resolved duration in seconds.
+A fixed native preset keeps its own duration; `duration-*` does not retime it.
+Both forms accept `delay-*`. Partial preset dictionaries preserve built-in presets.
+Subtree updates can replace individual presets through `rules.animations`.
+String presets resolve against the current rules during rendering.
+
+Typed utilities use the same rules:
+
+```swift
+Text("Details").tw(.p(4), .animation(.spring), .duration(0.2), .delay(0.05))
+```
+
+Typed duration and delay utilities accept seconds.
+
 ## Rendering contract
 
 The renderer uses a stable content structure when state patches change values.
@@ -210,7 +285,7 @@ Unspecified fonts and foreground colors inherit from the surrounding view.
 Corners affect the background and border without clipping content.
 Decorative borders do not intercept input.
 
-Use native SwiftUI modifiers for gradients, materials, clipping, animation, and custom effects.
+Use native SwiftUI modifiers for gradients, materials, clipping, transitions, and custom effects.
 Keep toggle, picker, and menu presentation in their native styling APIs.
 Gesture helpers and responsive variants remain outside this initial release.
 
@@ -276,6 +351,7 @@ Supported classes include:
 | Colors | `bg-primary`, `text-foreground`, `text-muted-foreground`, `text-primary-foreground` |
 | Decoration | `rounded-md`, `rounded-full`, `border`, `border-2`, `border-primary`, `shadow-sm`, `opacity-80` |
 | Recipes | `card`, `button-primary`, `button-secondary`, `button-outline`, `button-destructive` |
+| Motion | `animate-spring`, `animate-ease-out`, `animate-none`, `duration-200`, `delay-100` |
 
 Numeric sizes use the theme spacing scale, as Tailwind does. Typed `.w()`, `.h()`, and `.minH()` continue to accept points.
 Border widths use points. `pl-` and `pr-` alias logical leading and trailing spacing.

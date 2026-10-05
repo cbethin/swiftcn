@@ -86,12 +86,12 @@ private struct VisualFixture: View {
                     let states: [TWState] = [.init(), .init(isHovered: true), .init(isFocused: true),
                                              .init(isPressed: true), .init(isDisabled: true)]
                     let labels = ["Rest", "Hover", "Focus", "Press", "Disabled"]
-                    Text(labels[index]).tw("\(name) focus:border-2 focus:border-primary", state: states[index])
+                    Text(labels[index]).tw("\(name) focus:border-2 focus:border-primary animate-spring duration-150", state: states[index])
                   }
               }
-            Button("Native activation") {}.buttonStyle(.tw("button-primary"))
-            Button("Native disabled") {}.buttonStyle(.tw("button-primary")).disabled(true)
-            Button("Typed style") {}.buttonStyle(.tw(.primaryButton, .px(6)))
+            Button("Native activation") {}.buttonStyle(.tw("button-primary animate-spring duration-150"))
+            Button("Native disabled") {}.buttonStyle(.tw("button-primary animate-none")).disabled(true)
+            Button("Typed style") {}.buttonStyle(.tw(.primaryButton, .px(6), .animation(.snappy)))
         }
     }
 
@@ -133,9 +133,9 @@ private struct VisualFixture: View {
         let brandTheme = TWTheme(spacingUnit: 5, colors: [brand: TWAdaptiveColor(light: .indigo, dark: .mint)],
                                 radii: [.lg: 22])
         let rules = TWGlobalRules(view: .text(.sm), button: .minH(48), named: [
-            "brand-button": TWStyle(.primaryButton, .bg(brand)),
+            "brand-button": TWStyle(.primaryButton, .bg(brand), "animate-settle duration-250 delay-50"),
             "card": TWStyle(TWStyle.defaultStyle(for: "card")!, .rounded(.xl), .p(3))
-        ])
+        ], animations: ["settle": TWAnimation { .spring(duration: $0, bounce: 0.15) }])
         return VStack(alignment: .leading, spacing: 16) {
             Text("Default card").tw("card w-full")
             VStack(alignment: .leading, spacing: 12) {

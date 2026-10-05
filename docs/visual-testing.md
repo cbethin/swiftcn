@@ -18,6 +18,13 @@ Button scenes cover rest, hover, focus, press, and disabled appearances.
 The state previews use explicit state values for repeatable rendering.
 Native buttons also cover typed styles, string styles, and the disabled environment.
 Global scenes cover custom tokens, named classes, local overrides, subtree overrides, and sibling isolation.
+Animation classes appear in native buttons, state previews, and custom global rules on both platforms.
+These images check their static appearances against the existing references.
+
+Hosted behavior tests check native interpolation during state entry and exit.
+They cover computed strings, state variants, child identity, transaction scope, and disabled transactions.
+The resolver tests check Reduce Motion, timing, and custom presets.
+The image suite does not compare intermediate animation frames.
 
 macOS controls can ignore the text-size environment.
 These images check rendering under that environment; they do not prove iOS Dynamic Type behavior.

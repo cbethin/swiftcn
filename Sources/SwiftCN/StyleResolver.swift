@@ -16,6 +16,7 @@ struct TWResolvedStyle {
     var height: CGFloat?
     var minimumHeight: CGFloat?
     var expandsWidth = false
+    var motion = TWResolvedMotion()
 }
 
 enum TWStyleResolver {
@@ -78,6 +79,9 @@ enum TWStyleResolver {
             case .height(let height): result.height = height
             case .minimumHeight(let height): result.minimumHeight = height
             case .fullWidth: result.width = nil; result.expandsWidth = true
+            case .animation(let preset): result.motion.preset = preset
+            case .animationDuration(let duration): result.motion.duration = duration
+            case .animationDelay(let delay): result.motion.delay = delay
             case .classes: break // Expansion removes these before resolution.
             }
         }

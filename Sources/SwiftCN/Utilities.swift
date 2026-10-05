@@ -51,6 +51,18 @@ extension TWStyle {
     }
     public static var fullWidth: Self { property(.fullWidth) }
 
+    public static func animation(_ preset: TWAnimation) -> Self { property(.animation(preset)) }
+    /// Duration in seconds. String duration utilities use milliseconds.
+    public static func duration(_ seconds: TimeInterval) -> Self {
+        precondition(seconds.isFinite && seconds >= 0)
+        return property(.animationDuration(seconds))
+    }
+    /// Delay in seconds. String delay utilities use milliseconds.
+    public static func delay(_ seconds: TimeInterval) -> Self {
+        precondition(seconds.isFinite && seconds >= 0)
+        return property(.animationDelay(seconds))
+    }
+
     public static func hover(_ styles: TWStyle...) -> Self { Self(styles).conditioned(on: .hovered) }
     public static func focus(_ styles: TWStyle...) -> Self { Self(styles).conditioned(on: .focused) }
     public static func pressed(_ styles: TWStyle...) -> Self { Self(styles).conditioned(on: .pressed) }
