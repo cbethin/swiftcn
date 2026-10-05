@@ -4,6 +4,12 @@ extension View {
     public func tw(_ classes: String, state: TWState = TWState()) -> some View {
         modifier(TWModifier(style: .classes(classes), state: state))
     }
+
+    /// Watch native state for layout and shared-element animation using these classes.
+    public func tw<Value: Equatable>(_ classes: String, value: Value, state: TWState = TWState()) -> some View {
+        modifier(TWModifier(style: .classes(classes), state: state))
+            .modifier(TWValueAnimationModifier(style: .classes(classes), value: value, state: state))
+    }
     /// Apply one styled surface. Later utilities replace earlier values by property.
     public func tw(_ styles: TWStyle..., state: TWState = TWState()) -> some View {
         modifier(TWModifier(style: TWStyle(styles), state: state))
@@ -24,6 +30,8 @@ struct TWModifier: ViewModifier {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.twGroups) private var groups
+    @Namespace private var groupNamespace
     @State private var isHovered = false
 
     func body(content: Content) -> some View {
@@ -31,14 +39,21 @@ struct TWModifier: ViewModifier {
         activeState.isDisabled = activeState.isDisabled || !isEnabled
         activeState.isHovered = activeState.isHovered || isHovered
         let combined = TWStyle(rules.view, isButton ? rules.button : TWStyle(), style)
-        let appearance = TWStyleResolver.resolve(combined, theme: theme, scheme: scheme, state: activeState, globalRules: rules)
+        let appearance = TWStyleResolver.resolve(combined, theme: theme, scheme: scheme, state: activeState,
+            globalRules: rules, groupStates: groups.states)
         return content
             .transaction { transaction in
                 appearance.motion.update(&transaction, reduceMotion: reduceMotion)
             } body: { surface in
-                surface.modifier(TWAppearanceModifier(appearance: appearance, scheme: scheme))
+                surface.modifier(TWClassSharedElementModifier(appearance: appearance, groups: groups))
+                    .modifier(TWAppearanceModifier(appearance: appearance, scheme: scheme))
             }
             .onHover { isHovered = $0 }
+            .transformEnvironment(\.twGroups) { inherited in
+                if let name = appearance.group {
+                    inherited.scopes.append(TWGroupScope(name: name, namespace: groupNamespace, state: activeState))
+                }
+            }
     }
 }
 

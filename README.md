@@ -278,38 +278,69 @@ Typed duration and delay utilities accept seconds.
 
 ## Shared elements
 
-Pair views with `.twShared` and a native `@Namespace`.
-Use `.twAnimation` on their common container to animate layout and content when a state value changes.
+Declare a parent group and pair its children with shared element classes.
+The group owns a persistent native namespace. State stays in SwiftUI.
+Pass `value:` to animate the subtree when that value changes.
 
 ```swift
 struct HeroCard: View {
-    @Namespace private var hero
     @State private var expanded = false
 
     private var cover: some View {
         RoundedRectangle(cornerRadius: 16)
             .fill(.indigo)
-            .twShared("cover", in: hero)
     }
 
     var body: some View {
         VStack {
             ZStack {
                 if expanded {
-                    cover.frame(width: 320, height: 200)
+                    cover.tw("shared-[cover] w-80 h-50")
                 } else {
-                    cover.frame(width: 80, height: 80)
+                    cover.tw("shared-[cover] w-20 h-20")
                 }
             }
             Button("Toggle") { expanded.toggle() }
                 .buttonStyle(.tw("button-primary"))
         }
-        .twAnimation("animate-smooth duration-400", value: expanded)
+        .tw("group/hero animate-smooth duration-400", value: expanded)
     }
 }
 ```
 
-`.twShared` wraps native [matched geometry](https://developer.apple.com/documentation/swiftui/view/matchedgeometryeffect(id:in:properties:anchor:issource:)).
+The classes use native [matched geometry](https://developer.apple.com/documentation/swiftui/view/matchedgeometryeffect(id:in:properties:anchor:issource:)).
+
+| Class | Meaning |
+| --- | --- |
+| `group`, `group/hero` | Declare a local group; an optional name selects that ancestor |
+| `shared-[cover]` | Match this ID within the nearest group |
+| `shared-[cover]/hero` | Match this ID within the nearest ancestor named hero |
+| `shared-frame`, `shared-position`, `shared-size` | Select the matched properties; frame is the default |
+| `shared-source`, `shared-follower` | Select the source or follower; source is the default |
+| `group-hover/hero:opacity-70` | Style a child when that ancestor group has hover state |
+
+Group names are local to their view subtree. Sibling groups with the same name have separate namespaces.
+Nested groups retain access to their named ancestors. Unqualified classes select the nearest group.
+
+IDs and group names accept ASCII letters, digits, hyphens, underscores, and periods.
+Keep group markers and shared IDs present at both endpoints throughout the transition.
+An unscoped shared class preserves normal rendering and logs a missing-group diagnostic.
+
+Parent-state variants follow [Tailwind's group syntax](https://tailwindcss.com/docs/hover-focus-and-other-states#styling-based-on-parent-state).
+Shared element classes are a swiftcn extension.
+Supported variants are `group-hover`, `group-focus`, `group-active`, `group-pressed`, and `group-disabled`.
+Append `/name` to select a named ancestor. Combine them with ordinary variants such as `active:group-hover/hero:opacity-50`.
+
+Groups publish native hover and disabled state plus explicit `TWState` values.
+Button styles publish native press state. Pass focus through `TWState` with your native `@FocusState`.
+
+Use `.twShared` with your own `@Namespace` when you need native control:
+
+```swift
+cover.twShared("cover", in: hero)
+title.twShared("title", in: hero, properties: .position, anchor: .leading)
+```
+
 It accepts any `Hashable` ID and retains the native `properties`, `anchor`, and `isSource` options.
 Apply it before different fixed frames to interpolate their sizes.
 Apply it after `.tw` when the pair represents the entire styled surface.
@@ -317,18 +348,20 @@ Use `properties: .position` for a title that keeps its destination size.
 
 Use the same namespace and ID at both endpoints within one view hierarchy.
 Keep one source per pair. If both endpoints stay visible, mark the follower with `isSource: false`.
-The helper synchronizes geometry; use native transitions for content appearance and removal.
-It does not connect independent windows or presentation hosts.
+Shared elements synchronize geometry; use native transitions for content appearance and removal.
+Matched geometry does not connect independent windows or presentation hosts.
 Reduce Motion suppresses the shared geometry animation while retaining its final geometry.
 
-`.twAnimation` uses the same presets, timing classes, named rules, and custom animations as `.tw`.
-It also accepts typed utilities: `.twAnimation(.animation(.smooth), .duration(0.4), value: expanded)`.
-It reads animation defaults from `rules.view`. Non-animation utilities do not decorate the container.
+`.tw(..., value:)` and `.twAnimation` use the same presets, timing classes, named rules, and custom animations as `.tw`.
+Both read animation defaults from `rules.view`.
+`.twAnimation` also accepts typed utilities: `.twAnimation(.animation(.smooth), .duration(0.4), value: expanded)`.
+Non-animation utilities in `.twAnimation` do not decorate the container.
 
 Without a preset, it preserves the caller's transaction.
 Explicit presets respect Reduce Motion and `Transaction.disablesAnimations`.
 The watched value controls the transaction for the subtree, including other changes in the same update.
-Use `.tw` for animation limited to styled values; use `.twAnimation` for layout, insertion, removal, and shared elements.
+Use `.tw` without `value:` for animation limited to styled values.
+Use `value:` or `.twAnimation` for layout, insertion, removal, and shared elements.
 
 ## Rendering contract
 

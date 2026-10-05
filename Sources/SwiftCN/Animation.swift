@@ -60,19 +60,33 @@ extension View {
     }
 }
 
-private struct TWValueAnimationModifier<Value: Equatable>: ViewModifier {
+struct TWValueAnimationModifier<Value: Equatable>: ViewModifier {
     let style: TWStyle
     let value: Value
+    let state: TWState
     @Environment(\.twTheme) private var theme
     @Environment(\.twRules) private var rules
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.twGroups) private var groups
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var isHovered = false
+
+    init(style: TWStyle, value: Value, state: TWState = TWState()) {
+        self.style = style
+        self.value = value
+        self.state = state
+    }
 
     func body(content: Content) -> some View {
+        var activeState = state
+        activeState.isDisabled = activeState.isDisabled || !isEnabled
+        activeState.isHovered = activeState.isHovered || isHovered
         let motion = TWStyleResolver.resolve(TWStyle(rules.view, style), theme: theme,
-            scheme: scheme, state: TWState(), globalRules: rules).motion
+            scheme: scheme, state: activeState, globalRules: rules, groupStates: groups.states).motion
         return content.transaction(value: value) { transaction in
             motion.update(&transaction, reduceMotion: reduceMotion)
         }
+        .onHover { isHovered = $0 }
     }
 }

@@ -8,6 +8,24 @@ import Testing
 @MainActor
 struct MotionRenderingTests {
     @Test(arguments: [false, true])
+    func composedClassAnimationDrivesLayoutThroughTheStyledGroup(disabled: Bool) {
+        let samples = MotionSamples()
+        let model = MotionModel()
+        let recorder = ContentRecorder()
+        let view = ClassValueAnimationHarness(model: model, recorder: recorder)
+            .twRules(.init(animations: ["probe": TWAnimation(Animation(MotionProbeAnimation(samples: samples)))]))
+            .disabled(disabled)
+        withHost(view) { host in
+            #expect(samples.times.isEmpty)
+            model.active = true
+            settle(host, seconds: 0.6)
+            if disabled { #expect(samples.times.isEmpty) }
+            else { expectMotion(samples, reduceMotion: recorder.reduceMotion) }
+            #expect(Set(recorder.identities).count == 1)
+        }
+    }
+
+    @Test(arguments: [false, true])
     func valueAnimationDrivesContentAndPreservesItsIdentity(typed: Bool) {
         let samples = MotionSamples()
         let model = MotionModel()
@@ -225,6 +243,16 @@ private struct ValueAnimationHarness: View {
         } else {
             content.twAnimation(classes, value: model.active)
         }
+    }
+}
+
+private struct ClassValueAnimationHarness: View {
+    @ObservedObject var model: MotionModel
+    let recorder: ContentRecorder
+    var body: some View {
+        MotionContent(recorder: recorder, active: model.active)
+            .transaction { recorder.animations.append($0.animation) }
+            .tw("group/hero animate-probe disabled:animate-none", value: model.active)
     }
 }
 

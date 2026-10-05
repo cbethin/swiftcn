@@ -2,7 +2,6 @@ import SwiftUI
 import SwiftCN
 
 struct SharedElementPlayground: View {
-    @Namespace private var hero
     @State private var expanded = false
     @State private var preset = "smooth"
     @State private var duration = 450.0
@@ -39,7 +38,7 @@ struct SharedElementPlayground: View {
                             Text("Reduce Motion is on. The layout changes immediately.")
                                 .tw("text-sm text-muted-foreground")
                         }
-                        Text("A native namespace keeps each pair local to this playground.")
+                        Text("The hero group owns a native namespace. Shared classes pair its children.")
                             .tw("text-sm text-muted-foreground")
                     }
                     .frame(width: 260)
@@ -70,8 +69,7 @@ struct SharedElementPlayground: View {
                             }
                         }
                         .frame(maxWidth: .infinity, minHeight: 350)
-                        .tw("p-6 rounded-xl border bg-surface")
-                        .twAnimation(motionClasses, value: expanded)
+                        .tw("group/hero p-6 rounded-xl border bg-surface \(motionClasses)", value: expanded)
                         .accessibilityIdentifier("shared-element-preview")
 
                         Text(expanded ? "Detail layout" : "Compact layout").tw("text-sm text-muted-foreground")
@@ -93,27 +91,25 @@ struct SharedElementPlayground: View {
         RoundedRectangle(cornerRadius: 20, style: .continuous)
             .fill(LinearGradient(colors: [.indigo, .purple, .pink], startPoint: .topLeading, endPoint: .bottomTrailing))
             .overlay { Image(systemName: "sparkles").font(.system(size: 36)).foregroundStyle(.white) }
-            .twShared("artwork", in: hero)
+            .tw("shared-[artwork]/hero")
             .accessibilityHidden(true)
     }
 
     private var title: some View {
         Text("Room for ideas")
-            .tw("font-semibold")
-            .twShared("title", in: hero, properties: .position, anchor: .leading)
+            .tw("shared-[title]/hero shared-position font-semibold group-hover/hero:opacity-70 animate-smooth duration-180")
     }
 
     private var code: String {
         """
-        @Namespace private var hero
         @State private var expanded = false
 
         // In both layouts, before their different frames:
-        artwork.twShared("artwork", in: hero)
-        title.twShared("title", in: hero, properties: .position)
+        artwork.tw("shared-[artwork]/hero")
+        title.tw("shared-[title]/hero shared-position")
 
         // On their common container:
-        .twAnimation("\(motionClasses)", value: expanded)
+        .tw("group/hero \(motionClasses)", value: expanded)
         """
     }
 }

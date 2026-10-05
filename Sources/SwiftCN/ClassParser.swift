@@ -30,7 +30,17 @@ enum TWClassParser {
                 let parts = token.split(separator: ":", omittingEmptySubsequences: false).map(String.init)
                 let name = parts.last!
                 var conditions = rule.conditions
+                var groupConditions = rule.groupConditions
                 for variant in parts.dropLast() {
+                    if variant.hasPrefix("group-") {
+                        let pieces = variant.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
+                        guard pieces.count <= 2, pieces.count == 1 || identifier(pieces[1]),
+                              let condition = groupCondition(pieces[0]) else {
+                            throw TWClassError.unknownVariant(variant)
+                        }
+                        groupConditions.insert(TWGroupCondition(name: pieces.count == 2 ? pieces[1] : nil, condition: condition))
+                        continue
+                    }
                     switch variant {
                     case "hover": conditions.insert(.hovered)
                     case "focus": conditions.insert(.focused)
@@ -50,6 +60,7 @@ enum TWClassParser {
                 result += expanded.rules.map {
                     var value = $0
                     value.conditions.formUnion(conditions)
+                    value.groupConditions.formUnion(groupConditions)
                     return value
                 }
             }
@@ -58,6 +69,26 @@ enum TWClassParser {
     }
 
     private static func utility(_ name: String, theme: TWTheme, rules: TWGlobalRules) -> TWStyle? {
+        if name == "group" { return TWStyle(rules: [TWRule(property: .group(""))]) }
+        if name.hasPrefix("group/"), identifier(String(name.dropFirst(6))) {
+            return TWStyle(rules: [TWRule(property: .group(String(name.dropFirst(6))))])
+        }
+        if name.hasPrefix("shared-[") {
+            let pieces = name.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
+            guard pieces.count <= 2, pieces[0].hasSuffix("]"),
+                  pieces.count == 1 || identifier(pieces[1]) else { return nil }
+            let id = String(pieces[0].dropFirst(8).dropLast())
+            guard identifier(id) else { return nil }
+            return TWStyle(rules: [TWRule(property: .sharedID(id, group: pieces.count == 2 ? pieces[1] : nil))])
+        }
+        switch name {
+        case "shared-frame": return TWStyle(rules: [TWRule(property: .sharedProperties(.frame))])
+        case "shared-position": return TWStyle(rules: [TWRule(property: .sharedProperties(.position))])
+        case "shared-size": return TWStyle(rules: [TWRule(property: .sharedProperties(.size))])
+        case "shared-source": return TWStyle(rules: [TWRule(property: .sharedSource(true))])
+        case "shared-follower": return TWStyle(rules: [TWRule(property: .sharedSource(false))])
+        default: break
+        }
         if name.hasPrefix("animate-") {
             guard let preset = rules.animations[String(name.dropFirst("animate-".count))] else { return nil }
             return .animation(preset)
@@ -127,5 +158,19 @@ enum TWClassParser {
         guard !text.isEmpty, text.allSatisfy({ $0.isASCII && ($0.isNumber || $0 == ".") }),
               let value = Double(text), value.isFinite, value >= 0 else { return nil }
         return CGFloat(value)
+    }
+
+    private static func identifier(_ value: String) -> Bool {
+        !value.isEmpty && value.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || "-_.".contains($0)) }
+    }
+
+    private static func groupCondition(_ value: String) -> TWCondition? {
+        switch value {
+        case "group-hover": .hovered
+        case "group-focus": .focused
+        case "group-active", "group-pressed": .pressed
+        case "group-disabled": .disabled
+        default: nil
+        }
     }
 }

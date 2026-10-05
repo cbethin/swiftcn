@@ -46,8 +46,17 @@ enum TWCondition: Int, Hashable, Sendable {
 struct TWRule: Sendable {
     let property: TWProperty
     var conditions: Set<TWCondition> = []
-    var priority: Int { conditions.map(\.rawValue).max() ?? 0 }
+    var groupConditions: Set<TWGroupCondition> = []
+    var priority: Int { (conditions.map(\.rawValue) + groupConditions.map { $0.condition.rawValue }).max() ?? 0 }
+    var conditionCount: Int { conditions.count + groupConditions.count }
 }
+
+struct TWGroupCondition: Hashable, Sendable {
+    let name: String?
+    let condition: TWCondition
+}
+
+enum TWSharedProperties: Sendable { case frame, position, size }
 
 enum TWEdge: Sendable { case top, leading, bottom, trailing }
 enum TWLength: Sendable { case units(CGFloat), points(CGFloat) }
@@ -69,4 +78,6 @@ enum TWProperty: Sendable {
     case opacity(Double)
     case width(CGFloat), height(CGFloat), minimumHeight(CGFloat), fullWidth
     case animation(TWAnimation), animationDuration(TimeInterval), animationDelay(TimeInterval)
+    case group(String), sharedID(String, group: String?)
+    case sharedProperties(TWSharedProperties), sharedSource(Bool)
 }

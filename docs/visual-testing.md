@@ -28,6 +28,10 @@ The image suite does not compare intermediate animation frames.
 
 Shared element tests measure the rendered size of a native follower with a typed ID.
 They check matching within one namespace and isolation between namespaces.
+Class tests also cover local groups, nested groups, named ancestor selection, and sibling isolation.
+Hosted tests verify that group updates preserve the native namespace and child state.
+Parser tests cover group variants, composed conditions, and invalid IDs.
+
 Container animation tests cover string and typed presets, custom rules, child identity, and disabled transactions.
 The catalog exports both shared element layouts in light and dark mode.
 CI uploads these exports and the follower images as visual evidence.

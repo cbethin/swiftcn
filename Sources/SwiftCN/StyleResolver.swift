@@ -17,11 +17,16 @@ struct TWResolvedStyle {
     var minimumHeight: CGFloat?
     var expandsWidth = false
     var motion = TWResolvedMotion()
+    var group: String?
+    var sharedID: String?
+    var sharedGroup: String?
+    var sharedProperties = TWSharedProperties.frame
+    var sharedSource = true
 }
 
 enum TWStyleResolver {
     static func resolve(_ style: TWStyle, theme: TWTheme, scheme: ColorScheme, state: TWState,
-                        globalRules: TWGlobalRules = TWGlobalRules()) -> TWResolvedStyle {
+                        globalRules: TWGlobalRules = TWGlobalRules(), groupStates: [String: TWState] = [:]) -> TWResolvedStyle {
         let expanded: TWStyle
         do {
             expanded = try TWClassParser.expand(style, rules: globalRules, theme: theme)
@@ -30,13 +35,18 @@ enum TWStyleResolver {
             return TWResolvedStyle()
         }
         let rules = expanded.rules.enumerated()
-            .filter { $0.element.conditions.allSatisfy { $0.matches(state) } }
+            .filter {
+                $0.element.conditions.allSatisfy { $0.matches(state) } && $0.element.groupConditions.allSatisfy {
+                    guard let group = groupStates[$0.name ?? ""] else { return false }
+                    return $0.condition.matches(group)
+                }
+            }
             .sorted { lhs, rhs in
                 if lhs.element.priority != rhs.element.priority {
                     return lhs.element.priority < rhs.element.priority
                 }
-                if lhs.element.conditions.count != rhs.element.conditions.count {
-                    return lhs.element.conditions.count < rhs.element.conditions.count
+                if lhs.element.conditionCount != rhs.element.conditionCount {
+                    return lhs.element.conditionCount < rhs.element.conditionCount
                 }
                 return lhs.offset < rhs.offset
             }
@@ -82,6 +92,10 @@ enum TWStyleResolver {
             case .animation(let preset): result.motion.preset = preset
             case .animationDuration(let duration): result.motion.duration = duration
             case .animationDelay(let delay): result.motion.delay = delay
+            case .group(let name): result.group = name
+            case .sharedID(let id, let group): result.sharedID = id; result.sharedGroup = group
+            case .sharedProperties(let properties): result.sharedProperties = properties
+            case .sharedSource(let source): result.sharedSource = source
             case .classes: break // Expansion removes these before resolution.
             }
         }

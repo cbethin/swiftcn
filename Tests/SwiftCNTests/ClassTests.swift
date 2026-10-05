@@ -4,6 +4,35 @@ import Testing
 
 @Suite("Classes and global rules")
 struct ClassTests {
+    @Test func groupAndSharedClassesComposeAndValidate() throws {
+        let shared = resolve(try .parse("shared-[cover]/hero shared-size shared-follower shared-source shared-position p-2"))
+        #expect(shared.sharedID == "cover")
+        #expect(shared.sharedGroup == "hero")
+        #expect(shared.sharedProperties == .position)
+        #expect(shared.sharedSource)
+        #expect(shared.padding.top == 8)
+        #expect(resolve(try .parse("group/outer group/hero")).group == "hero")
+        #expect(resolve(try .parse("group")).group == "")
+        #expect(resolve(try .parse("shared-[cover]")).sharedGroup == nil)
+        for invalid in ["group/", "group/a/b", "shared-[]", "shared-[cover", "shared-[a]/", "shared-[a]/b/c",
+                        "shared-[a!b]", "group-hover/:opacity-50", "group-typo:opacity-50"] {
+            #expect(throws: (any Error).self) { try TWStyle.parse(invalid) }
+        }
+    }
+
+    @Test func groupVariantsUseAncestorStateAndRetainNamedRuleConditions() throws {
+        let rules = TWGlobalRules(named: ["label": "group-hover/hero:opacity-60"])
+        let style = try TWStyle.parse("opacity-100 label active:group-hover/hero:opacity-40 group-disabled:opacity-20", rules: rules)
+        func resolveGroups(_ groups: [String: TWState], pressed: Bool = false) -> TWResolvedStyle {
+            TWStyleResolver.resolve(style, theme: .standard, scheme: .light,
+                state: .init(isPressed: pressed), groupStates: groups)
+        }
+        #expect(resolveGroups([:]).opacity == 1)
+        #expect(resolveGroups(["hero": .init(isHovered: true)]).opacity == 0.6)
+        #expect(resolveGroups(["hero": .init(isHovered: true)], pressed: true).opacity == 0.4)
+        #expect(resolveGroups(["hero": .init(isHovered: true), "": .init(isDisabled: true)]).opacity == 0.2)
+    }
+
     private func resolve(_ style: TWStyle, rules: TWGlobalRules = TWGlobalRules(),
                          theme: TWTheme = .standard, state: TWState = TWState()) -> TWResolvedStyle {
         TWStyleResolver.resolve(style, theme: theme, scheme: .light, state: state, globalRules: rules)
