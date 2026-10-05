@@ -13,6 +13,8 @@ struct CatalogLauncher {
             for scheme in [ColorScheme.light, .dark] {
                 let appearance = scheme == .dark ? "dark" : "light"
                 try render(CatalogView(), scheme: scheme, name: "catalog-\(appearance).png", directory: directory)
+                try render(ArgumentPlayground().frame(width: 1040, height: 800), scheme: scheme,
+                           name: "arguments-\(appearance).png", directory: directory)
                 for expanded in [false, true] {
                     let layout = expanded ? "detail" : "compact"
                     try render(SharedElementPlayground(expanded: expanded).frame(width: 980, height: 820),

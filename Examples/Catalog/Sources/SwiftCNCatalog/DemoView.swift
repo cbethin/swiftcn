@@ -12,6 +12,8 @@ struct DemoView: View {
                 .tabItem { Label("Motion", systemImage: "waveform.path") }
             SharedElementPlayground()
                 .tabItem { Label("Shared elements", systemImage: "rectangle.on.rectangle") }
+            ArgumentPlayground()
+                .tabItem { Label("Arguments", systemImage: "textformat.123") }
             GlobalRulesPlayground()
                 .tabItem { Label("Global rules", systemImage: "slider.horizontal.3") }
         }

@@ -76,7 +76,9 @@ enum TWProperty: Sendable {
     case borderColor(TWColorSource), borderWidth(CGFloat)
     case shadow(TWShadow)
     case opacity(Double)
-    case width(CGFloat), height(CGFloat), minimumHeight(CGFloat), fullWidth
+    case tracking(CGFloat), lineSpacing(CGFloat), textAlignment(TextAlignment), lineLimit(Int?)
+    case offset(CGSize), scale(CGSize), rotation(Double), blur(CGFloat)
+    case width(CGFloat), height(CGFloat), minimumHeight(CGFloat), minimumWidth(CGFloat), maximumWidth(CGFloat), maximumHeight(CGFloat), fullWidth
     case animation(TWAnimation), animationDuration(TimeInterval), animationDelay(TimeInterval)
     case group(String), sharedID(String, group: String?)
     case sharedProperties(TWSharedProperties), sharedSource(Bool)

@@ -32,6 +32,12 @@ Class tests also cover local groups, nested groups, named ancestor selection, an
 Hosted tests verify that group updates preserve the native namespace and child state.
 Parser tests cover group variants, composed conditions, and invalid IDs.
 
+Argument tests compare bracket classes with equivalent native modifiers at exact pixels.
+They cover both themes and both text-size environments.
+Tests also check inherited text attributes, child identity, custom factories, and invalid arguments.
+CI uploads both native and class images for review.
+The Arguments demo exports both themes and includes a live class editor.
+
 Container animation tests cover string and typed presets, custom rules, child identity, and disabled transactions.
 The catalog exports both shared element layouts in light and dark mode.
 CI uploads these exports and the follower images as visual evidence.

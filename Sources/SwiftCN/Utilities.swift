@@ -50,6 +50,53 @@ extension TWStyle {
         return property(.minimumHeight(points))
     }
     public static var fullWidth: Self { property(.fullWidth) }
+    public static func minW(_ points: CGFloat) -> Self {
+        precondition(points.isFinite && points >= 0)
+        return property(.minimumWidth(points))
+    }
+    public static func maxW(_ points: CGFloat) -> Self {
+        precondition(points.isFinite && points >= 0)
+        return property(.maximumWidth(points))
+    }
+    public static func maxH(_ points: CGFloat) -> Self {
+        precondition(points.isFinite && points >= 0)
+        return property(.maximumHeight(points))
+    }
+
+    public static func fontSize(_ points: CGFloat) -> Self {
+        precondition(points.isFinite && points > 0)
+        return .font(.system(size: points))
+    }
+    public static func tracking(_ points: CGFloat) -> Self {
+        precondition(points.isFinite)
+        return property(.tracking(points))
+    }
+    public static func lineSpacing(_ points: CGFloat) -> Self {
+        precondition(points.isFinite && points >= 0)
+        return property(.lineSpacing(points))
+    }
+    public static func textAlignment(_ alignment: TextAlignment) -> Self { property(.textAlignment(alignment)) }
+    public static func lineLimit(_ limit: Int?) -> Self {
+        precondition(limit == nil || limit! > 0)
+        return property(.lineLimit(limit))
+    }
+    public static func offset(x: CGFloat, y: CGFloat) -> Self {
+        precondition(x.isFinite && y.isFinite)
+        return property(.offset(CGSize(width: x, height: y)))
+    }
+    public static func scale(x: CGFloat, y: CGFloat) -> Self {
+        precondition(x.isFinite && y.isFinite && x >= 0 && y >= 0)
+        return property(.scale(CGSize(width: x, height: y)))
+    }
+    public static func scale(_ factor: CGFloat) -> Self { .scale(x: factor, y: factor) }
+    public static func rotate(_ degrees: Double) -> Self {
+        precondition(degrees.isFinite)
+        return property(.rotation(degrees))
+    }
+    public static func blur(_ radius: CGFloat) -> Self {
+        precondition(radius.isFinite && radius >= 0)
+        return property(.blur(radius))
+    }
 
     public static func animation(_ preset: TWAnimation) -> Self { property(.animation(preset)) }
     /// Duration in seconds. String duration utilities use milliseconds.

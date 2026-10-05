@@ -27,7 +27,7 @@ enum TWClassParser {
                 continue
             }
             for token in classes.split(whereSeparator: { $0.isWhitespace }) {
-                let parts = token.split(separator: ":", omittingEmptySubsequences: false).map(String.init)
+                let parts = try variants(String(token))
                 let name = parts.last!
                 var conditions = rule.conditions
                 var groupConditions = rule.groupConditions
@@ -55,7 +55,8 @@ enum TWClassParser {
                     expanded = try expand(named, rules: rules, theme: theme, stack: stack + [name], depth: depth + 1)
                 } else {
                     guard let utility = utility(name, theme: theme, rules: rules) else { throw TWClassError.unknownClass(name) }
-                    expanded = utility
+                    guard !stack.contains(name) else { throw TWClassError.recursiveClass(name) }
+                    expanded = try expand(utility, rules: rules, theme: theme, stack: stack + [name], depth: depth + 1)
                 }
                 result += expanded.rules.map {
                     var value = $0
@@ -89,6 +90,18 @@ enum TWClassParser {
         case "shared-follower": return TWStyle(rules: [TWRule(property: .sharedSource(false))])
         default: break
         }
+        if let (prefix, argument) = argument(name) {
+            if let custom = rules.utilities[prefix] { return custom.resolve(argument, theme: theme) }
+            return TWArgumentUtilities.resolve(prefix, argument: argument, theme: theme)
+        }
+        switch name {
+        case "text-center": return .textAlignment(.center)
+        case "text-start": return .textAlignment(.leading)
+        case "text-end": return .textAlignment(.trailing)
+        case "line-clamp-none": return .lineLimit(nil)
+        default: break
+        }
+        if name.hasPrefix("line-clamp-"), let count = Int(name.dropFirst(11)), count > 0 { return .lineLimit(count) }
         if name.hasPrefix("animate-") {
             guard let preset = rules.animations[String(name.dropFirst("animate-".count))] else { return nil }
             return .animation(preset)
@@ -162,6 +175,44 @@ enum TWClassParser {
 
     private static func identifier(_ value: String) -> Bool {
         !value.isEmpty && value.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || "-_.".contains($0)) }
+    }
+
+    private static func variants(_ token: String) throws -> [String] {
+        var parts: [String] = [], part = "", depth = 0, escaped = false
+        for character in token {
+            if escaped { part.append(character); escaped = false; continue }
+            if character == "\\" { part.append(character); escaped = true; continue }
+            if character == "[" { depth += 1 }
+            if character == "]" {
+                depth -= 1
+                guard depth >= 0 else { throw TWClassError.unknownClass(token) }
+            }
+            if character == ":", depth == 0 { parts.append(part); part = "" }
+            else { part.append(character) }
+        }
+        guard depth == 0, !escaped else { throw TWClassError.unknownClass(token) }
+        parts.append(part)
+        return parts
+    }
+
+    private static func argument(_ token: String) -> (String, TWArgument)? {
+        guard let opening = token.range(of: "-["), token.hasSuffix("]") else { return nil }
+        let prefix = String(token[..<opening.lowerBound])
+        guard identifier(prefix) else { return nil }
+        let body = token[opening.upperBound..<token.index(before: token.endIndex)]
+        guard !body.isEmpty else { return nil }
+        var decoded = "", escaped = false, depth = 1
+        for character in body {
+            if escaped { decoded.append(character); escaped = false }
+            else if character == "\\" { escaped = true }
+            else {
+                if character == "[" { depth += 1 }
+                if character == "]" { depth -= 1; if depth == 0 { return nil } }
+                decoded.append(character == "_" ? " " : character)
+            }
+        }
+        guard !escaped, depth == 1 else { return nil }
+        return (prefix, TWArgument(decoded))
     }
 
     private static func groupCondition(_ value: String) -> TWCondition? {

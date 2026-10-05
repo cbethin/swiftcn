@@ -12,9 +12,20 @@ struct TWResolvedStyle {
     var borderWidth: CGFloat = 0
     var shadow: TWShadowValue?
     var opacity: Double = 1
+    var tracking: CGFloat?
+    var lineSpacing: CGFloat?
+    var textAlignment: TextAlignment?
+    var lineLimit: Int??
+    var offset = CGSize.zero
+    var scale = CGSize(width: 1, height: 1)
+    var rotation: Double = 0
+    var blur: CGFloat = 0
     var width: CGFloat?
     var height: CGFloat?
     var minimumHeight: CGFloat?
+    var minimumWidth: CGFloat?
+    var maximumWidth: CGFloat?
+    var maximumHeight: CGFloat?
     var expandsWidth = false
     var motion = TWResolvedMotion()
     var group: String?
@@ -85,9 +96,20 @@ enum TWStyleResolver {
             case .borderWidth(let width): result.borderWidth = width
             case .shadow(let token): result.shadow = theme.shadow(token)
             case .opacity(let opacity): result.opacity = opacity
+            case .tracking(let value): result.tracking = value
+            case .lineSpacing(let value): result.lineSpacing = value
+            case .textAlignment(let value): result.textAlignment = value
+            case .lineLimit(let value): result.lineLimit = .some(value)
+            case .offset(let value): result.offset = value
+            case .scale(let value): result.scale = value
+            case .rotation(let value): result.rotation = value
+            case .blur(let value): result.blur = value
             case .width(let width): result.width = width; result.expandsWidth = false
             case .height(let height): result.height = height
             case .minimumHeight(let height): result.minimumHeight = height
+            case .minimumWidth(let value): result.minimumWidth = value
+            case .maximumWidth(let value): result.maximumWidth = value
+            case .maximumHeight(let value): result.maximumHeight = value
             case .fullWidth: result.width = nil; result.expandsWidth = true
             case .animation(let preset): result.motion.preset = preset
             case .animationDuration(let duration): result.motion.duration = duration

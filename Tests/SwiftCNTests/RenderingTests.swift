@@ -207,7 +207,7 @@ private struct IdentityHarness: View {
     let recorder: IdentityRecorder
     var body: some View {
         IdentityChild(recorder: recorder, focused: model.focused)
-            .tw(.focus(.fgColor(.red), .text(.xl), .bgColor(.blue), .rounded(.lg)),
+            .tw(.focus(.fgColor(.red), .text(.xl), .bgColor(.blue), .rounded(.lg), .offset(x: 4, y: 2), .scale(1.1), .rotate(2)),
                 state: .init(isFocused: model.focused))
     }
 }

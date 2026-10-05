@@ -77,13 +77,96 @@ Text("Project settings")
 | `.borderColor(.blue, width: 2)` | Native border color |
 | `.shadow(.sm)` | Shadow on the surface background |
 | `.opacity(0.8)` | Opacity for the complete surface |
-| `.w(200)`, `.h(44)`, `.minH(44)`, `.fullWidth` | Outer dimensions, minimum height, or available width |
+| `.w(200)`, `.h(44)`, `.minW(80)`, `.maxW(300)`, `.minH(44)`, `.maxH(200)`, `.fullWidth` | Outer dimensions, size limits, or available width |
+| `.fontSize(18)`, `.tracking(0.5)`, `.lineSpacing(4)`, `.textAlignment(.center)`, `.lineLimit(2)` | Fixed font size, text attributes, and line limits |
+| `.offset(x: 12, y: -4)`, `.scale(1.05)`, `.rotate(3)`, `.blur(2)` | Native visual transforms and blur |
 
 The default spacing unit is four points.
 `.p(4)` selects 16 points.
 Typography tokens use scalable SwiftUI font roles.
 Padding, radius, width, and height inputs must be finite and nonnegative.
 Opacity inputs must lie between zero and one.
+
+## Arbitrary arguments
+
+Use [Tailwind's bracket notation](https://tailwindcss.com/docs/adding-custom-styles#using-arbitrary-values) to supply values outside the theme scale.
+
+```swift
+Text("Room for ideas")
+    .tw("text-[22] tracking-[0.3] p-[24] w-[360] rounded-[22] bg-[#6366f1] text-[#fff]")
+    .tw("hover:scale-[1.02] animate-smooth duration-[220ms]")
+```
+
+| Classes | Arguments |
+| --- | --- |
+| `w-[240]`, `h-[80]`, `size-[44]` | Width, height, or both dimensions |
+| `min-w-[80]`, `max-w-[300]`, `min-h-[44]`, `max-h-[200]` | Native size limits |
+| `p-[13]`, `px-[12]`, `py-[8]`, `pt-[4]`, `pb-[4]`, `ps-[4]`, `pe-[4]` | Padding in native points |
+| `rounded-[14]`, `border-[1.5]` | Corner radius or border width |
+| `text-[18]`, `text-[length:18px]` | Fixed native font size in points |
+| `text-[#fff]`, `bg-[#6366f1]`, `border-[color:#6366f180]` | Hex colors in RGB or RGBA order |
+| `text-[color:brand]`, `bg-[brand]`, `border-[color:brand]` | Registered adaptive theme colors |
+| `opacity-[0.8]` | Native opacity from zero to one |
+| `tracking-[0.5]`, `tracking-[-0.5]` | Character tracking on a native Text value |
+| `line-spacing-[4]` | Native gap between text lines in points |
+| `line-clamp-[2]`, `line-clamp-2`, `line-clamp-none` | Native line limit or removal of the inherited limit |
+| `text-start`, `text-center`, `text-end` | Native multiline text alignment |
+| `offset-[12,-4]` | Horizontal and vertical offsets in points |
+| `scale-[1.05]`, `scale-[1.1,0.9]` | Uniform or separate horizontal and vertical scale factors |
+| `rotate-[3deg]`, `rotate-[0.05rad]` | Rotation in degrees or radians |
+| `blur-[2]` | Native blur radius in points |
+| `duration-[400]`, `duration-[400ms]`, `duration-[0.4s]`, `delay-[75ms]` | Animation timing |
+
+Bare bracket lengths use native points. The `pt` and `px` suffixes also represent native points.
+For example, `w-12` follows the theme scale; `w-[48]` always uses 48 points.
+Bare bracket timing values use milliseconds. Bare rotation values use degrees.
+
+Size tokens such as `text-lg` retain scalable SwiftUI font roles.
+Explicit font sizes such as `text-[18]` use a fixed native font size.
+Native line spacing controls the gap between lines; CSS line height needs a separate mapping.
+
+Apply tracking directly to `Text`, before modifiers that wrap it in another view.
+Other views keep their normal rendering and log a diagnostic for an unsupported tracking target.
+Unspecified text attributes preserve native inheritance.
+
+State variants, group variants, named classes, and local overrides also accept bracket values.
+Colons inside brackets belong to the argument. Underscores represent spaces; `\_` preserves a literal underscore.
+Use comma-separated scalar values for offset and scale arguments.
+Numeric helpers reject invalid numbers, unsupported units, and nonfinite values.
+Percentages, `rem`, `calc`, and CSS variables have no native mappings and fail validation.
+
+## Custom argument utilities
+
+Register a prefix in global rules. Its factory receives a `TWArgument` and the current theme.
+The factory returns composable `TWStyle` values. Return `nil` to reject an argument.
+
+```swift
+let rules = TWGlobalRules(utilities: [
+    "tilt": TWUtility { argument, _ in
+        guard let degrees = argument.degrees else { return nil }
+        return .rotate(degrees)
+    },
+    "inset": TWUtility { argument, theme in
+        guard let units = argument.number, units >= 0,
+              theme.space(CGFloat(units)).isFinite else { return nil }
+        return .paddingPoints(theme.space(CGFloat(units)))
+    }
+])
+
+Text("Hello")
+    .tw("inset-[3] hover:tilt-[3deg] animate-smooth duration-[220ms]")
+    .twRules(rules)
+```
+
+Argument helpers include `number`, `points`, `seconds`, `degrees`, `components`, and `hexColor`.
+Use `rawValue` for custom strings or argument grammars.
+Factories resolve against the nearest rules and theme when the view renders.
+Subtree overrides retain other inherited utility factories.
+
+Exact named classes take precedence over factories. A registered prefix overrides the built-in bracket utility for that prefix.
+Factory output can contain named classes and state variants. Recursive output fails validation.
+Factories generate the styling properties that `TWStyle` supports.
+Use native SwiftUI modifiers alongside `.tw` for other behavior.
 
 ## Composition and overrides
 
