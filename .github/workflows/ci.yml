@@ -37,7 +37,9 @@ jobs:
           fi
           trap 'defaults write com.apple.universalaccess reduceMotion -bool "$swiftcn_motion_setting"' EXIT
           defaults write com.apple.universalaccess reduceMotion -bool false
-          swift test --skip SwiftCNVisualTests
+          # Keep these hosted probes separate from other suites that pump the main run loop.
+          swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests'
+          swift test --filter NativeUtilityRenderingTests
       - name: Verify visual baselines
         run: bash Scripts/visual-test.sh verify ci
       - name: Verify iOS visual baselines

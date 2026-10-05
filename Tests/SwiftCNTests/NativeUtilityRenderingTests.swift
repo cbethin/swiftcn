@@ -58,7 +58,7 @@ struct NativeUtilityRenderingTests {
                 settle(host, seconds: 0.45)
                 #expect(Set(identities.values).count == 1)
                 if identities.reduceMotion == true || disabledTransaction { #expect(samples.times.isEmpty) }
-                else { #expect(samples.times.contains { $0 > 0 && $0 < 0.3 }) }
+                else { #expect(samples.times.contains { $0 > 0 && $0 < 0.3 }, "Phase \(phase), native sample times: \(samples.times)") }
                 samples.clear()
             }
             #expect(Set(identities.phases) == [0, 1, 2])
