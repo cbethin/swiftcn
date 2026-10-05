@@ -42,7 +42,7 @@ export function Landing() {
           <div className="example-code"><span className="example-kicker">ONE VIEW. STYLES, STATE, AND MOTION.</span><pre><code>{demoCode}</code></pre></div>
           <div className="visual-example">
             <div className="illustration-stage">
-              <motion.div className="illustration-card" initial={false} animate={{ width: expanded ? 365 : 290 }} transition={{ type: 'spring', bounce: 0, duration: reduced ? 0 : .4 }}>
+              <motion.div className="illustration-card" initial={false} animate={{ width: expanded ? 365 : 290 }} transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 320, damping: 24, mass: 1 }}>
                 <div className="illustration-icon"><img className="bird-mark" src={sitePath('/brand/swiftcn-bird-v1.png')} alt="" width={36} height={36} /></div>
                 <div className="illustration-copy"><strong>A little more native.</strong><p>Less ceremony. More SwiftUI.</p></div>
                 <button type="button" onClick={() => setExpanded(value => !value)} aria-expanded={expanded} aria-label={expanded ? 'Back to simple' : 'Make some room'}>
