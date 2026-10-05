@@ -94,4 +94,22 @@ struct AnimationTests {
         try motion("animate-snappy duration-200 delay-50").update(&b, reduceMotion: false)
         #expect(a.animation == b.animation)
     }
+
+    @Test func motionExtractionValidatesRecipesWithoutRequiringANativeSource() {
+        let rules = TWGlobalRules(named: ["photo-motion": "resize animate-linear duration-200"], modifiers: [
+            "resize": .image { image, active in active ? image.resizable() : image }
+        ])
+        var transaction = Transaction()
+        TWStyleResolver.resolve("photo-motion", theme: .standard, scheme: .light,
+            state: .init(), globalRules: rules, target: nil).motion.update(&transaction, reduceMotion: false)
+        #expect(transaction.animation == Animation.linear(duration: 0.2).delay(0))
+        // Only source compatibility is skipped: unknown classes still invalidate the recipe.
+        let invalid = TWStyleResolver.resolve("photo-motion typo", theme: .standard, scheme: .light,
+            state: .init(), globalRules: rules, target: nil)
+        #expect(invalid.motion.preset == nil)
+        // Ordinary styling keeps strict native-source validation.
+        let wrongSource = TWStyleResolver.resolve("photo-motion", theme: .standard, scheme: .light,
+            state: .init(), globalRules: rules, target: .text)
+        #expect(wrongSource.motion.preset == nil)
+    }
 }

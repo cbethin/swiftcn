@@ -86,6 +86,24 @@ struct MotionRenderingTests {
         }
     }
 
+    @Test func valueAnimationCanReuseSourceSpecificRecipes() {
+        let model = MotionModel()
+        let recorder = ContentRecorder()
+        let native = Animation.linear(duration: 0.2).delay(0)
+        let view = ValueAnimationHarness(model: model, recorder: recorder, typed: false, classes: "photo-motion")
+            .twRules(.init(named: ["photo-motion": "resize animate-linear duration-200"], modifiers: [
+                "resize": .image { image, active in active ? image.resizable() : image }
+            ]))
+        withHost(view) { host in
+            recorder.animations.removeAll()
+            model.active = true
+            settle(host, seconds: 0.3)
+            if recorder.reduceMotion == true { #expect(recorder.animations.allSatisfy { $0 == nil }) }
+            else { #expect(recorder.animations.contains(native)) }
+            #expect(Set(recorder.identities).count == 1)
+        }
+    }
+
     @Test func valueAnimationWithoutAPresetKeepsTheNativeCallerAnimation() {
         let model = MotionModel()
         let recorder = ContentRecorder()

@@ -46,6 +46,30 @@ struct CompositionRenderingTests {
         #expect(result.nativeSlots.allSatisfy { !$0.active })
     }
 
+    @Test(arguments: ["kern-a", "kern-z"])
+    func inactiveTextConflictsLeaveTheWinnerUnchanged(winner: String) throws {
+        let rules = TWGlobalRules(modifiers: [
+            "kern-a": .textValue(default: CGFloat.zero, conflictKey: "kerning") { $0.kerning($1) },
+            "kern-z": .textValue(default: CGFloat.zero, conflictKey: "kerning") { $0.kerning($1) }
+        ])
+        // Both order positions must win, including a variant replacing a base class.
+        try equal(Text("ABCDEFG").tw("\(winner)-[8]").twRules(rules),
+                  Text("ABCDEFG").kerning(8), name: "text-conflict-\(winner)")
+        try equal(Text("ABCDEFG").tw("kern-a-[2] hover:kern-z-[8]", state: .init(isHovered: true)).twRules(rules),
+                  Text("ABCDEFG").kerning(8), name: "text-conflict-hover")
+    }
+
+    @Test func inactiveSourcesDoNotInstallAttributes() throws {
+        let rules = TWGlobalRules(modifiers: [
+            "italic": .text { text, active in active ? text.italic() : text.fontWeight(.regular) },
+            "render": .imageValue(default: Image.TemplateRenderingMode.original) { $0.renderingMode($1) }
+        ])
+        try equal(Text("ABCDEFG").tw("font-bold").twRules(rules),
+                  Text("ABCDEFG").tw("font-bold"), name: "inactive-text-attributes")
+        try equal(Image(systemName: "star.fill").tw("text-[#f00]").twRules(rules),
+                  Image(systemName: "star.fill").tw("text-[#f00]"), name: "inactive-image-attributes")
+    }
+
     @Test(arguments: TWAnimationScope.allCases)
     func animationScopeAffectsOnlySelectedStages(scope: TWAnimationScope) {
         let model = ScopeModel()

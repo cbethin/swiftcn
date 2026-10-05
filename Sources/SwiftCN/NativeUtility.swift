@@ -148,10 +148,14 @@ public struct TWNativeUtility: Sendable {
     }
 
     @MainActor func apply(to text: Text, argument: TWArgument?, active: Bool, theme: TWTheme) -> Text {
-        textTransform?(text, argument, active, theme) ?? text
+        // Text attributes accumulate; even a zero-valued inactive attribute can mask a winner.
+        // The source remains Text when an attribute is absent, so no wrapper needs retaining.
+        guard active else { return text }
+        return textTransform?(text, argument, active, theme) ?? text
     }
     @MainActor func apply(to image: Image, argument: TWArgument?, active: Bool, theme: TWTheme) -> Image {
-        imageTransform?(image, argument, active, theme) ?? image
+        guard active else { return image }
+        return imageTransform?(image, argument, active, theme) ?? image
     }
     @MainActor func apply(to shape: AnyShape, argument: TWArgument?, active: Bool, theme: TWTheme) -> AnyShape {
         shapeTransform?(shape, argument, active, theme) ?? shape
@@ -193,7 +197,7 @@ private final class TWNativeArgumentFactory<M: ViewModifier>: TWNativeArgumentMa
     }
 }
 
-struct TWNativeSlot {
+struct TWNativeSlot: Sendable {
     let name: String
     let utility: TWNativeUtility
     var argument: TWArgument?

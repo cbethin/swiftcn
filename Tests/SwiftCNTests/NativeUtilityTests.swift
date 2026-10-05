@@ -54,6 +54,18 @@ struct NativeUtilityTests {
         }
     }
 
+    @Test func preparedSlotOrderTracksRegistryEditsWithoutLeakingSelections() throws {
+        var rules = registry
+        let inherited = rules
+        rules.modifiers["first"] = .view(phase: .content) { view, _ in view }
+        rules.modifiers["glass"] = .view(order: -10) { view, _ in view }
+        #expect(try resolve("glass", rules: rules).nativeSlots.map(\.name) == ["first", "glass", "lean", "tilt"])
+        #expect(try resolve("", rules: rules).nativeSlots.allSatisfy { !$0.active })
+        #expect(try resolve("", rules: inherited).nativeSlots.map(\.name) == ["lean", "tilt", "glass"])
+        rules.modifiers.removeValue(forKey: "first")
+        #expect(try resolve("", rules: rules).nativeSlots.map(\.name) == ["glass", "lean", "tilt"])
+    }
+
     @Test func aliasesAndArgumentsSelectOneStableOrderedSlot() throws {
         let resolved = try resolve(cn("lifted glass", "tilt-[12deg]"))
         #expect(resolved.nativeSlots.map(\.name) == ["lean", "tilt", "glass"])

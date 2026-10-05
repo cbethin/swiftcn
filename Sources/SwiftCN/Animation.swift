@@ -113,7 +113,7 @@ struct TWValueAnimationModifier<Value: Equatable>: ViewModifier {
         activeState.isDisabled = activeState.isDisabled || !isEnabled
         activeState.isHovered = activeState.isHovered || isHovered
         let motion = TWStyleResolver.resolve(TWStyle(rules.view, style), theme: theme,
-            scheme: scheme, state: activeState, globalRules: rules, groupStates: groups.states).motion
+            scheme: scheme, state: activeState, globalRules: rules, groupStates: groups.states, target: nil).motion
         return content.transaction(value: value) { transaction in
             motion.update(&transaction, reduceMotion: reduceMotion)
         }

@@ -15,16 +15,20 @@ struct MotionSurfaceTests {
         try check(preset: "none", expectsMotion: false)
     }
 
+    @Test func nativePaddingUsesTheSamePresentationCapture() throws {
+        try check(preset: "linear", expectsMotion: true, native: true)
+    }
+
     @Test(arguments: [TWAnimationScope.surface, .layout])
     func scopedMotionKeepsTheLabelFixed(scope: TWAnimationScope) throws {
         try check(preset: "linear", expectsMotion: scope != .content, animationScope: scope)
     }
 
-    private func check(preset: String, expectsMotion: Bool, animationScope: TWAnimationScope = .all) throws {
+    private func check(preset: String, expectsMotion: Bool, animationScope: TWAnimationScope = .all, native: Bool = false) throws {
         let model = SurfaceModel()
         let recorder = SurfaceEnvironment()
         let blue = TWAdaptiveColor(light: .blue, dark: .blue)
-        let host = NSHostingView(rootView: SurfaceHarness(model: model, recorder: recorder, preset: preset, animationScope: animationScope)
+        let host = NSHostingView(rootView: SurfaceHarness(model: model, recorder: recorder, preset: preset, animationScope: animationScope, native: native)
             .twTheme(TWTheme(colors: [.primary: blue, .accent: blue,
                 .onPrimary: .init(light: .white, dark: .white), .foreground: .init(light: .black, dark: .black)]))
             .environment(\.colorScheme, .light)
@@ -36,13 +40,14 @@ struct MotionSurfaceTests {
         defer { window.orderOut(nil); window.contentView = nil }
         host.layoutSubtreeIfNeeded()
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
+        let label = "\(native ? "native" : "tw")-\(preset)-\(animationScope.rawValue)"
         var contentFrames: [CGRect] = []
-        let compact = try bounds(host, name: "\(preset)-\(animationScope.rawValue)-compact", contentFrames: &contentFrames)
+        let compact = try bounds(host, name: "\(label)-compact", contentFrames: &contentFrames)
         var expansion: [CGRect] = []
         model.expanded = true
         for frame in 0..<12 {
             RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
-            expansion.append(try bounds(host, name: "\(preset)-\(animationScope.rawValue)-expand-\(frame)", contentFrames: &contentFrames))
+            expansion.append(try bounds(host, name: "\(label)-expand-\(frame)", contentFrames: &contentFrames))
         }
         let expanded = try #require(expansion.last)
         #expect(expanded.width > compact.width + 30)
@@ -51,7 +56,7 @@ struct MotionSurfaceTests {
         model.expanded = false
         for frame in 0..<12 {
             RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
-            collapse.append(try bounds(host, name: "\(preset)-\(animationScope.rawValue)-collapse-\(frame)", contentFrames: &contentFrames))
+            collapse.append(try bounds(host, name: "\(label)-collapse-\(frame)", contentFrames: &contentFrames))
         }
         let restingContent = try #require(contentFrames.first)
         #expect(contentFrames.allSatisfy {
@@ -73,7 +78,7 @@ struct MotionSurfaceTests {
             }
             #expect(frames.allSatisfy { abs($0.midX - compact.midX) < 1 && abs($0.midY - compact.midY) < 1 })
         }
-        print("Motion \(preset): compact=\(compact.size), expanded=\(expanded.size), expansion=\(expansion.map(\.size)), collapse=\(collapse.map(\.size))")
+        print("Motion \(label): compact=\(compact.size), expanded=\(expanded.size), expansion=\(expansion.map(\.size)), collapse=\(collapse.map(\.size))")
     }
 
     /// Read the native presentation pixels, not the target SwiftUI layout proposal.
@@ -129,11 +134,24 @@ private struct SurfaceHarness: View {
     let recorder: SurfaceEnvironment
     let preset: String
     let animationScope: TWAnimationScope
+    var native = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         recorder.reduceMotion = reduceMotion
-        return MotionSurface(expanded: model.expanded, motionClasses: "animate-\(preset) duration-1000 delay-0", animationScope: animationScope)
-            .frame(width: 400, height: 180)
-            .background(.white)
+        return Group {
+            if native {
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles").accessibilityHidden(true)
+                    Text("Hello, SwiftUI").contentTransition(.identity)
+                }
+                .padding(model.expanded ? 32 : 12)
+                .background(RoundedRectangle(cornerRadius: model.expanded ? 16 : 8).fill(.blue))
+                .animation(.linear(duration: 1), value: model.expanded)
+            } else {
+                MotionSurface(expanded: model.expanded, motionClasses: "animate-\(preset) duration-1000 delay-0", animationScope: animationScope)
+            }
+        }
+        .frame(width: 400, height: 180)
+        .background(.white)
     }
 }
