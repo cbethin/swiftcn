@@ -294,8 +294,16 @@ Gesture helpers and responsive variants remain outside this initial release.
 Run the interactive macOS catalog:
 
 ```sh
-swift run --package-path Examples/Catalog SwiftCNCatalog
+bash Scripts/run-demo.sh
 ```
+
+The script builds and opens `artifacts/SwiftCN Demo.app`.
+The app includes components, a motion playground, and a global rules playground.
+Change animation presets and timing while toggling the styled surface.
+Edit shared classes, palettes, spacing, and subtree overrides in the global rules playground.
+The appearance picker selects system, light, or dark mode.
+
+Run the executable directly with `swift run --package-path Examples/Catalog SwiftCNCatalog`.
 
 Render light and dark catalog images:
 

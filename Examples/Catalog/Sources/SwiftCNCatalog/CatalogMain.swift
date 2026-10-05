@@ -39,7 +39,8 @@ private enum CatalogError: Error { case renderFailed }
 
 struct SwiftCNCatalogApp: App {
     var body: some Scene {
-        WindowGroup("swiftcn") { CatalogView() }
-            .windowResizability(.contentSize)
+        WindowGroup("swiftcn Demo") { DemoView() }
+            .defaultSize(width: 1040, height: 800)
+            .windowResizability(.contentMinSize)
     }
 }
