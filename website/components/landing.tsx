@@ -47,8 +47,8 @@ export function Landing() {
         <div id="example-panel" role="tabpanel" aria-labelledby={`example-tab-${selected}`}>
           <div className="example-code"><span className="example-kicker">{example.tag}</span><pre><code>{example.code}</code></pre></div>
           <div className="visual-example">
-            <motion.div className={`illustration-card ${expanded ? 'expanded' : ''}`} layout transition={{ type: 'spring', bounce: .1, duration: reduced ? 0 : .4 }}>
-              <motion.div layout className="illustration-icon" transition={{ duration: reduced ? 0 : .3 }}><img className="bird-mark" src={sitePath('/brand/swiftcn-bird-v1.png')} alt="" width={36} height={36} /></motion.div>
+            <motion.div className="illustration-card" initial={false} animate={{ width: expanded ? 365 : 290, padding: expanded ? 24 : 19 }} transition={{ type: 'spring', bounce: .05, duration: reduced ? 0 : .4 }}>
+              <div className="illustration-icon"><img className="bird-mark" src={sitePath('/brand/swiftcn-bird-v1.png')} alt="" width={36} height={36} /></div>
               <div><strong>A little more native.</strong><p>Less ceremony. More SwiftUI.</p></div>
               <motion.button type="button" onClick={() => setExpanded(!expanded)} animate={{ scale: 1 }} whileTap={reduced ? undefined : { scale: 0.97 }} aria-expanded={expanded}>{expanded ? 'Back to simple' : 'Make some room'} <ArrowRight size={14} /></motion.button>
             </motion.div>
