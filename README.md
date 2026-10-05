@@ -276,6 +276,60 @@ Text("Details").tw(.p(4), .animation(.spring), .duration(0.2), .delay(0.05))
 
 Typed duration and delay utilities accept seconds.
 
+## Shared elements
+
+Pair views with `.twShared` and a native `@Namespace`.
+Use `.twAnimation` on their common container to animate layout and content when a state value changes.
+
+```swift
+struct HeroCard: View {
+    @Namespace private var hero
+    @State private var expanded = false
+
+    private var cover: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .fill(.indigo)
+            .twShared("cover", in: hero)
+    }
+
+    var body: some View {
+        VStack {
+            ZStack {
+                if expanded {
+                    cover.frame(width: 320, height: 200)
+                } else {
+                    cover.frame(width: 80, height: 80)
+                }
+            }
+            Button("Toggle") { expanded.toggle() }
+                .buttonStyle(.tw("button-primary"))
+        }
+        .twAnimation("animate-smooth duration-400", value: expanded)
+    }
+}
+```
+
+`.twShared` wraps native [matched geometry](https://developer.apple.com/documentation/swiftui/view/matchedgeometryeffect(id:in:properties:anchor:issource:)).
+It accepts any `Hashable` ID and retains the native `properties`, `anchor`, and `isSource` options.
+Apply it before different fixed frames to interpolate their sizes.
+Apply it after `.tw` when the pair represents the entire styled surface.
+Use `properties: .position` for a title that keeps its destination size.
+
+Use the same namespace and ID at both endpoints within one view hierarchy.
+Keep one source per pair. If both endpoints stay visible, mark the follower with `isSource: false`.
+The helper synchronizes geometry; use native transitions for content appearance and removal.
+It does not connect independent windows or presentation hosts.
+Reduce Motion suppresses the shared geometry animation while retaining its final geometry.
+
+`.twAnimation` uses the same presets, timing classes, named rules, and custom animations as `.tw`.
+It also accepts typed utilities: `.twAnimation(.animation(.smooth), .duration(0.4), value: expanded)`.
+It reads animation defaults from `rules.view`. Non-animation utilities do not decorate the container.
+
+Without a preset, it preserves the caller's transaction.
+Explicit presets respect Reduce Motion and `Transaction.disablesAnimations`.
+The watched value controls the transaction for the subtree, including other changes in the same update.
+Use `.tw` for animation limited to styled values; use `.twAnimation` for layout, insertion, removal, and shared elements.
+
 ## Rendering contract
 
 The renderer uses a stable content structure when state patches change values.
@@ -298,7 +352,7 @@ bash Scripts/run-demo.sh
 ```
 
 The script builds and opens `artifacts/SwiftCN Demo.app`.
-The app includes components, a motion playground, and a global rules playground.
+The app includes components, motion, shared elements, and global rules playgrounds.
 Change animation presets and timing while toggling the styled surface.
 Edit shared classes, palettes, spacing, and subtree overrides in the global rules playground.
 The appearance picker selects system, light, or dark mode.

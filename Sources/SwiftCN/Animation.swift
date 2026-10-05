@@ -47,3 +47,32 @@ struct TWResolvedMotion {
         transaction.animation = reduceMotion ? nil : preset.resolve(duration: duration, delay: delay)
     }
 }
+
+extension View {
+    /// Animate a subtree when a native state value changes, using the shared preset registry.
+    /// Unlike `.tw`, this affects layout, transitions, and content as well as styled values.
+    public func twAnimation<Value: Equatable>(_ classes: String, value: Value) -> some View {
+        modifier(TWValueAnimationModifier(style: .classes(classes), value: value))
+    }
+
+    public func twAnimation<Value: Equatable>(_ styles: TWStyle..., value: Value) -> some View {
+        modifier(TWValueAnimationModifier(style: TWStyle(styles), value: value))
+    }
+}
+
+private struct TWValueAnimationModifier<Value: Equatable>: ViewModifier {
+    let style: TWStyle
+    let value: Value
+    @Environment(\.twTheme) private var theme
+    @Environment(\.twRules) private var rules
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        let motion = TWStyleResolver.resolve(TWStyle(rules.view, style), theme: theme,
+            scheme: scheme, state: TWState(), globalRules: rules).motion
+        return content.transaction(value: value) { transaction in
+            motion.update(&transaction, reduceMotion: reduceMotion)
+        }
+    }
+}

@@ -8,6 +8,80 @@ import Testing
 @MainActor
 struct MotionRenderingTests {
     @Test(arguments: [false, true])
+    func valueAnimationDrivesContentAndPreservesItsIdentity(typed: Bool) {
+        let samples = MotionSamples()
+        let model = MotionModel()
+        let recorder = ContentRecorder()
+        let view = ValueAnimationHarness(model: model, recorder: recorder, typed: typed, classes: "animate-probe",
+            typedPreset: TWAnimation(Animation(MotionProbeAnimation(samples: samples))))
+            .twRules(.init(animations: ["probe": TWAnimation(Animation(MotionProbeAnimation(samples: samples)))]))
+        withHost(view) { host in
+            #expect(samples.times.isEmpty)
+            model.active = true
+            settle(host, seconds: 0.6)
+            expectMotion(samples, reduceMotion: recorder.reduceMotion)
+            #expect(Set(recorder.identities).count == 1)
+            if recorder.reduceMotion == true { #expect(recorder.animations.allSatisfy { $0 == nil }) }
+            samples.clear()
+            model.active = false
+            settle(host, seconds: 0.6)
+            expectMotion(samples, reduceMotion: recorder.reduceMotion)
+            #expect(Set(recorder.identities).count == 1)
+        }
+    }
+
+    @Test func valueAnimationHonorsDisabledTransactionsAndPreservesUnrelatedUpdates() {
+        let samples = MotionSamples()
+        let model = MotionModel()
+        let recorder = ContentRecorder()
+        let view = ValueAnimationHarness(model: model, recorder: recorder, typed: false, classes: "animate-probe")
+            .twRules(.init(animations: ["probe": TWAnimation(Animation(MotionProbeAnimation(samples: samples)))]))
+        withHost(view) { host in
+            model.unrelated = true
+            settle(host, seconds: 0.1)
+            #expect(samples.times.isEmpty)
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { model.active = true }
+            settle(host, seconds: 0.2)
+            #expect(samples.times.isEmpty)
+            #expect(Set(recorder.identities).count == 1)
+        }
+    }
+
+    @Test func valueAnimationResolvesGlobalRulesAndTimingAtTheContainer() {
+        let model = MotionModel()
+        let recorder = ContentRecorder()
+        let view = ValueAnimationHarness(model: model, recorder: recorder, typed: false, classes: "layout-motion delay-50")
+            .twRules(.init(named: ["layout-motion": "animate-settle duration-200"], animations: [
+                "settle": TWAnimation { .smooth(duration: $0) }
+            ]))
+        withHost(view) { host in
+            recorder.animations.removeAll()
+            model.active = true
+            settle(host, seconds: 0.1)
+            if recorder.reduceMotion == true {
+                #expect(recorder.animations.allSatisfy { $0 == nil })
+            } else {
+                #expect(recorder.animations.contains(Animation.smooth(duration: 0.2).delay(0.05)))
+            }
+        }
+    }
+
+    @Test func valueAnimationWithoutAPresetKeepsTheNativeCallerAnimation() {
+        let model = MotionModel()
+        let recorder = ContentRecorder()
+        let native = Animation.linear(duration: 0.2)
+        let view = ValueAnimationHarness(model: model, recorder: recorder, typed: false, classes: "duration-100")
+        withHost(view) { host in
+            recorder.animations.removeAll()
+            withAnimation(native) { model.active = true }
+            settle(host, seconds: 0.1)
+            #expect(recorder.animations.contains(native))
+        }
+    }
+
+    @Test(arguments: [false, true])
     func styleChangesInvokeNativeInterpolationWithoutAnimatingContent(dynamicString: Bool) {
         let samples = MotionSamples()
         let native = Animation(MotionProbeAnimation(samples: samples))
@@ -112,6 +186,7 @@ private struct MotionProbeAnimation: CustomAnimation {
 
 @MainActor private final class MotionModel: ObservableObject {
     @Published var active = false
+    @Published var unrelated = false
 }
 
 @MainActor private final class ContentRecorder {
@@ -131,6 +206,25 @@ private struct MotionHarness: View {
                 ? "\(model.active ? "opacity-100" : "opacity-20") animate-probe"
                 : "opacity-20 active:opacity-100 animate-probe",
                 state: .init(isPressed: model.active))
+    }
+}
+
+private struct ValueAnimationHarness: View {
+    @ObservedObject var model: MotionModel
+    let recorder: ContentRecorder
+    let typed: Bool
+    let classes: String
+    var typedPreset: TWAnimation? = nil
+
+    var body: some View {
+        let content = MotionContent(recorder: recorder, active: model.active)
+            .offset(x: model.unrelated ? 10 : 0)
+            .transaction { recorder.animations.append($0.animation) }
+        if typed {
+            content.twAnimation(.animation(typedPreset ?? .spring), value: model.active)
+        } else {
+            content.twAnimation(classes, value: model.active)
+        }
     }
 }
 

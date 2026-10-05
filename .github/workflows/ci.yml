@@ -26,6 +26,7 @@ jobs:
       - name: Native tests
         env:
           SWIFTCN_EXPECT_MOTION: "1"
+          SWIFTCN_SHARED_ARTIFACTS: artifacts/shared-elements
         run: |
           # Hosted macOS images enable Reduce Motion. Restore it before image comparisons.
           swiftcn_motion_setting=false
@@ -54,6 +55,8 @@ jobs:
           name: swiftcn-visual-evidence
           path: |
             artifacts/catalog-*.png
+            artifacts/shared-*.png
+            artifacts/shared-elements/
             artifacts/visual-diffs/
             artifacts/ios-visual/*.png
             Tests/SwiftCNVisualTests/__Snapshots__/macos-15-xcode-16.4/

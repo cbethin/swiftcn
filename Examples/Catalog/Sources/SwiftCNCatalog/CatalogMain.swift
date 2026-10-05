@@ -11,29 +11,39 @@ struct CatalogLauncher {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             NSApplication.shared.setActivationPolicy(.prohibited)
             for scheme in [ColorScheme.light, .dark] {
-                // A native host also captures AppKit-backed controls such as TextField.
-                let host = NSHostingView(rootView: CatalogView()
-                    .environment(\.demoMotionEnabled, false)
-                    .environment(\.colorScheme, scheme))
-                host.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
-                host.setFrameSize(host.fittingSize)
-                let window = NSWindow(contentRect: host.bounds, styleMask: [.borderless], backing: .buffered, defer: false)
-                window.contentView = host
-                host.layoutSubtreeIfNeeded()
-                RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
-                guard let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
-                    throw CatalogError.renderFailed
+                let appearance = scheme == .dark ? "dark" : "light"
+                try render(CatalogView(), scheme: scheme, name: "catalog-\(appearance).png", directory: directory)
+                for expanded in [false, true] {
+                    let layout = expanded ? "detail" : "compact"
+                    try render(SharedElementPlayground(expanded: expanded).frame(width: 980, height: 820),
+                        scheme: scheme, name: "shared-\(layout)-\(appearance).png", directory: directory)
                 }
-                host.cacheDisplay(in: host.bounds, to: bitmap)
-                guard let data = bitmap.representation(using: .png, properties: [:]) else { throw CatalogError.renderFailed }
-                window.contentView = nil
-                let name = scheme == .dark ? "catalog-dark.png" : "catalog-light.png"
-                try data.write(to: directory.appendingPathComponent(name))
-                print("Rendered \(name)")
             }
             return
         }
         SwiftCNCatalogApp.main()
+    }
+
+    @MainActor private static func render<V: View>(_ view: V, scheme: ColorScheme,
+                                                  name: String, directory: URL) throws {
+        // A native host also captures AppKit-backed controls such as TextField.
+        let host = NSHostingView(rootView: view
+            .foregroundStyle(TWTheme.standard.color(.foreground, scheme: scheme))
+            .background(TWTheme.standard.color(.background, scheme: scheme))
+            .environment(\.demoMotionEnabled, false)
+            .environment(\.colorScheme, scheme))
+        host.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
+        host.setFrameSize(host.fittingSize)
+        let window = NSWindow(contentRect: host.bounds, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = host
+        defer { window.contentView = nil }
+        host.layoutSubtreeIfNeeded()
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
+        guard let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { throw CatalogError.renderFailed }
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        guard let data = bitmap.representation(using: .png, properties: [:]) else { throw CatalogError.renderFailed }
+        try data.write(to: directory.appendingPathComponent(name))
+        print("Rendered \(name)")
     }
 }
 

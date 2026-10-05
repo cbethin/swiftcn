@@ -10,6 +10,8 @@ struct DemoView: View {
                 .tabItem { Label("Components", systemImage: "square.grid.2x2") }
             MotionPlayground()
                 .tabItem { Label("Motion", systemImage: "waveform.path") }
+            SharedElementPlayground()
+                .tabItem { Label("Shared elements", systemImage: "rectangle.on.rectangle") }
             GlobalRulesPlayground()
                 .tabItem { Label("Global rules", systemImage: "slider.horizontal.3") }
         }
