@@ -24,7 +24,12 @@ struct CarouselExample: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             CNCarousel(options, selection: $optionalSelection, classes: "h-[160]") { option in
-                CNCard { Text(option.title).tw("text-xl font-semibold"); Text("Swipe or scroll to the next page.") }.tw("p-4")
+                CNCard {
+                    CNCardHeader {
+                        CNCardTitle { Text(option.title) }
+                        CNCardDescription("Swipe or scroll to the next page.")
+                    }
+                }.tw("p-4")
             }
 
         }
