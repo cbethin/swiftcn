@@ -6,7 +6,6 @@ struct MotionSurface: View {
     let expanded: Bool
     let motionClasses: String
     let animationScope: TWAnimationScope
-    private var motion = DemoMotion()
 
     init(expanded: Bool, motionClasses: String, animationScope: TWAnimationScope = .all) {
         self.expanded = expanded
@@ -21,8 +20,8 @@ struct MotionSurface: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "sparkles")
-                .symbolEffect(.bounce, options: .speed(1.4), value: expanded)
-                .symbolEffectsRemoved(!motion.isEnabled || motionClasses.split(separator: " ").contains("animate-none"))
+                .demoSymbolBounce(expanded, speed: 1.4,
+                    enabled: !motionClasses.split(separator: " ").contains("animate-none"))
                 .accessibilityHidden(true)
             Text("Hello, SwiftUI")
                 // Keep the label's ink fixed while its foreground and surrounding layout change.
@@ -30,4 +29,5 @@ struct MotionSurface: View {
         }
         .tw(Self.classes(expanded: expanded, motion: motionClasses), value: expanded, animationScope: animationScope)
     }
+
 }

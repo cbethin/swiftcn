@@ -71,9 +71,16 @@ struct TWModifier: ViewModifier {
             .modifier(phase(.layout, appearance: appearance))
             .modifier(phase(.decoration, appearance: appearance))
             .modifier(phase(.effects, appearance: appearance))
-            .modifier(TWDrivenAnimationModifier(motion: appearance.motion, value: animationValue,
-                appliesToRoot: animationValue != nil && animationScope != .content,
-                animationID: animationValue != nil ? animationID : nil))
+            .transaction(value: animationValue) { transaction in
+                if animationValue != nil {
+                    transaction[TWAnimationChangeKey.self] = animationID
+                    // Intrinsic size and placement interpolate at the surface boundary.
+                    if animationScope != .content { appearance.motion.update(&transaction, reduceMotion: reduceMotion) }
+                }
+            }
+            .transaction { transaction in
+                transaction[TWCallerAnimationKey.self] = TWCallerAnimation(animation: transaction.animation)
+            }
             .onHover { isHovered = $0 }
             .transformEnvironment(\.twGroups) { inherited in
                 if let name = appearance.group {

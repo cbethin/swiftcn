@@ -75,34 +75,6 @@ struct TWResolvedMotion {
     }
 }
 
-/// Use SwiftUI's native value animation driver to keep presentation geometry advancing.
-/// A nil preset preserves the caller; an explicit `animate-none` still cancels it.
-struct TWDrivenAnimationModifier<Value: Equatable>: ViewModifier {
-    let motion: TWResolvedMotion
-    let value: Value
-    var appliesToRoot = true
-    var animationID: UUID? = nil
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    func body(content: Content) -> some View {
-        content
-            .transaction { transaction in
-                if !appliesToRoot || motion.preset == nil,
-                   let caller = transaction[TWCallerAnimationKey.self] {
-                    transaction.animation = caller.animation
-                }
-            }
-            .transaction(value: value) { transaction in
-                if let animationID { transaction[TWAnimationChangeKey.self] = animationID }
-            }
-            .animation(appliesToRoot && !reduceMotion
-                ? motion.preset?.resolve(duration: motion.duration, delay: motion.delay) : nil, value: value)
-            .transaction { transaction in
-                transaction[TWCallerAnimationKey.self] = TWCallerAnimation(animation: transaction.animation)
-            }
-    }
-}
-
 extension View {
     /// Animate a subtree when a native state value changes, using the shared preset registry.
     /// Unlike `.tw`, this affects layout, transitions, and content as well as styled values.
@@ -125,6 +97,7 @@ struct TWValueAnimationModifier<Value: Equatable>: ViewModifier {
     @Environment(\.twTheme) private var theme
     @Environment(\.twRules) private var rules
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.twGroups) private var groups
     @Environment(\.isEnabled) private var isEnabled
     @State private var isHovered = false
@@ -141,7 +114,9 @@ struct TWValueAnimationModifier<Value: Equatable>: ViewModifier {
         activeState.isHovered = activeState.isHovered || isHovered
         let motion = TWStyleResolver.resolve(TWStyle(rules.view, style), theme: theme,
             scheme: scheme, state: activeState, globalRules: rules, groupStates: groups.states, target: nil).motion
-        return content.modifier(TWDrivenAnimationModifier(motion: motion, value: value))
+        return content.transaction(value: value) { transaction in
+            motion.update(&transaction, reduceMotion: reduceMotion)
+        }
         .onHover { isHovered = $0 }
     }
 }

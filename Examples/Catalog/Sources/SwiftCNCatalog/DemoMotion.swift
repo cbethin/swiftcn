@@ -24,6 +24,25 @@ struct DemoMotion: DynamicProperty {
 extension View {
     func demoEntrance(delay: Double = 0) -> some View { modifier(DemoEntrance(delay: delay)) }
     func demoNumber(_ value: Int) -> some View { modifier(DemoNumber(value: value)) }
+    func demoSymbolBounce<Value: Equatable>(_ value: Value, speed: Double = 1.5, enabled: Bool = true) -> some View {
+        modifier(DemoSymbolBounce(value: value, speed: speed, enabled: enabled))
+    }
+}
+
+private struct DemoSymbolBounce<Value: Equatable>: ViewModifier {
+    let value: Value
+    let speed: Double
+    let enabled: Bool
+    private var motion = DemoMotion()
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if enabled && motion.isEnabled {
+            content.symbolEffect(.bounce, options: .speed(speed), value: value)
+        } else {
+            // On macOS 15, removing an installed effect can stop the parent's layout animation.
+            content
+        }
+    }
 }
 
 private struct DemoEntrance: ViewModifier {

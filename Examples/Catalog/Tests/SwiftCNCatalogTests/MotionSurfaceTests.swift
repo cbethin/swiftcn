@@ -8,12 +8,13 @@ import Testing
 @Suite("Motion demo geometry", .serialized)
 @MainActor
 struct MotionSurfaceTests {
-    @Test func expansionAndCollapseInterpolateActualCardSize() throws {
-        try check(preset: "linear", expectsMotion: true)
+    @Test(arguments: [false, true])
+    func expansionAndCollapseInterpolateActualCardSize(demoEffectsEnabled: Bool) throws {
+        try check(preset: "linear", expectsMotion: true, demoEffectsEnabled: demoEffectsEnabled)
     }
 
     @Test func noneChangesSizeImmediately() throws {
-        try check(preset: "none", expectsMotion: false)
+        try check(preset: "none", expectsMotion: false, demoEffectsEnabled: true)
     }
 
     @Test func nativePaddingUsesTheSamePresentationCapture() throws {
@@ -24,26 +25,22 @@ struct MotionSurfaceTests {
         try check(preset: "linear", expectsMotion: true, plainUtilities: true)
     }
 
-    @Test func nativePaddingWithRemovedSymbolEffectsStillInterpolates() throws {
-        try check(preset: "linear", expectsMotion: true, native: true, removedSymbolEffects: true)
-    }
-
     @Test(arguments: [TWAnimationScope.surface, .layout])
     func scopedMotionKeepsTheLabelFixed(scope: TWAnimationScope) throws {
         try check(preset: "linear", expectsMotion: scope != .content, animationScope: scope)
     }
 
     private func check(preset: String, expectsMotion: Bool, animationScope: TWAnimationScope = .all,
-                       native: Bool = false, plainUtilities: Bool = false, removedSymbolEffects: Bool = false) throws {
+                       native: Bool = false, plainUtilities: Bool = false, demoEffectsEnabled: Bool = false) throws {
         let model = SurfaceModel()
         let recorder = SurfaceEnvironment()
         let blue = TWAdaptiveColor(light: .blue, dark: .blue)
         let host = NSHostingView(rootView: SurfaceHarness(model: model, recorder: recorder, preset: preset,
-            animationScope: animationScope, native: native, plainUtilities: plainUtilities, removedSymbolEffects: removedSymbolEffects)
+            animationScope: animationScope, native: native, plainUtilities: plainUtilities)
             .twTheme(TWTheme(colors: [.primary: blue, .accent: blue,
                 .onPrimary: .init(light: .white, dark: .white), .foreground: .init(light: .black, dark: .black)]))
             .environment(\.colorScheme, .light)
-            .environment(\.demoMotionEnabled, false))
+            .environment(\.demoMotionEnabled, demoEffectsEnabled))
         host.frame = CGRect(x: 0, y: 0, width: 400, height: 180)
         host.wantsLayer = true
         let window = NSWindow(contentRect: host.bounds, styleMask: [.borderless], backing: .buffered, defer: false)
@@ -52,7 +49,7 @@ struct MotionSurfaceTests {
         defer { window.orderOut(nil); window.contentView = nil }
         host.layoutSubtreeIfNeeded()
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
-        let label = "\(native ? "native" : "tw")\(plainUtilities ? "-plain" : "")\(removedSymbolEffects ? "-symbols" : "")-\(preset)-\(animationScope.rawValue)"
+        let label = "\(native ? "native" : "tw")\(plainUtilities ? "-plain" : "")\(demoEffectsEnabled ? "-live" : "")-\(preset)-\(animationScope.rawValue)"
         var contentFrames: [CGRect] = []
         let compact = try bounds(host, name: "\(label)-compact", contentFrames: &contentFrames)
         var expansion: [CGRect] = []
@@ -156,24 +153,16 @@ private struct SurfaceHarness: View {
     let animationScope: TWAnimationScope
     var native = false
     var plainUtilities = false
-    var removedSymbolEffects = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         recorder.reduceMotion = reduceMotion
         return Group {
             if native {
                 HStack(spacing: 8) {
-                    if removedSymbolEffects {
-                        Image(systemName: "sparkles")
-                            .symbolEffect(.bounce, options: .speed(1.4), value: model.expanded)
-                            .symbolEffectsRemoved(true)
-                            .accessibilityHidden(true)
-                    } else {
-                        Image(systemName: "sparkles").accessibilityHidden(true)
-                    }
+                    Image(systemName: "sparkles").accessibilityHidden(true)
                     Text("Hello, SwiftUI").contentTransition(.identity)
                 }
-                .foregroundStyle(removedSymbolEffects && model.expanded ? Color.white : Color.black)
+                .foregroundStyle(.black)
                 .padding(model.expanded ? 32 : 12)
                 .background(RoundedRectangle(cornerRadius: model.expanded ? 16 : 8).fill(.blue))
                 .animation(.linear(duration: 1), value: model.expanded)
