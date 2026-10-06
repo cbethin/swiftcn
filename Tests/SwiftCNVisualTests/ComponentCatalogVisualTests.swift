@@ -52,6 +52,11 @@ struct ComponentCatalogVisualTests {
             pinCarouselScrollers(host)
         }
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.08))
+        if component == .carousel {
+            // SwiftUI can install the native scroll view during the first run-loop turn.
+            pinCarouselScrollers(host)
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.08))
+        }
         // Stop native indeterminate indicators at a reproducible frame; behavior tests cover state.
         stopIndicators(host)
         host.layoutSubtreeIfNeeded()

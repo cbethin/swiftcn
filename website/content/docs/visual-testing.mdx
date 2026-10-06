@@ -147,6 +147,8 @@ AppKit bitmap capture cannot composite the native TabView strip correctly, inclu
 
 The command screenshot ends editing before capture. This excludes the blinking caret and keyboard inset timing from static comparisons. The interactive gallery retains native autofocus and keyboard activation.
 
+The macOS carousel capture pins native scroller geometry before page layout. This prevents a late scrollbar-style change from shifting the centered content. The running gallery follows system scroll preferences.
+
 ```bash
 bash Scripts/component-visual-test.sh verify ci
 python3 Scripts/ios-visual-test.py verify ci --components
