@@ -1,9 +1,19 @@
 import SwiftUI
 import SwiftCN
+#if os(macOS)
+import AppKit
+#endif
 
 @main struct SwiftCNComponentGalleryApp: App {
+    @State private var dark = false
+    init() {
+        #if os(macOS)
+        // Native panels inherit the app appearance before SwiftUI installs their content.
+        NSApplication.shared.appearance = NSAppearance(named: .aqua)
+        #endif
+    }
     var body: some Scene {
-        WindowGroup("SwiftCN Component Gallery") { ComponentGalleryView() }
+        WindowGroup("SwiftCN Component Gallery") { ComponentGalleryView(dark: $dark) }
         #if os(macOS)
             .defaultSize(width: 1040, height: 760)
         #endif
@@ -13,7 +23,7 @@ import SwiftCN
 struct ComponentGalleryView: View {
     @State private var selection: CNComponentGallery? = .button
     @State private var query = ""
-    @State private var dark = false
+    @Binding var dark: Bool
     var body: some View {
         NavigationSplitView {
             List(CNComponentGallery.allCases.filter { query.isEmpty || $0.title.localizedStandardContains(query) }, selection: $selection) { component in
@@ -34,5 +44,10 @@ struct ComponentGalleryView: View {
                 }.tw("p-6 w-full")
             }.tw("bg-background")
         }.preferredColorScheme(dark ? .dark : .light).cnPopoverHost()
+        #if os(macOS)
+            .onChange(of: dark, initial: true) { _, dark in
+                NSApplication.shared.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+            }
+        #endif
     }
 }

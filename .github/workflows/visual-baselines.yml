@@ -41,6 +41,7 @@ jobs:
           swift test --filter CatalogNativeRenderingTests
           swift test --filter PopoverInteractionTests
           swift test --filter TouchTargetInteractionTests
+          SWIFTCN_GALLERY_APPEARANCE_TESTS=1 swift test --filter GalleryAppearanceTests
           swift test --filter NativeUtilityRenderingTests
       - name: Record candidates
         if: inputs.ios_component == ''
