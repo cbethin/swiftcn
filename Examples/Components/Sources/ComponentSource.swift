@@ -1070,13 +1070,21 @@ import SwiftUI
 import SwiftCN
 
 struct SkeletonExample: View {
-
+    @State private var isLoading = true
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            CNSkeleton(isLoading: true) {
-                VStack(alignment: .leading, spacing: 6) { Text("A workspace title"); Text("Loading a thoughtful description.").tw("text-sm") }
-            }
-
+        VStack(alignment: .leading, spacing: 20) {
+            CNAdaptiveActionLayout(spacing: 16) {
+                CNSkeleton(isLoading: isLoading, classes: "rounded-full") {
+                    CNAvatar(accessibilityLabel: "Charles Bethin", classes: "w-12 h-12") { Text("CB").lineLimit(1).minimumScaleFactor(0.5) }
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    CNSkeleton(isLoading: isLoading) { Text("Your next great project").tw("font-semibold") }
+                    CNSkeleton(isLoading: isLoading) {
+                        Text("A fresh canvas for your team.").tw("text-sm text-mutedForeground")
+                    }
+                }
+            }.frame(maxWidth: .infinity, alignment: .leading).tw("p-4 border rounded-lg w-full")
+            CNButton(isLoading ? "Reveal content" : "Show skeleton", variant: .outline) { isLoading.toggle() }
         }
     }
 }
@@ -1103,12 +1111,24 @@ import SwiftUI
 import SwiftCN
 
 struct SpinnerExample: View {
-
+    @State private var paused = false
+    private var motion: TWClasses { paused ? "cn-spin-[0]" : "" }
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            CNSpinner("Loading workspace")
-
-        }
+        VStack(alignment: .leading, spacing: 20) {
+            HStack(spacing: 12) {
+                CNSpinner("Loading workspace", classes: cn("w-6 h-6", motion))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Getting things ready").tw("text-sm font-semibold")
+                    Text("Your workspace is on its way.").tw("text-sm text-mutedForeground")
+                }
+            }
+            HStack(spacing: 20) {
+                CNSpinner("Small activity", lineWidth: 1.5, classes: cn("w-4 h-4", motion))
+                CNSpinner("Activity", classes: motion)
+                CNSpinner("Large activity", lineWidth: 3, classes: cn("w-8 h-8 text-[#6366f1]", motion))
+            }.accessibilityElement(children: .contain)
+            CNButton(paused ? "Resume animation" : "Pause animation", variant: .outline) { paused.toggle() }
+        }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 """### + "\n"
@@ -1134,16 +1154,66 @@ import SwiftUI
 import SwiftCN
 
 struct TableExample: View {
-
+    @State private var selected: Set<String> = []
+    @ScaledMetric(relativeTo: .body) private var selectionWidth: CGFloat = 48
+    private let invoices = [
+        Invoice(id: "INV-001", status: "Paid", method: "Credit card", amount: "$250.00"),
+        Invoice(id: "INV-002", status: "Pending", method: "Bank transfer", amount: "$150.00"),
+        Invoice(id: "INV-003", status: "Paid", method: "Apple Pay", amount: "$350.00"),
+        Invoice(id: "INV-004", status: "Overdue", method: "Credit card", amount: "$450.00")
+    ]
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            CNTable {
-                CNTableRow { CNTableHead("Workspace"); CNTableHead("Status") }
-                CNTableRow { CNTableCell("Design system"); CNTableCell { CNBadge("Ready") } }
-                CNTableRow { CNTableCell("Mobile app"); CNTableCell("In progress") }
+            CNAdaptiveActionLayout(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Recent invoices").tw("text-lg font-semibold")
+                    Text("Keep track of your team's payments.").tw("text-sm text-mutedForeground")
+                }
+                CNBadge("4 invoices", classes: "bg-accent text-mutedForeground")
             }
-
+            CNTable {
+                CNTableRow {
+                    CNTableHead("w-[\(selectionWidth)] px-3") { Text("") }
+                    CNTableHead("Invoice")
+                    CNTableHead("Status")
+                    CNTableHead("Payment method")
+                    CNTableHead("Amount", alignment: .trailing)
+                }
+                ForEach(invoices) { invoice in
+                    CNTableRow(isSelected: selected.contains(invoice.id)) {
+                        CNTableCell("w-[\(selectionWidth)] px-3") {
+                            CNCheckbox("", isOn: Binding(
+                                get: { selected.contains(invoice.id) },
+                                set: { if $0 { selected.insert(invoice.id) } else { selected.remove(invoice.id) } }))
+                                .accessibilityLabel("Select invoice \(invoice.id)")
+                        }
+                        CNTableCell("\(invoice.id)", classes: "font-medium")
+                        CNTableCell {
+                            HStack(spacing: 6) {
+                                Circle().tw("w-[6] h-[6] \(invoice.status == "Paid" ? "text-[#16a34a]" : invoice.status == "Overdue" ? "text-destructive" : "text-mutedForeground")").accessibilityHidden(true)
+                                Text(invoice.status)
+                            }
+                        }
+                        CNTableCell("\(invoice.method)", classes: "text-mutedForeground")
+                        CNTableCell("\(invoice.amount)", classes: "cn-mono font-medium", alignment: .trailing).cnTextUtilities()
+                    }
+                }
+                CNTableRow(classes: "bg-accent") {
+                    CNTableCell("w-[\(selectionWidth)] px-3") { Text("") }
+                    CNTableCell("Total", classes: "font-semibold")
+                    CNTableCell { Text("") }
+                    CNTableCell { Text("") }
+                    CNTableCell("$1,200.00", classes: "cn-mono font-semibold", alignment: .trailing).cnTextUtilities()
+                }
+            }
+            CNTableCaption("\(selected.count) of 4 invoices selected. Scroll horizontally to see all columns on smaller screens.")
         }
+    }
+    private struct Invoice: Identifiable {
+        let id: String
+        let status: String
+        let method: String
+        let amount: String
     }
 }
 """### + "\n"

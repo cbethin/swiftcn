@@ -18,23 +18,73 @@ import SwiftUI
 import SwiftCN
 
 struct TableExample: View {
-
+    @State private var selected: Set<String> = []
+    @ScaledMetric(relativeTo: .body) private var selectionWidth: CGFloat = 48
+    private let invoices = [
+        Invoice(id: "INV-001", status: "Paid", method: "Credit card", amount: "$250.00"),
+        Invoice(id: "INV-002", status: "Pending", method: "Bank transfer", amount: "$150.00"),
+        Invoice(id: "INV-003", status: "Paid", method: "Apple Pay", amount: "$350.00"),
+        Invoice(id: "INV-004", status: "Overdue", method: "Credit card", amount: "$450.00")
+    ]
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            CNTable {
-                CNTableRow { CNTableHead("Workspace"); CNTableHead("Status") }
-                CNTableRow { CNTableCell("Design system"); CNTableCell { CNBadge("Ready") } }
-                CNTableRow { CNTableCell("Mobile app"); CNTableCell("In progress") }
+            CNAdaptiveActionLayout(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Recent invoices").tw("text-lg font-semibold")
+                    Text("Keep track of your team's payments.").tw("text-sm text-mutedForeground")
+                }
+                CNBadge("4 invoices", classes: "bg-accent text-mutedForeground")
             }
-
+            CNTable {
+                CNTableRow {
+                    CNTableHead("w-[\(selectionWidth)] px-3") { Text("") }
+                    CNTableHead("Invoice")
+                    CNTableHead("Status")
+                    CNTableHead("Payment method")
+                    CNTableHead("Amount", alignment: .trailing)
+                }
+                ForEach(invoices) { invoice in
+                    CNTableRow(isSelected: selected.contains(invoice.id)) {
+                        CNTableCell("w-[\(selectionWidth)] px-3") {
+                            CNCheckbox("", isOn: Binding(
+                                get: { selected.contains(invoice.id) },
+                                set: { if $0 { selected.insert(invoice.id) } else { selected.remove(invoice.id) } }))
+                                .accessibilityLabel("Select invoice \(invoice.id)")
+                        }
+                        CNTableCell("\(invoice.id)", classes: "font-medium")
+                        CNTableCell {
+                            HStack(spacing: 6) {
+                                Circle().tw("w-[6] h-[6] \(invoice.status == "Paid" ? "text-[#16a34a]" : invoice.status == "Overdue" ? "text-destructive" : "text-mutedForeground")").accessibilityHidden(true)
+                                Text(invoice.status)
+                            }
+                        }
+                        CNTableCell("\(invoice.method)", classes: "text-mutedForeground")
+                        CNTableCell("\(invoice.amount)", classes: "cn-mono font-medium", alignment: .trailing).cnTextUtilities()
+                    }
+                }
+                CNTableRow(classes: "bg-accent") {
+                    CNTableCell("w-[\(selectionWidth)] px-3") { Text("") }
+                    CNTableCell("Total", classes: "font-semibold")
+                    CNTableCell { Text("") }
+                    CNTableCell { Text("") }
+                    CNTableCell("$1,200.00", classes: "cn-mono font-semibold", alignment: .trailing).cnTextUtilities()
+                }
+            }
+            CNTableCaption("\(selected.count) of 4 invoices selected. Scroll horizontally to see all columns on smaller screens.")
         }
+    }
+    private struct Invoice: Identifiable {
+        let id: String
+        let status: String
+        let method: String
+        let amount: String
     }
 }
 ```
 
 ## Native behavior
 
-Compose rich cells through native Grid, GridRow, CNTableHead, and CNTableCell parts. Header cells expose the header accessibility trait. Wrap wide content in CNScrollArea when needed; use CNDataTable for native selection and sorting.
+Compose rich aligned columns with native Grid, GridRow, CNTableHead, and CNTableCell parts. The table fills its viewport and scrolls horizontally when columns need more room. Header cells expose accessibility headings. Rows have separators, immediate hover feedback, and a caller-controlled selected appearance. Cells accept leading, center, or trailing alignment. CNTableCaption adds supporting text outside the table. Child checkboxes, buttons, and editors remain native controls; use CNDataTable for native record sorting.
 
 ## Style and compose
 
@@ -60,29 +110,74 @@ import SwiftCN
 
 /// Native Grid parts for tables with rich cells. Use CNDataTable for selectable, sortable records.
 public struct CNTable<Content: View>: View {
+    @State private var viewportWidth: CGFloat = 0
+    @Environment(\.twTheme) private var theme
     private let classes: TWClasses
     private let content: Content
     public init(_ classes: TWClasses = "", @ViewBuilder content: () -> Content) { self.classes = classes; self.content = content() }
-    public var body: some View { Grid(alignment: .leading, horizontalSpacing: 0, verticalSpacing: 0) { content }.tw(cn("table", classes)) }
+    public var body: some View {
+        ScrollView(.horizontal) {
+            Grid(alignment: .leading, horizontalSpacing: 0, verticalSpacing: 0) { content }
+                .frame(minWidth: viewportWidth, alignment: .leading)
+        }.fixedSize(horizontal: false, vertical: true)
+            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+            .background(GeometryReader { proxy in Color.clear.preference(key: CNTableWidthKey.self, value: proxy.size.width) })
+            .onPreferenceChange(CNTableWidthKey.self) { viewportWidth = $0 }
+            .tw(cn("table", classes)).clipShape(RoundedRectangle(cornerRadius: theme.radius(.lg)))
+    }
+}
+private struct CNTableWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 public struct CNTableRow<Content: View>: View {
+    private let isSelected: Bool
+    private let classes: TWClasses
     private let content: Content
-    public init(@ViewBuilder content: () -> Content) { self.content = content() }
-    public var body: some View { GridRow { content } }
+    public init(isSelected: Bool = false, classes: TWClasses = "", @ViewBuilder content: () -> Content) {
+        self.isSelected = isSelected; self.classes = classes; self.content = content()
+    }
+    public var body: some View {
+        GridRow { content }.tw(cn("table-row", isSelected ? "table-row-selected" : "", classes))
+            .overlay(alignment: .bottom) { CNSeparator().allowsHitTesting(false) }
+            .accessibilityElement(children: .contain).accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
 }
 public struct CNTableCell<Content: View>: View {
+    private let alignment: Alignment
     private let classes: TWClasses
     private let content: Content
-    public init(_ classes: TWClasses = "", @ViewBuilder content: () -> Content) { self.classes = classes; self.content = content() }
-    public init(_ text: LocalizedStringKey, classes: TWClasses = "") where Content == Text { self.classes = classes; content = Text(text) }
-    public var body: some View { content.tw(cn("table-cell", classes)) }
+    public init(_ classes: TWClasses = "", alignment: Alignment = .leading, @ViewBuilder content: () -> Content) {
+        self.classes = classes; self.alignment = alignment; self.content = content()
+    }
+    public init(_ text: LocalizedStringKey, classes: TWClasses = "", alignment: Alignment = .leading) where Content == Text {
+        self.classes = classes; self.alignment = alignment; content = Text(text)
+    }
+    public var body: some View {
+        content.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment).tw(cn("table-cell", classes))
+            .gridColumnAlignment(alignment.horizontal)
+    }
 }
 public struct CNTableHead<Content: View>: View {
+    private let alignment: Alignment
     private let classes: TWClasses
     private let content: Content
-    public init(_ classes: TWClasses = "", @ViewBuilder content: () -> Content) { self.classes = classes; self.content = content() }
-    public init(_ text: LocalizedStringKey, classes: TWClasses = "") where Content == Text { self.classes = classes; content = Text(text) }
-    public var body: some View { content.tw(cn("table-header", classes)).accessibilityAddTraits(.isHeader) }
+    public init(_ classes: TWClasses = "", alignment: Alignment = .leading, @ViewBuilder content: () -> Content) {
+        self.classes = classes; self.alignment = alignment; self.content = content()
+    }
+    public init(_ text: LocalizedStringKey, classes: TWClasses = "", alignment: Alignment = .leading) where Content == Text {
+        self.classes = classes; self.alignment = alignment; content = Text(text)
+    }
+    public var body: some View {
+        content.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment).tw(cn("table-header", classes))
+            .gridColumnAlignment(alignment.horizontal).accessibilityAddTraits(.isHeader)
+    }
+}
+public struct CNTableCaption: View {
+    private let title: LocalizedStringKey
+    private let classes: TWClasses
+    public init(_ title: LocalizedStringKey, classes: TWClasses = "") { self.title = title; self.classes = classes }
+    public var body: some View { Text(title).tw(cn("table-caption", classes)) }
 }
 
 /// A native column builder supports rich cells and sortable key paths without a dynamic-column OS restriction.

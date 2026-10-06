@@ -419,9 +419,9 @@
     "name": "Skeleton",
     "slug": "skeleton",
     "symbol": "CNSkeleton",
-    "source": "Display.swift",
+    "source": "Loading.swift",
     "example": "SkeletonExample.swift",
-    "notes": "Native redaction keeps the real content in the tree. Loading content is disabled and hidden from accessibility. No repeating timer or motion runs while the placeholder is idle."
+    "notes": "Native redaction keeps the same controls mounted while a subtle gradient shimmers across the placeholder. Loading content stays disabled and hidden from accessibility. The skeleton-motion recipe uses cn-shimmer-[1.6], in seconds; set it to cn-shimmer-[0] to stop shimmer. The native timeline pauses offscreen, in inactive scenes, and under Reduce Motion. Use cnLoadingPhase for reproducible static previews."
   },
   {
     "name": "Slider",
@@ -435,9 +435,9 @@
     "name": "Spinner",
     "slug": "spinner",
     "symbol": "CNSpinner",
-    "source": "ValueControls.swift",
+    "source": "Loading.swift",
     "example": "SpinnerExample.swift",
-    "notes": "A native circular ProgressView presents indeterminate activity with an accessible label. The platform owns its spinning animation. Classes style the surrounding view and optional native control tint."
+    "notes": "A custom circular ring uses a rounded arc and quiet track. Its label describes activity to accessibility without adding visible text. Classes control size and color; lineWidth controls the stroke. The spinner-motion recipe uses cn-spin-[0.9], in seconds; cn-spin-[0] pauses it. Native timeline updates stop offscreen, in inactive scenes, and under Reduce Motion. Use cnLoadingPhase for reproducible static previews."
   },
   {
     "name": "Switch",
@@ -453,7 +453,7 @@
     "symbol": "CNTable",
     "source": "Table.swift",
     "example": "TableExample.swift",
-    "notes": "Compose rich cells through native Grid, GridRow, CNTableHead, and CNTableCell parts. Header cells expose the header accessibility trait. Wrap wide content in CNScrollArea when needed; use CNDataTable for native selection and sorting."
+    "notes": "Compose rich aligned columns with native Grid, GridRow, CNTableHead, and CNTableCell parts. The table fills its viewport and scrolls horizontally when columns need more room. Header cells expose accessibility headings. Rows have separators, immediate hover feedback, and a caller-controlled selected appearance. Cells accept leading, center, or trailing alignment. CNTableCaption adds supporting text outside the table. Child checkboxes, buttons, and editors remain native controls; use CNDataTable for native record sorting."
   },
   {
     "name": "Tabs",

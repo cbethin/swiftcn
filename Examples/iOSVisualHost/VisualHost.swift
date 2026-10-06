@@ -34,6 +34,7 @@ struct SwiftCNVisualHost: App {
                 .environment(\.locale, Locale(identifier: "en_US_POSIX"))
                 .environment(\.calendar, Calendar(identifier: .gregorian))
                 .environment(\.timeZone, TimeZone(secondsFromGMT: 0)!)
+                .cnLoadingPhase(0.35)
                 .transaction { $0.animation = nil }
                 .task {
                     // Signal only after the native controls settle. The capture script polls this file.

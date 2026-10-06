@@ -93,3 +93,4 @@ jobs:
             Tests/SwiftCNVisualTests/__Snapshots__/components-macos-15-xcode-16.4/
             Tests/SwiftCNVisualTests/__Snapshots__/components-ios-18.5-iphone-16/
             artifacts/visual-diffs/
+            artifacts/ios-components/*-launch.log

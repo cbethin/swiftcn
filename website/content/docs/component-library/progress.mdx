@@ -86,14 +86,6 @@ public struct CNProgress: View {
         ProgressView(title, value: value, total: total).tw(cn("progress feedback-motion", classes), value: value, animationScope: .content).cnControlUtilities()
     }
 }
-public struct CNSpinner: View {
-    private let title: LocalizedStringKey
-    private let classes: TWClasses
-    public init(_ title: LocalizedStringKey = "Loading", classes: TWClasses = "") { self.title = title; self.classes = classes }
-    public var body: some View {
-        ProgressView(title).progressViewStyle(.circular).tw(cn("spinner", classes)).cnControlUtilities()
-    }
-}
 public struct CNDatePicker: View {
     private let title: LocalizedStringKey
     @Binding private var date: Date

@@ -21,7 +21,7 @@ struct ComponentCatalogVisualTests {
     func catalog(component: CNComponentGallery, dark: Bool) throws {
         try snapshot(component, dark: dark, width: 720, large: false)
     }
-    @Test(arguments: [CNComponentGallery.field, .input_group, .message, .questionnaire, .empty, .card, .radio_group, .typography, .pagination, .sidebar]
+    @Test(arguments: [CNComponentGallery.field, .input_group, .message, .questionnaire, .empty, .card, .radio_group, .typography, .pagination, .sidebar, .skeleton, .spinner, .table]
         .filter { selectedComponents.contains($0) })
     func narrowAndLarge(component: CNComponentGallery) throws {
         try snapshot(component, dark: false, width: 320, large: true)
@@ -44,6 +44,7 @@ struct ComponentCatalogVisualTests {
             .environment(\.timeZone, TimeZone(secondsFromGMT: 0)!)
             .environment(\.calendar, Calendar(identifier: .gregorian))
             .scrollIndicators(.hidden)
+            .cnLoadingPhase(0.35)
             .transaction { $0.animation = nil; $0.disablesAnimations = true }
         let host = NSHostingView(rootView: view)
         host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)

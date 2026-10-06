@@ -57,19 +57,6 @@ public struct CNDirection<Content: View>: View {
     }
     public var body: some View { content.environment(\.layoutDirection, direction) }
 }
-/// Keep real content in the tree while it loads. Native redaction supplies the placeholder.
-public struct CNSkeleton<Content: View>: View {
-    private let isLoading: Bool
-    private let classes: TWClasses
-    private let content: Content
-    public init(isLoading: Bool = true, classes: TWClasses = "", @ViewBuilder content: () -> Content) {
-        self.isLoading = isLoading; self.classes = classes; self.content = content()
-    }
-    public var body: some View {
-        content.redacted(reason: isLoading ? .placeholder : []).disabled(isLoading)
-            .accessibilityHidden(isLoading).tw(cn("feedback-motion", isLoading ? "skeleton" : "", classes), value: isLoading, animationScope: .surface)
-    }
-}
 public struct CNAvatar<Fallback: View>: View {
     private let url: URL?
     private let accessibilityLabel: String

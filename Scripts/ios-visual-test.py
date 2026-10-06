@@ -20,13 +20,31 @@ def run(*args, capture=False, **kwargs):
     return result.stdout.strip() if capture else None
 
 
+class CaptureReadinessTimeout(RuntimeError):
+    pass
+
+
 def launch_capture(device, bundle_id, flags, ready, artifacts, name):
+    (artifacts / f"{name}-launch.log").write_text("")
+    for attempt in range(2):
+        try:
+            launch_capture_attempt(device, bundle_id, flags, ready, artifacts, name, attempt)
+            return
+        except CaptureReadinessTimeout:
+            if attempt == 1:
+                raise
+            print(f"Retrying {name} after the simulator did not render its readiness marker", flush=True)
+
+
+def launch_capture_attempt(device, bundle_id, flags, ready, artifacts, name, attempt):
     # The host's per-launch marker proves rendering finished, even if simctl has not returned.
     capture_id = uuid.uuid4().hex
     command = [XCRUN, "simctl", "launch", "--terminate-running-process", device, bundle_id,
                *flags, "--capture-id", capture_id]
     log = artifacts / f"{name}-launch.log"
-    with log.open("w") as output:
+    with log.open("a") as output:
+        output.write(f"Capture attempt {attempt + 1}: {capture_id}\n")
+        output.flush()
         process = subprocess.Popen(command, stdout=output, stderr=subprocess.STDOUT, text=True)
         try:
             deadline = time.monotonic() + 120
@@ -37,7 +55,7 @@ def launch_capture(device, bundle_id, flags, ready, artifacts, name):
                 if status is not None and status != 0:
                     raise RuntimeError(f"Simulator launch failed with status {status}; see {log}")
                 if time.monotonic() > deadline:
-                    raise RuntimeError(f"The visual host did not signal readiness for {name}; see {log}")
+                    raise CaptureReadinessTimeout(f"The visual host did not signal readiness for {name}; see {log}")
                 time.sleep(0.1)
         finally:
             if process.poll() is None:
@@ -118,7 +136,7 @@ def main():
         captures = []
         if args.components:
             catalog = json.loads((REPO / "Components/catalog.json").read_text())
-            narrow = {"field", "input-group", "message", "questionnaire", "empty", "card", "radio-group", "typography", "pagination", "sidebar"}
+            narrow = {"field", "input-group", "message", "questionnaire", "empty", "card", "radio-group", "typography", "pagination", "sidebar", "skeleton", "spinner", "table"}
             for entry in catalog:
                 if args.only and entry['slug'] not in args.only:
                     continue

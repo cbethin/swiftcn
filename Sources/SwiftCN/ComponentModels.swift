@@ -1,5 +1,19 @@
 import SwiftUI
 
+private struct CNLoadingPhaseKey: EnvironmentKey {
+    static let defaultValue: Double? = nil
+}
+extension EnvironmentValues {
+    /// Nil uses the live native clock. A fixed phase makes previews and snapshots reproducible.
+    public var cnLoadingPhase: Double? {
+        get { self[CNLoadingPhaseKey.self] }
+        set { self[CNLoadingPhaseKey.self] = newValue.map { $0.isFinite ? min(1, max(0, $0)) : 0 } }
+    }
+}
+extension View {
+    public func cnLoadingPhase(_ phase: Double?) -> some View { environment(\.cnLoadingPhase, phase) }
+}
+
 /// A stable option value is shared by selectors, commands, and questionnaire choices.
 public struct CNOption<ID: Hashable & Sendable>: Identifiable, Hashable, Sendable {
     public let id: ID

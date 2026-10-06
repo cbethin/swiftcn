@@ -7,6 +7,59 @@ import Testing
 @Suite("Catalog native controls", .serialized)
 @MainActor
 struct CatalogNativeRenderingTests {
+    @Test func skeletonPreservesTheEditorAndDraftWhenLoadingChanges() throws {
+        let model = LoadingControlModel()
+        let (host, window) = host(SkeletonControlHarness(model: model))
+        defer { window.contentView = nil }
+        let editor = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
+        #expect(!editor.isEnabled)
+        model.loading = false; settle(host)
+        #expect(editor.isEnabled)
+        editor.stringValue = "unfinished loading draft"
+        editor.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: editor))
+        model.loading = true; settle(host)
+        model.loading = false; settle(host)
+        #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)
+        #expect(model.text == "unfinished loading draft")
+        #expect(Set(model.identities).count == 1)
+    }
+    @Test func fixedLoadingPhasesMoveTheRingWithoutMovingInactiveViews() throws {
+        let model = LoadingControlModel()
+        let (host, window) = host(SpinnerControlHarness(model: model))
+        defer { window.contentView = nil }
+        let first = try pixels(host)
+        model.phase = 0.65; settle(host)
+        #expect(try pixels(host) != first)
+        model.paused = true; settle(host)
+        let paused = try pixels(host)
+        model.phase = 0.15; settle(host)
+        #expect(try pixels(host) == paused, "An inactive cn-spin slot must stay neutral, including in frozen previews.")
+        #expect(descendants(host).allSatisfy { !($0 is NSProgressIndicator) })
+    }
+    @Test func tableSelectionAndHorizontalReflowPreserveEditableCells() throws {
+        let model = LoadingControlModel()
+        let controller = NSHostingController(rootView: TableControlHarness(model: model))
+        let host = controller.view
+        host.frame = CGRect(x: 0, y: 0, width: 600, height: 180)
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentViewController = controller
+        defer { window.contentViewController = nil }
+        settle(host)
+        let editor = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
+        editor.stringValue = "draft invoice"
+        editor.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: editor))
+        model.selected = true; host.frame.size.width = 180; settle(host)
+        let scroll = try #require(descendants(host).compactMap { $0 as? NSScrollView }.first)
+        #expect(try #require(scroll.documentView).frame.width > scroll.contentSize.width)
+        #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)
+        #expect(model.text == "draft invoice")
+    }
+    private func pixels(_ host: NSView) throws -> Data {
+        host.layoutSubtreeIfNeeded()
+        let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        return try #require(bitmap.representation(using: .png, properties: [:]))
+    }
     @Test(arguments: [false, true])
     func sidebarMotionReachesDetailAndHonorsGlobalOverrides(disableMotion: Bool) {
         let model = SidebarControlModel()
@@ -164,6 +217,49 @@ struct CatalogNativeRenderingTests {
     }
     private func settle(_ view: NSView) { view.layoutSubtreeIfNeeded(); RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.08)) }
     private func descendants(_ root: NSView) -> [NSView] { root.subviews.flatMap { [$0] + descendants($0) } }
+}
+@MainActor @Observable private final class LoadingControlModel {
+    var loading = true
+    var text = "initial draft"
+    var phase = 0.15
+    var paused = false
+    var selected = false
+    @ObservationIgnored var identities: [UUID] = []
+}
+private struct SkeletonControlHarness: View {
+    let model: LoadingControlModel
+    var body: some View {
+        CNSkeleton(isLoading: model.loading) { LoadingEditorProbe(model: model) }.cnLoadingPhase(model.phase)
+    }
+}
+private struct LoadingEditorProbe: View {
+    let model: LoadingControlModel
+    @State private var identity = UUID()
+    var body: some View {
+        model.identities.append(identity)
+        return CNInput("Draft", text: Binding(get: { model.text }, set: { model.text = $0 }))
+    }
+}
+private struct SpinnerControlHarness: View {
+    let model: LoadingControlModel
+    var body: some View {
+        HStack {
+            CNSpinner(classes: model.paused ? "cn-spin-[0] w-8 h-8" : "w-8 h-8")
+            Text("This stays still").tw("text-sm")
+        }.cnLoadingPhase(model.phase)
+    }
+}
+private struct TableControlHarness: View {
+    let model: LoadingControlModel
+    var body: some View {
+        CNTable {
+            CNTableRow { CNTableHead("Draft"); CNTableHead("Amount") }
+            CNTableRow(isSelected: model.selected) {
+                CNTableCell("w-[180]") { CNInput("Draft", text: Binding(get: { model.text }, set: { model.text = $0 })) }
+                CNTableCell("$250.00", classes: "w-[160]", alignment: .trailing)
+            }
+        }
+    }
 }
 @MainActor @Observable private final class SidebarControlModel {
     var visibility: NavigationSplitViewVisibility = .all
