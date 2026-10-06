@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ios_component:
-        description: 'Optional iOS component slug for a focused candidate review; blank records the complete suite.'
+        description: 'Optional space-separated iOS component slugs for focused candidate review; blank records the complete suite.'
         type: string
         default: ''
   push:
@@ -57,14 +57,20 @@ jobs:
           SWIFTCN_REVIEW_COMPONENT: ${{ inputs.ios_component }}
         run: |
           args=()
-          if [[ -n "$SWIFTCN_REVIEW_COMPONENT" ]]; then args=(--only "$SWIFTCN_REVIEW_COMPONENT"); fi
+          if [[ -n "$SWIFTCN_REVIEW_COMPONENT" ]]; then
+            read -r -a components <<< "$SWIFTCN_REVIEW_COMPONENT"
+            args=(--only "${components[@]}")
+          fi
           python3 Scripts/ios-visual-test.py record ci --components "${args[@]}"
       - name: Verify iOS component candidates
         env:
           SWIFTCN_REVIEW_COMPONENT: ${{ inputs.ios_component }}
         run: |
           args=()
-          if [[ -n "$SWIFTCN_REVIEW_COMPONENT" ]]; then args=(--only "$SWIFTCN_REVIEW_COMPONENT"); fi
+          if [[ -n "$SWIFTCN_REVIEW_COMPONENT" ]]; then
+            read -r -a components <<< "$SWIFTCN_REVIEW_COMPONENT"
+            args=(--only "${components[@]}")
+          fi
           python3 Scripts/ios-visual-test.py verify ci --components "${args[@]}"
       - name: Upload candidates for review
         if: always()

@@ -9,7 +9,7 @@ struct CarouselExample: View {
         VStack(alignment: .leading, spacing: 12) {
             CNCarousel(options, selection: $optionalSelection, classes: "h-[160]") { option in
                 CNCard {
-                    CNCardHeader {
+                    CNCardHeader("pb-6") {
                         CNCardTitle { Text(option.title) }
                         CNCardDescription("Swipe or scroll to the next page.")
                     }
