@@ -51,7 +51,6 @@ struct SwiftCNVisualHost: App {
                     }
                     if component != nil {
                         stopIndicators(view)
-                        freezeImageAnimations(view.layer)
                         view.layoutIfNeeded()
                         CATransaction.flush()
                     }
@@ -70,8 +69,16 @@ struct SwiftCNVisualHost: App {
     }
 }
 
-
 @MainActor private func stopIndicators(_ view: UIView) {
+    if let image = view as? UIImageView,
+       let first = image.animationImages?.first ?? image.image?.images?.first {
+        // SwiftUI's circular progress view uses native animated image frames.
+        image.stopAnimating()
+        image.animationImages = nil
+        image.highlightedAnimationImages = nil
+        image.image = first
+        image.layer.removeAllAnimations()
+    }
     if let indicator = view as? UIActivityIndicatorView {
         indicator.hidesWhenStopped = false
         indicator.stopAnimating()
@@ -87,21 +94,6 @@ struct SwiftCNVisualHost: App {
     layer.speed = 0
     layer.timeOffset = 0
     for child in layer.sublayers ?? [] { freezeIndicatorLayers(child) }
-}
-
-@MainActor private func freezeImageAnimations(_ layer: CALayer) {
-    // SwiftUI's native circular progress view animates an image layer, rather
-    // than a UIActivityIndicatorView. Keep its first native keyframe image.
-    for key in layer.animationKeys() ?? [] {
-        if let animation = layer.animation(forKey: key) as? CAKeyframeAnimation,
-           animation.keyPath == "contents", let first = animation.values?.first {
-            layer.contents = first
-            layer.removeAllAnimations()
-            layer.speed = 0
-            layer.timeOffset = 0
-        }
-    }
-    for child in layer.sublayers ?? [] { freezeImageAnimations(child) }
 }
 
 private struct IOSFixture: View {
