@@ -46,6 +46,8 @@ for filename in {entry['source'] for entry in catalog}:
     (scratch/'component-copy'/filename).write_bytes(source.read_bytes())
 for entry in catalog:
     (scratch/'component-copy'/entry['example']).write_bytes((scratch/'consumer'/entry['example']).read_bytes())
+(scratch/'component-copy'/'MixedComponentOptions.swift').write_bytes(
+    (repo/'Tests/SourceOwnership/MixedComponentOptions.swift').read_bytes())
 PYTHON
 cmp "$repo_dir/LICENSE" "$scratch_dir/owned/LICENSE"
 

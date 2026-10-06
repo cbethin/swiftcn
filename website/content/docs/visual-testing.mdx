@@ -145,11 +145,15 @@ The component suite records every catalog example in light and dark appearances 
 
 AppKit bitmap capture cannot composite the native TabView strip correctly, including an unstyled SwiftUI TabView. The macOS tab test checks native selection and item identity instead. The running gallery also supports manual keyboard and pointer review. The Tabs documentation uses native iOS captures, where the complete control renders correctly.
 
+The command screenshot ends editing before capture. This excludes the blinking caret and keyboard inset timing from static comparisons. The interactive gallery retains native autofocus and keyboard activation.
+
 ```bash
 bash Scripts/component-visual-test.sh verify ci
 python3 Scripts/ios-visual-test.py verify ci --components
 ```
 
 For a focused iOS design pass, append `--only` with catalog slugs, such as `--only aspect-ratio chart`. This captures and compares only those entries. Normal CI verification uses the complete catalog.
+
+The manual `Record visual baselines` workflow also accepts one optional `ios_component` slug. It records that component and verifies it in a second capture run. Download and review the candidate images before updating references.
 
 After accepting component references, run `python3 Scripts/generate-components.py`. This updates each documentation preview from its reviewed native reference.

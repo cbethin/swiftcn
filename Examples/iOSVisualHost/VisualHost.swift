@@ -42,6 +42,13 @@ struct SwiftCNVisualHost: App {
                     guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first,
                           let window = scene.windows.first(where: \.isKeyWindow),
                           let view = window.rootViewController?.view else { return }
+                    if component == .command {
+                        // Static references exclude caret blinking and keyboard inset timing.
+                        // The component still focuses normally in the interactive gallery.
+                        window.endEditing(true)
+                        try? await Task.sleep(for: .milliseconds(500))
+                        view.layoutIfNeeded()
+                    }
                     if component != nil { stopIndicators(view) }
                     let format = UIGraphicsImageRendererFormat()
                     format.scale = view.traitCollection.displayScale

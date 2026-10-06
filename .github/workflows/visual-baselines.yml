@@ -2,6 +2,11 @@ name: Record visual baselines
 
 on:
   workflow_dispatch:
+    inputs:
+      ios_component:
+        description: 'Optional iOS component slug for a focused candidate review; blank records the complete suite.'
+        type: string
+        default: ''
   push:
     branches: ['visual-baselines/**']
 
@@ -22,6 +27,7 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
       - name: Native tests
+        if: inputs.ios_component == ''
         run: |
           swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests|ComponentRenderingTests|CompositionRenderingTests|CatalogNativeRenderingTests'
           swift test --filter CompositionRenderingTests
@@ -29,21 +35,37 @@ jobs:
           swift test --filter CatalogNativeRenderingTests
           swift test --filter NativeUtilityRenderingTests
       - name: Record candidates
+        if: inputs.ios_component == ''
         run: bash Scripts/visual-test.sh record ci
       - name: Verify candidates
+        if: inputs.ios_component == ''
         run: bash Scripts/visual-test.sh verify ci
       - name: Record iOS candidates
+        if: inputs.ios_component == ''
         run: python3 Scripts/ios-visual-test.py record ci
       - name: Verify iOS candidates
+        if: inputs.ios_component == ''
         run: python3 Scripts/ios-visual-test.py verify ci
       - name: Record component candidates
+        if: inputs.ios_component == ''
         run: bash Scripts/component-visual-test.sh record ci
       - name: Verify component candidates
+        if: inputs.ios_component == ''
         run: bash Scripts/component-visual-test.sh verify ci
       - name: Record iOS component candidates
-        run: python3 Scripts/ios-visual-test.py record ci --components
+        env:
+          SWIFTCN_REVIEW_COMPONENT: ${{ inputs.ios_component }}
+        run: |
+          args=()
+          if [[ -n "$SWIFTCN_REVIEW_COMPONENT" ]]; then args=(--only "$SWIFTCN_REVIEW_COMPONENT"); fi
+          python3 Scripts/ios-visual-test.py record ci --components "${args[@]}"
       - name: Verify iOS component candidates
-        run: python3 Scripts/ios-visual-test.py verify ci --components
+        env:
+          SWIFTCN_REVIEW_COMPONENT: ${{ inputs.ios_component }}
+        run: |
+          args=()
+          if [[ -n "$SWIFTCN_REVIEW_COMPONENT" ]]; then args=(--only "$SWIFTCN_REVIEW_COMPONENT"); fi
+          python3 Scripts/ios-visual-test.py verify ci --components "${args[@]}"
       - name: Upload candidates for review
         if: always()
         uses: actions/upload-artifact@v7
