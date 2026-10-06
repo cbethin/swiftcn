@@ -215,8 +215,19 @@ struct TWNativeChainModifier: ViewModifier {
             content
         } else {
             slots.reduce(AnyView(content)) { view, slot in
-                slot.utility.apply(to: view, argument: slot.argument, active: slot.active, theme: theme)
+                AnyView(TWNativeSlotView(content: view, slot: slot, theme: theme))
             }
         }
+    }
+}
+
+/// Keep each registration's body boundary stable when neighboring arguments change.
+private struct TWNativeSlotView: View {
+    let content: AnyView
+    let slot: TWNativeSlot
+    let theme: TWTheme
+
+    var body: some View {
+        slot.utility.apply(to: content, argument: slot.argument, active: slot.active, theme: theme)
     }
 }
