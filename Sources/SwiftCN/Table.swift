@@ -32,17 +32,33 @@ public struct CNTableRow<Content: View>: View {
     }
     public var body: some View {
         GridRow { content }.tw(cn("table-row", isSelected ? "table-row-selected" : "", classes))
-            .background {
-                if let onSelect {
-                    Button(action: onSelect) { Color.clear.contentShape(.interaction, Rectangle()) }
-                        .buttonStyle(.plain).focusable(false).accessibilityHidden(true)
-                }
-            }
+            .environment(\.cnTableRowAction, onSelect)
             .overlay(alignment: .bottom) { CNSeparator().allowsHitTesting(false) }
             .accessibilityElement(children: .contain).accessibilityAddTraits(isSelected ? .isSelected : [])
             .accessibilityActions {
                 if let onSelect { Button("Toggle row selection", action: onSelect) }
             }
+    }
+}
+private struct CNTableRowAction: EnvironmentKey {
+    static var defaultValue: (() -> Void)? { nil }
+}
+private extension EnvironmentValues {
+    var cnTableRowAction: (() -> Void)? {
+        get { self[CNTableRowAction.self] }
+        set { self[CNTableRowAction.self] = newValue }
+    }
+}
+private struct CNTableCellActivation: ViewModifier {
+    @Environment(\.cnTableRowAction) private var onSelect
+    @Environment(\.isEnabled) private var isEnabled
+    @ViewBuilder func body(content: Content) -> some View {
+        if let onSelect {
+            content.contentShape(.interaction, Rectangle())
+                .onTapGesture { if isEnabled { onSelect() } }
+        } else {
+            content
+        }
     }
 }
 public struct CNTableCell<Content: View>: View {
@@ -57,6 +73,7 @@ public struct CNTableCell<Content: View>: View {
     }
     public var body: some View {
         content.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment).tw(cn("table-cell", classes))
+            .modifier(CNTableCellActivation())
             .gridColumnAlignment(alignment.horizontal)
     }
 }

@@ -151,6 +151,10 @@ extension TWStyle {
         for name in ["switch", "command-item", "sidebar-menu-button"] {
             if let classes = components[name] { recipes[name] = Self(.classes(classes), .minH(44)) }
         }
+        #else
+        for name in ["checkbox", "switch"] {
+            if let classes = components[name] { recipes[name] = Self(.classes(classes), .minH(32)) }
+        }
         #endif
         return recipes
     }()

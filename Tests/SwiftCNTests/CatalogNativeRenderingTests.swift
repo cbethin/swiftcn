@@ -48,7 +48,8 @@ struct CatalogNativeRenderingTests {
         let editor = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
         editor.stringValue = "draft invoice"
         editor.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: editor))
-        model.selected = true; host.frame.size.width = 180; settle(host)
+        model.selected = true; window.setContentSize(NSSize(width: 180, height: 180)); settle(host)
+        #expect(abs(host.bounds.width - 180) < 1, "Resize the owning window so AppKit does not restore the old host width.")
         let scroll = try #require(descendants(host).compactMap { $0 as? NSScrollView }.first)
         #expect(try #require(scroll.documentView).frame.width > scroll.contentSize.width)
         #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)

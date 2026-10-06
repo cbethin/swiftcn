@@ -61,13 +61,34 @@ public struct TWToggleStyle<Base: ToggleStyle>: ToggleStyle {
     }
 
     public func makeBody(configuration: Configuration) -> some View {
-        Toggle(configuration).toggleStyle(base)
-            .modifier(TWFieldControlModifier(style: style, state: state))
-            .background {
-                Button(action: { configuration.isOn.toggle() }) { Color.clear.contentShape(.interaction, Rectangle()) }
-                    .buttonStyle(.plain).focusable(false).accessibilityHidden(true)
-            }
+        TWToggleActivationBody(configuration: configuration, base: base, style: style, state: state)
     }
+}
+
+private struct TWToggleActivationBody<Base: ToggleStyle>: View {
+    let configuration: ToggleStyleConfiguration
+    let base: Base
+    let style: TWStyle
+    let state: TWState
+    @Namespace private var space
+    @State private var nativeFrame = CGRect.zero
+    @Environment(\.isEnabled) private var isEnabled
+    var body: some View {
+        Toggle(configuration).toggleStyle(base)
+            .background { GeometryReader { geometry in
+                Color.clear.preference(key: TWToggleNativeFrame.self, value: geometry.frame(in: .named(space)))
+            } }
+            .modifier(TWFieldControlModifier(style: style, state: state))
+            .contentShape(.interaction, Rectangle()).coordinateSpace(name: space)
+            .onPreferenceChange(TWToggleNativeFrame.self) { nativeFrame = $0 }
+            .simultaneousGesture(SpatialTapGesture(coordinateSpace: .named(space)).onEnded { value in
+                if isEnabled && !nativeFrame.contains(value.location) { configuration.isOn.toggle() }
+            })
+    }
+}
+private struct TWToggleNativeFrame: PreferenceKey {
+    static let defaultValue = CGRect.zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) { value = nextValue() }
 }
 
 extension ToggleStyle where Self == TWToggleStyle<DefaultToggleStyle> {

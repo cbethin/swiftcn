@@ -125,7 +125,7 @@
     "symbol": "CNCheckbox",
     "source": "SelectionControls.swift",
     "example": "CheckboxExample.swift",
-    "notes": "The complete styled row activates the binding, including label spacing and padding. macOS keeps its native checkbox indicator, keyboard handling, and accessibility. iOS uses a native Toggle configuration and Button with a 44-point minimum width and height. Disabled rows cannot activate."
+    "notes": "The complete styled row activates the binding, including label spacing and padding. The native Toggle configuration owns checked state, while one Button handles the complete row. macOS keeps its system checkbox appearance and a 32-point minimum height. iOS uses a 44-point minimum width and height. Disabled rows cannot activate."
   },
   {
     "name": "Collapsible",
@@ -445,7 +445,7 @@
     "symbol": "CNSwitch",
     "source": "SelectionControls.swift",
     "example": "SwitchExample.swift",
-    "notes": "The complete styled row activates the binding. The system switch keeps its native thumb gesture, keyboard handling, accessibility, and disabled behavior. Background activation fills label and padding gaps without intercepting the foreground indicator."
+    "notes": "The complete styled row activates the binding. The system switch keeps its native thumb gesture, keyboard handling, accessibility, and disabled behavior. Row taps outside the system indicator activate the binding. The system indicator handles its own gestures without duplicate activation."
   },
   {
     "name": "Table",

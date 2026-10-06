@@ -31,7 +31,7 @@ struct CheckboxExample: View {
 
 ## Native behavior
 
-The complete styled row activates the binding, including label spacing and padding. macOS keeps its native checkbox indicator, keyboard handling, and accessibility. iOS uses a native Toggle configuration and Button with a 44-point minimum width and height. Disabled rows cannot activate.
+The complete styled row activates the binding, including label spacing and padding. The native Toggle configuration owns checked state, while one Button handles the complete row. macOS keeps its system checkbox appearance and a 32-point minimum height. iOS uses a 44-point minimum width and height. Disabled rows cannot activate.
 
 ## Style and compose
 
@@ -88,24 +88,20 @@ public struct CNCheckboxStyle: ToggleStyle {
     private let classes: TWClasses
     public init(classes: TWClasses = "") { self.classes = classes }
     public func makeBody(configuration: Configuration) -> some View {
-        #if os(macOS)
-        HStack(spacing: 8) {
-            Toggle(configuration).toggleStyle(.checkbox).labelsHidden().fixedSize()
-            configuration.label.allowsHitTesting(false).accessibilityHidden(true)
-        }.frame(maxWidth: .infinity, alignment: .leading).tw(cn("checkbox", classes))
-            .background { CNToggleActivationSurface { configuration.isOn.toggle() } }
-            .cnControlUtilities()
-        #else
         Button { configuration.isOn.toggle() } label: {
             HStack(spacing: 8) {
+                #if os(macOS)
+                Toggle(configuration).toggleStyle(.checkbox).labelsHidden().fixedSize()
+                    .allowsHitTesting(false).focusable(false).accessibilityHidden(true)
+                #else
                 Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square").accessibilityHidden(true)
+                #endif
                 configuration.label
             }.frame(maxWidth: .infinity, alignment: .leading)
         }.buttonStyle(CNToggleSurfaceStyle(classes: cn("checkbox", classes)))
             .accessibilityValue(configuration.isOn ? Text("Checked") : Text("Unchecked"))
             .accessibilityAddTraits(configuration.isOn ? .isSelected : [])
             .cnControlUtilities()
-        #endif
     }
 }
 /// The native switch keeps its thumb gesture, keyboard handling, and accessibility.
@@ -113,22 +109,36 @@ public struct CNSwitchStyle: ToggleStyle {
     private let classes: TWClasses
     public init(classes: TWClasses = "") { self.classes = classes }
     public func makeBody(configuration: Configuration) -> some View {
+        CNSwitchRow(configuration: configuration, classes: classes)
+    }
+}
+private struct CNSwitchRow: View {
+    let configuration: ToggleStyleConfiguration
+    let classes: TWClasses
+    @Namespace private var space
+    @State private var indicatorFrame = CGRect.zero
+    @Environment(\.isEnabled) private var isEnabled
+    var body: some View {
         HStack(spacing: 12) {
             configuration.label.allowsHitTesting(false).accessibilityHidden(true)
             Spacer(minLength: 0)
             Toggle(configuration).toggleStyle(.switch).labelsHidden().fixedSize()
-        }.tw(cn("switch", classes))
-            .background { CNToggleActivationSurface { configuration.isOn.toggle() } }
+                .background { GeometryReader { geometry in
+                    Color.clear.preference(key: CNSwitchIndicatorFrame.self, value: geometry.frame(in: .named(space)))
+                } }
+        }.tw(cn("switch", classes)).contentShape(.interaction, Rectangle())
+            .coordinateSpace(name: space)
+            .onPreferenceChange(CNSwitchIndicatorFrame.self) { indicatorFrame = $0 }
+            .simultaneousGesture(SpatialTapGesture(coordinateSpace: .named(space)).onEnded { value in
+                // The system indicator handles its own tap or drag. Only the remaining row activates here.
+                if isEnabled && !indicatorFrame.contains(value.location) { configuration.isOn.toggle() }
+            })
             .cnControlUtilities()
     }
 }
-/// Only unoccupied parts of the styled row reach this button. The foreground toggle stays native.
-private struct CNToggleActivationSurface: View {
-    let action: () -> Void
-    var body: some View {
-        Button(action: action) { Color.clear.contentShape(.interaction, Rectangle()) }
-            .buttonStyle(.plain).focusable(false).accessibilityHidden(true)
-    }
+private struct CNSwitchIndicatorFrame: PreferenceKey {
+    static let defaultValue = CGRect.zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) { value = nextValue() }
 }
 private struct CNToggleSurfaceStyle: ButtonStyle {
     let classes: TWClasses
