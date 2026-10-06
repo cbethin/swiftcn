@@ -35,6 +35,12 @@ private struct DemoSymbolBounce<Value: Equatable>: ViewModifier {
     let enabled: Bool
     private var motion = DemoMotion()
 
+    init(value: Value, speed: Double, enabled: Bool) {
+        self.value = value
+        self.speed = speed
+        self.enabled = enabled
+    }
+
     @ViewBuilder func body(content: Content) -> some View {
         if enabled && motion.isEnabled {
             content.symbolEffect(.bounce, options: .speed(speed), value: value)
