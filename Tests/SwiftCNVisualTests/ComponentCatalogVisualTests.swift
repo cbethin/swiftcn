@@ -46,6 +46,11 @@ struct ComponentCatalogVisualTests {
         window.contentView = host
         defer { window.contentView = nil }
         host.layoutSubtreeIfNeeded()
+        if component == .carousel {
+            // Pin the native scroller geometry before SwiftUI centers each page.
+            // Otherwise AppKit can switch from overlay to legacy after layout.
+            pinCarouselScrollers(host)
+        }
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.08))
         // Stop native indeterminate indicators at a reproducible frame; behavior tests cover state.
         stopIndicators(host)
@@ -59,6 +64,14 @@ struct ComponentCatalogVisualTests {
     private func stopIndicators(_ view: NSView) {
         if let indicator = view as? NSProgressIndicator { indicator.stopAnimation(nil) }
         for child in view.subviews { stopIndicators(child) }
+    }
+    private func pinCarouselScrollers(_ view: NSView) {
+        if let scroll = view as? NSScrollView {
+            scroll.scrollerStyle = .legacy
+            scroll.autohidesScrollers = false
+            scroll.tile()
+        }
+        for child in view.subviews { pinCarouselScrollers(child) }
     }
 }
 #endif
