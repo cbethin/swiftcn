@@ -63,6 +63,10 @@ public struct TWToggleStyle<Base: ToggleStyle>: ToggleStyle {
     public func makeBody(configuration: Configuration) -> some View {
         Toggle(configuration).toggleStyle(base)
             .modifier(TWFieldControlModifier(style: style, state: state))
+            .background {
+                Button(action: { configuration.isOn.toggle() }) { Color.clear.contentShape(.interaction, Rectangle()) }
+                    .buttonStyle(.plain).focusable(false).accessibilityHidden(true)
+            }
     }
 }
 

@@ -5,7 +5,7 @@
     "symbol": "CNAccordion",
     "source": "Disclosure.swift",
     "example": "AccordionExample.swift",
-    "notes": "Stable caller-owned IDs preserve expansion through reorder. Choose single or multiple expansion. The native DisclosureGroup owns activation and accessibility."
+    "notes": "Stable caller-owned IDs preserve expansion through reorder. Choose single or multiple expansion. A custom native DisclosureGroup style makes the complete header, including whitespace and the chevron, one native Button."
   },
   {
     "name": "Alert",
@@ -125,7 +125,7 @@
     "symbol": "CNCheckbox",
     "source": "SelectionControls.swift",
     "example": "CheckboxExample.swift",
-    "notes": "Uses a native checkbox Toggle on macOS. The iOS adaptation uses a native Toggle configuration and Button with checked state and a 44-point minimum height."
+    "notes": "The complete styled row activates the binding, including label spacing and padding. macOS keeps its native checkbox indicator, keyboard handling, and accessibility. iOS uses a native Toggle configuration and Button with a 44-point minimum width and height. Disabled rows cannot activate."
   },
   {
     "name": "Collapsible",
@@ -133,7 +133,7 @@
     "symbol": "CNCollapsible",
     "source": "Disclosure.swift",
     "example": "CollapsibleExample.swift",
-    "notes": "A bound native DisclosureGroup owns disclosure activation and accessibility. Supply a custom label and content. Expanded layout changes use disclosure-motion and respect Reduce Motion."
+    "notes": "A bound native DisclosureGroup uses a full-width Button header, including whitespace and its chevron. Supply a custom label and content. Expanded layout changes use disclosure-motion and respect Reduce Motion."
   },
   {
     "name": "Combobox",
@@ -237,7 +237,7 @@
     "symbol": "CNInput",
     "source": "Input.swift",
     "example": "InputExample.swift",
-    "notes": "A native TextField or SecureField preserves selection, input methods, password managers, submit, and accessibility. Pass a FocusState binding with focus: when the host controls focus."
+    "notes": "A native TextField or SecureField preserves selection, input methods, password managers, submit, and accessibility. Decoration gaps focus the same editor. Pass a FocusState binding with focus: when the host controls focus."
   },
   {
     "name": "Input Group",
@@ -245,7 +245,7 @@
     "symbol": "CNInputGroup",
     "source": "Input.swift",
     "example": "InputGroupExample.swift",
-    "notes": "Compose CNInputGroupField with icons, addons, or native actions. The field shares native focus with the surrounding group border. Pass focus: when the host controls focus; child buttons keep their own activation."
+    "notes": "Compose CNInputGroupField with icons, addons, or native actions. Decoration gaps focus the native editor; child buttons retain their own events. Pass focus: when the host controls focus."
   },
   {
     "name": "Input OTP",
@@ -445,7 +445,7 @@
     "symbol": "CNSwitch",
     "source": "SelectionControls.swift",
     "example": "SwitchExample.swift",
-    "notes": "A native switch-style Toggle binds a Boolean and accepts localized text or a custom label. The control preserves platform activation, disabled behavior, and accessibility. Optional tint uses the component utility registration."
+    "notes": "The complete styled row activates the binding. The system switch keeps its native thumb gesture, keyboard handling, accessibility, and disabled behavior. Background activation fills label and padding gaps without intercepting the foreground indicator."
   },
   {
     "name": "Table",
@@ -453,7 +453,7 @@
     "symbol": "CNTable",
     "source": "Table.swift",
     "example": "TableExample.swift",
-    "notes": "Compose rich aligned columns with native Grid, GridRow, CNTableHead, and CNTableCell parts. The table fills its viewport and scrolls horizontally when columns need more room. Header cells expose accessibility headings. Rows have separators, immediate hover feedback, and a caller-controlled selected appearance. Cells accept leading, center, or trailing alignment. CNTableCaption adds supporting text outside the table. Child checkboxes, buttons, and editors remain native controls; use CNDataTable for native record sorting."
+    "notes": "Compose rich aligned columns with native Grid, GridRow, CNTableHead, and CNTableCell parts. The table fills its viewport and scrolls horizontally when columns need more room. Header cells expose accessibility headings. Rows have separators, immediate hover feedback, and a caller-controlled selected appearance. Cells accept leading, center, or trailing alignment. CNTableCaption adds supporting text outside the table. Pass onSelect: to make row whitespace selectable. Child checkboxes, buttons, and editors handle their own events without also activating the row; use CNDataTable for native record sorting."
   },
   {
     "name": "Tabs",
@@ -485,7 +485,7 @@
     "symbol": "CNToggle",
     "source": "SelectionControls.swift",
     "example": "ToggleExample.swift",
-    "notes": "A button-style native Toggle binds a Boolean and accepts custom label content. SwiftUI owns activation and selection semantics. The surrounding recipe and optional tint remain editable through classes."
+    "notes": "A native Toggle configuration uses a styled Button for the entire padded activation surface. The binding and checked accessibility state stay native. Selected and unselected recipes remain editable through classes."
   },
   {
     "name": "Toggle Group",

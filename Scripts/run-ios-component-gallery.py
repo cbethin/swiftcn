@@ -35,7 +35,7 @@ with tempfile.TemporaryDirectory(prefix='swiftcn-interactive-gallery-') as tempo
             text = text.replace('import SwiftCN\n', '')
         (frozen / source.name).write_text(text)
     subprocess.run(['xcrun', 'swiftc', '-sdk', sdk, '-target', f'{architecture}-apple-ios17.0-simulator',
-        '-swift-version', '6', '-warnings-as-errors', '-parse-as-library', '-module-name', 'SwiftCNComponentGallery',
+        '-whole-module-optimization', '-swift-version', '6', '-warnings-as-errors', '-parse-as-library', '-module-name', 'SwiftCNComponentGallery',
         *map(str, sorted(frozen.glob('*.swift'))), '-o', str(app / 'SwiftCNComponentGallery')],
         check=True, env=dict(os.environ, SDKROOT=sdk))
 run('/usr/bin/codesign', '--force', '--sign', '-', str(app))

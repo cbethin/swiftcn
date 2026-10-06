@@ -3,7 +3,11 @@ import SwiftCN
 
 struct TableExample: View {
     @State private var selected: Set<String> = []
+    #if os(iOS)
+    @ScaledMetric(relativeTo: .body) private var selectionWidth: CGFloat = 72
+    #else
     @ScaledMetric(relativeTo: .body) private var selectionWidth: CGFloat = 48
+    #endif
     private let invoices = [
         Invoice(id: "INV-001", status: "Paid", method: "Credit card", amount: "$250.00"),
         Invoice(id: "INV-002", status: "Pending", method: "Bank transfer", amount: "$150.00"),
@@ -28,7 +32,9 @@ struct TableExample: View {
                     CNTableHead("Amount", alignment: .trailing)
                 }
                 ForEach(invoices) { invoice in
-                    CNTableRow(isSelected: selected.contains(invoice.id)) {
+                    CNTableRow(isSelected: selected.contains(invoice.id), onSelect: {
+                        if !selected.insert(invoice.id).inserted { selected.remove(invoice.id) }
+                    }) {
                         CNTableCell("w-[\(selectionWidth)] px-3") {
                             CNCheckbox("", isOn: Binding(
                                 get: { selected.contains(invoice.id) },

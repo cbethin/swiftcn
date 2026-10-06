@@ -84,15 +84,25 @@ private struct CNTableWidthKey: PreferenceKey {
 }
 public struct CNTableRow<Content: View>: View {
     private let isSelected: Bool
+    private let onSelect: (() -> Void)?
     private let classes: TWClasses
     private let content: Content
-    public init(isSelected: Bool = false, classes: TWClasses = "", @ViewBuilder content: () -> Content) {
-        self.isSelected = isSelected; self.classes = classes; self.content = content()
+    public init(isSelected: Bool = false, onSelect: (() -> Void)? = nil, classes: TWClasses = "", @ViewBuilder content: () -> Content) {
+        self.isSelected = isSelected; self.onSelect = onSelect; self.classes = classes; self.content = content()
     }
     public var body: some View {
         GridRow { content }.tw(cn("table-row", isSelected ? "table-row-selected" : "", classes))
+            .background {
+                if let onSelect {
+                    Button(action: onSelect) { Color.clear.contentShape(.interaction, Rectangle()) }
+                        .buttonStyle(.plain).focusable(false).accessibilityHidden(true)
+                }
+            }
             .overlay(alignment: .bottom) { CNSeparator().allowsHitTesting(false) }
             .accessibilityElement(children: .contain).accessibilityAddTraits(isSelected ? .isSelected : [])
+            .accessibilityActions {
+                if let onSelect { Button("Toggle row selection", action: onSelect) }
+            }
     }
 }
 public struct CNTableCell<Content: View>: View {

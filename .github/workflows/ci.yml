@@ -39,12 +39,13 @@ jobs:
           trap 'defaults write com.apple.universalaccess reduceMotion -bool "$swiftcn_motion_setting"' EXIT
           defaults write com.apple.universalaccess reduceMotion -bool false
           # Keep these hosted probes separate from other suites that pump the main run loop.
-          swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests|ComponentRenderingTests|CompositionRenderingTests|CatalogNativeRenderingTests|PopoverInteractionTests|MotionRenderingTests'
+          swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests|ComponentRenderingTests|CompositionRenderingTests|CatalogNativeRenderingTests|PopoverInteractionTests|MotionRenderingTests|TouchTargetInteractionTests'
           swift test --filter MotionRenderingTests
           swift test --filter CompositionRenderingTests
           swift test --filter ComponentRenderingTests
           swift test --filter CatalogNativeRenderingTests
           swift test --filter PopoverInteractionTests
+          swift test --filter TouchTargetInteractionTests
           SWIFTCN_MOTION_ARTIFACTS="$PWD/artifacts/motion-size" \
             swift test --package-path Examples/Catalog --filter MotionSurfaceTests
           swift test --filter NativeUtilityRenderingTests

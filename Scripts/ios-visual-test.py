@@ -108,7 +108,7 @@ def main():
         for source in sources:
             (frozen/source.name).write_text(source.read_text().replace("import SwiftCN\n", ""))
         run(XCRUN, "swiftc", "-sdk", sdk, "-target", f"{architecture}-apple-ios17.0-simulator",
-            "-swift-version", "6", "-warnings-as-errors", "-parse-as-library", "-module-name", "SwiftCNVisualHost",
+            "-whole-module-optimization", "-swift-version", "6", "-warnings-as-errors", "-parse-as-library", "-module-name", "SwiftCNVisualHost",
             *map(str, sorted(frozen.glob("*.swift"))), "-o", str(app / "SwiftCNVisualHost"),
             env=dict(os.environ, SDKROOT=sdk))
     run("/usr/bin/codesign", "--force", "--sign", "-", str(app))

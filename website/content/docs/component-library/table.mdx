@@ -19,7 +19,11 @@ import SwiftCN
 
 struct TableExample: View {
     @State private var selected: Set<String> = []
+    #if os(iOS)
+    @ScaledMetric(relativeTo: .body) private var selectionWidth: CGFloat = 72
+    #else
     @ScaledMetric(relativeTo: .body) private var selectionWidth: CGFloat = 48
+    #endif
     private let invoices = [
         Invoice(id: "INV-001", status: "Paid", method: "Credit card", amount: "$250.00"),
         Invoice(id: "INV-002", status: "Pending", method: "Bank transfer", amount: "$150.00"),
@@ -44,7 +48,9 @@ struct TableExample: View {
                     CNTableHead("Amount", alignment: .trailing)
                 }
                 ForEach(invoices) { invoice in
-                    CNTableRow(isSelected: selected.contains(invoice.id)) {
+                    CNTableRow(isSelected: selected.contains(invoice.id), onSelect: {
+                        if !selected.insert(invoice.id).inserted { selected.remove(invoice.id) }
+                    }) {
                         CNTableCell("w-[\(selectionWidth)] px-3") {
                             CNCheckbox("", isOn: Binding(
                                 get: { selected.contains(invoice.id) },
@@ -84,7 +90,7 @@ struct TableExample: View {
 
 ## Native behavior
 
-Compose rich aligned columns with native Grid, GridRow, CNTableHead, and CNTableCell parts. The table fills its viewport and scrolls horizontally when columns need more room. Header cells expose accessibility headings. Rows have separators, immediate hover feedback, and a caller-controlled selected appearance. Cells accept leading, center, or trailing alignment. CNTableCaption adds supporting text outside the table. Child checkboxes, buttons, and editors remain native controls; use CNDataTable for native record sorting.
+Compose rich aligned columns with native Grid, GridRow, CNTableHead, and CNTableCell parts. The table fills its viewport and scrolls horizontally when columns need more room. Header cells expose accessibility headings. Rows have separators, immediate hover feedback, and a caller-controlled selected appearance. Cells accept leading, center, or trailing alignment. CNTableCaption adds supporting text outside the table. Pass onSelect: to make row whitespace selectable. Child checkboxes, buttons, and editors handle their own events without also activating the row; use CNDataTable for native record sorting.
 
 ## Style and compose
 
@@ -132,15 +138,25 @@ private struct CNTableWidthKey: PreferenceKey {
 }
 public struct CNTableRow<Content: View>: View {
     private let isSelected: Bool
+    private let onSelect: (() -> Void)?
     private let classes: TWClasses
     private let content: Content
-    public init(isSelected: Bool = false, classes: TWClasses = "", @ViewBuilder content: () -> Content) {
-        self.isSelected = isSelected; self.classes = classes; self.content = content()
+    public init(isSelected: Bool = false, onSelect: (() -> Void)? = nil, classes: TWClasses = "", @ViewBuilder content: () -> Content) {
+        self.isSelected = isSelected; self.onSelect = onSelect; self.classes = classes; self.content = content()
     }
     public var body: some View {
         GridRow { content }.tw(cn("table-row", isSelected ? "table-row-selected" : "", classes))
+            .background {
+                if let onSelect {
+                    Button(action: onSelect) { Color.clear.contentShape(.interaction, Rectangle()) }
+                        .buttonStyle(.plain).focusable(false).accessibilityHidden(true)
+                }
+            }
             .overlay(alignment: .bottom) { CNSeparator().allowsHitTesting(false) }
             .accessibilityElement(children: .contain).accessibilityAddTraits(isSelected ? .isSelected : [])
+            .accessibilityActions {
+                if let onSelect { Button("Toggle row selection", action: onSelect) }
+            }
     }
 }
 public struct CNTableCell<Content: View>: View {

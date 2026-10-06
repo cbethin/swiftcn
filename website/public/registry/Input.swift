@@ -18,6 +18,7 @@ public struct CNInput: View {
             else { TextField(title, text: $text) }
         }.textFieldStyle(.plain).focused(focus ?? $isFocused)
             .modifier(TWFieldControlModifier(style: .classes(cn("input", classes)), state: .init(isFocused: focus?.wrappedValue ?? isFocused)))
+            .modifier(CNInputActivationSurface(focus: focus ?? $isFocused))
     }
 }
 
@@ -33,6 +34,7 @@ public struct CNTextarea: View {
     public var body: some View {
         TextEditor(text: $text).scrollContentBackground(.hidden).focused(focus ?? $isFocused)
             .modifier(TWFieldControlModifier(style: .classes(cn("textarea min-h-[100]", classes)), state: .init(isFocused: focus?.wrappedValue ?? isFocused)))
+            .modifier(CNInputActivationSurface(focus: focus ?? $isFocused))
             .accessibilityLabel(title)
     }
 }
@@ -50,6 +52,7 @@ public struct CNInputGroup<Content: View>: View {
         HStack(spacing: 8) { content }
             .modifier(TWFieldControlModifier(style: .classes(cn("input-group", classes)), state: .init(isFocused: focus?.wrappedValue ?? isFocused)))
             .environment(\.twInputGroupFocus, focus ?? $isFocused)
+            .modifier(CNInputActivationSurface(focus: focus ?? $isFocused))
     }
 }
 public struct CNInputGroupField: View {
@@ -62,6 +65,17 @@ public struct CNInputGroupField: View {
     public var body: some View {
         TextField(title, text: $text).textFieldStyle(.plain).focused(groupFocus ?? $isFocused)
             .tw(cn("input-group-field", classes))
+            .modifier(CNInputActivationSurface(focus: groupFocus ?? $isFocused))
+    }
+}
+
+/// The decorated control participates in native hit testing, including its padding.
+private struct CNInputActivationSurface: ViewModifier {
+    let focus: FocusState<Bool>.Binding
+    @Environment(\.isEnabled) private var isEnabled
+    func body(content: Content) -> some View {
+        content.contentShape(.interaction, Rectangle())
+            .onTapGesture { if isEnabled { focus.wrappedValue = true } }
     }
 }
 

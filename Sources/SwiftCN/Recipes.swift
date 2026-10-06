@@ -74,7 +74,7 @@ extension TWStyle {
             "spinner-motion": "cn-spin-[0.9]",
             "progress": "cn-tint-[primary]",
             "slider": "cn-tint-[primary]",
-            "checkbox": "text-sm cn-tint-[primary] disabled:opacity-45",
+            "checkbox": "w-full text-sm cn-tint-[primary] disabled:opacity-45",
             "switch": "text-sm cn-tint-[primary] disabled:opacity-45",
             "radio-group": "text-sm cn-tint-[primary]",
             "select": "text-sm cn-tint-[primary]",
@@ -146,6 +146,12 @@ extension TWStyle {
         recipes["button-link"] = Self(buttonBase, .px(0), .fg(.primary), .hover(.opacity(0.80)))
         recipes["input-group"] = Self(.px(3), .minH(inputMinimumHeight), .bg(.background), .border(.border), .rounded(.md), .focus(.border(.primary)), .disabled(.opacity(0.45)), .classes("control-motion"))
         recipes["input-group-field"] = Self(.text(.sm), .py(2), .minH(inputMinimumHeight))
+        #if os(iOS)
+        if let classes = components["checkbox"] { recipes["checkbox"] = Self(.classes(classes), .minW(44), .minH(44)) }
+        for name in ["switch", "command-item", "sidebar-menu-button"] {
+            if let classes = components[name] { recipes[name] = Self(.classes(classes), .minH(44)) }
+        }
+        #endif
         return recipes
     }()
 

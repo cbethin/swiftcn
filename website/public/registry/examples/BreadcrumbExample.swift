@@ -7,6 +7,7 @@ struct BreadcrumbExample: View {
         VStack(alignment: .leading, spacing: 12) {
             CNBreadcrumb {
                 Link("Home", destination: URL(string: "https://cbethin.github.io/swiftcn/")!)
+                    .buttonStyle(.tw("button-link"))
                 CNBreadcrumbSeparator()
                 CNBreadcrumbPage("Components")
             }

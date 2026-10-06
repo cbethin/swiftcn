@@ -24,6 +24,7 @@ public struct TWButtonStyle: ButtonStyle {
         activeState.isPressed = configuration.isPressed
         return configuration.label
             .modifier(TWModifier(style: style, state: activeState, isButton: true))
+            .contentShape(.interaction, Rectangle())
     }
 }
 

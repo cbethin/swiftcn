@@ -10,7 +10,9 @@ public struct CNCollapsible<Label: View, Content: View>: View {
         _isExpanded = isExpanded; self.classes = classes; self.content = content(); self.label = label()
     }
     public var body: some View {
-        DisclosureGroup(isExpanded: $isExpanded) { content } label: { label }.tw(cn("collapsible disclosure-motion", classes), value: isExpanded, animationScope: .layout)
+        DisclosureGroup(isExpanded: $isExpanded) { content } label: { label }
+            .disclosureGroupStyle(CNDisclosureGroupStyle())
+            .tw(cn("collapsible disclosure-motion", classes), value: isExpanded, animationScope: .layout)
     }
 }
 
@@ -35,9 +37,29 @@ public struct CNAccordion<Data: RandomAccessCollection, Label: View, Content: Vi
                 DisclosureGroup(isExpanded: Binding(get: { expanded.contains(item.id) }, set: { open in
                     if open { if mode == .single { expanded = [item.id] } else { expanded.insert(item.id) } }
                     else { expanded.remove(item.id) }
-                })) { content(item) } label: { label(item) }.tw("accordion-item")
+                })) { content(item) } label: { label(item) }
+                    .disclosureGroupStyle(CNDisclosureGroupStyle(classes: "accordion-item w-full px-0 rounded-none"))
                 CNSeparator()
             }
         }.tw(cn("accordion disclosure-motion", classes), value: expanded, animationScope: .layout)
+    }
+}
+
+/// The whole header is a native Button, including its whitespace and disclosure indicator.
+public struct CNDisclosureGroupStyle: DisclosureGroupStyle {
+    private let classes: TWClasses
+    public init(classes: TWClasses = "w-full px-0 py-2 rounded-none") { self.classes = classes }
+    public func makeBody(configuration: Configuration) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            CNButton(variant: .ghost, classes: classes, action: { configuration.isExpanded.toggle() }) {
+                HStack(spacing: 12) {
+                    configuration.label
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.down").rotationEffect(.degrees(configuration.isExpanded ? 180 : 0))
+                        .accessibilityHidden(true)
+                }
+            }.accessibilityValue(configuration.isExpanded ? Text("Expanded") : Text("Collapsed"))
+            if configuration.isExpanded { configuration.content }
+        }
     }
 }
