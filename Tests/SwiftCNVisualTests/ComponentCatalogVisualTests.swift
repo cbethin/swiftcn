@@ -51,7 +51,7 @@ struct ComponentCatalogVisualTests {
         stopIndicators(host)
         host.layoutSubtreeIfNeeded()
         let failure = withSnapshotTesting(record: record ? .all : .never) {
-            verifySnapshot(of: host as NSView, as: .image,
+            verifySnapshot(of: host as NSView, as: savingVisualDiffs(.image, name: name),
                            named: name, snapshotDirectory: directory, testName: "component")
         }
         if !record, let failure { Issue.record("\(name): \(failure)") }

@@ -15,6 +15,7 @@ case "$profile" in
     *) exit 2 ;;
 esac
 mkdir -p "$reference_dir"
+export SNAPSHOT_ARTIFACTS="$repo_dir/artifacts/visual-diffs"
 export SWIFTCN_COMPONENT_VISUAL_MODE="$mode"
 export SWIFTCN_COMPONENT_SNAPSHOT_DIRECTORY="$reference_dir"
 cd "$repo_dir"

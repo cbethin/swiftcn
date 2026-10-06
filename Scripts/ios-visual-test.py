@@ -55,7 +55,15 @@ def main():
     parser.add_argument("mode", choices=["record", "verify"], nargs="?", default="verify")
     parser.add_argument("profile", choices=["local", "ci"], nargs="?", default="local")
     parser.add_argument("--components", action="store_true", help="Capture all 64 component examples")
+    parser.add_argument("--only", nargs="+", metavar="SLUG", help="Capture selected component slugs for a focused review")
     args = parser.parse_args()
+    if args.only:
+        if not args.components:
+            parser.error("--only requires --components")
+        catalog_slugs = {entry["slug"] for entry in json.loads((REPO / "Components/catalog.json").read_text())}
+        unknown = set(args.only) - catalog_slugs
+        if unknown:
+            parser.error("Unknown component slugs: " + ", ".join(sorted(unknown)))
     if args.profile == "ci":
         sdk_version = run(XCRUN, "--sdk", "iphonesimulator", "--show-sdk-version", capture=True)
         if sdk_version != "18.5" or "Xcode 16.4" not in run("/usr/bin/xcodebuild", "-version", capture=True):
@@ -112,6 +120,8 @@ def main():
             catalog = json.loads((REPO / "Components/catalog.json").read_text())
             narrow = {"field", "input-group", "message", "questionnaire", "empty", "card", "radio-group", "typography"}
             for entry in catalog:
+                if args.only and entry['slug'] not in args.only:
+                    continue
                 for dark, large in [(False, False), (True, False)] + ([(False, True)] if entry['slug'] in narrow else []):
                     flags = ["--component", entry['slug'].replace('-', '_')] + (["--dark"] if dark else []) + (["--large-text"] if large else [])
                     name = f"component-{entry['slug']}-{'dark' if dark else 'light'}-{'large-text' if large else 'standard'}"
@@ -138,6 +148,8 @@ def main():
                        SNAPSHOT_ARTIFACTS=str(REPO / "artifacts/visual-diffs"),
                        SDKROOT=run(XCRUN, "--sdk", "macosx", "--show-sdk-path", capture=True))
     if args.components: environment["SWIFTCN_IOS_COMPONENT_SCREENSHOTS"] = str(artifacts)
+    environment.pop("SWIFTCN_IOS_COMPONENT_SELECTION", None)
+    if args.only: environment["SWIFTCN_IOS_COMPONENT_SELECTION"] = ",".join(args.only)
     run(XCRUN, "swift", "test", "--sdk", environment["SDKROOT"], "--filter", "IOSComponentVisualTests" if args.components else "IOSVisualTests", cwd=REPO, env=environment)
 
 

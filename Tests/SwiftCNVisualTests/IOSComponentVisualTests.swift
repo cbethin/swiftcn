@@ -8,7 +8,10 @@ import Testing
        .enabled(if: ProcessInfo.processInfo.environment["SWIFTCN_IOS_COMPONENT_SCREENSHOTS"] != nil))
 @MainActor
 struct IOSComponentVisualTests {
-    @Test(arguments: CNComponentGallery.allCases)
+    @Test(arguments: CNComponentGallery.allCases.filter { component in
+        guard let selected = ProcessInfo.processInfo.environment["SWIFTCN_IOS_COMPONENT_SELECTION"] else { return true }
+        return selected.split(separator: ",").contains(Substring(component.rawValue.replacingOccurrences(of: "_", with: "-")))
+    })
     func screenshots(component: CNComponentGallery) throws {
         let environment = ProcessInfo.processInfo.environment
         let directory = try #require(environment["SWIFTCN_IOS_COMPONENT_SCREENSHOTS"])

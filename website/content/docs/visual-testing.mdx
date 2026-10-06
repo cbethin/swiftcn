@@ -149,3 +149,5 @@ AppKit bitmap capture cannot composite the native TabView strip correctly, inclu
 bash Scripts/component-visual-test.sh verify ci
 python3 Scripts/ios-visual-test.py verify ci --components
 ```
+
+For a focused iOS design pass, append `--only` with catalog slugs, such as `--only aspect-ratio chart`. This captures and compares only those entries. Normal CI verification uses the complete catalog.

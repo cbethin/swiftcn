@@ -1,0 +1,5 @@
+# Generated docs mirror the Swift sources and examples.
+website/content/docs/component-library/** linguist-generated=true
+website/public/registry/** linguist-generated=true
+website/public/native/components/** linguist-generated=true
+Tests/SwiftCNVisualTests/__Snapshots__/** linguist-generated=true

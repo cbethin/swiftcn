@@ -52,7 +52,7 @@ jobs:
       - name: Capture component reference candidates
         run: bash Scripts/component-visual-test.sh record ci
       - name: Capture iOS component reference candidates
-        run: python3 Scripts/ios-visual-test.py record ci --components
+        run: python3 Scripts/ios-visual-test.py record ci --components --only aspect-ratio
       - name: Verify generated component sources
         run: python3 Scripts/generate-components.py --check
       - name: Verify iOS visual baselines
