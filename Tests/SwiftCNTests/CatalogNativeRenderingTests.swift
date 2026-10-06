@@ -41,6 +41,10 @@ struct CatalogNativeRenderingTests {
         let editor = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
         editor.stringValue = "unfinished draft"
         editor.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: editor))
+        // Two actions can arrive before SwiftUI recomputes the environment context.
+        model.context.toggle(); model.context.toggle()
+        #expect(model.visibility == .all)
+        settle(host)
         for expected in [false, true, false, true, false, true] {
             model.context.toggle()
             host.layoutSubtreeIfNeeded(); RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.025))

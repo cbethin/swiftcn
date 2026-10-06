@@ -47,14 +47,19 @@ struct SidebarExample: View {
 private struct SidebarNavigationExample: View {
     @Binding var selection: String
     @Environment(\.cnSidebarContext) private var sidebar
+    @Environment(\.dynamicTypeSize) private var typeSize
     var body: some View {
         CNSidebarHeader {
             HStack(spacing: 8) {
-                Image(systemName: "square.stack.3d.up.fill").tw("w-8 h-8 text-xl text-primary")
+                if !typeSize.isAccessibilitySize || sidebar.isCollapsed {
+                    Image(systemName: "square.stack.3d.up.fill").tw("w-8 h-8 text-xl text-primary")
+                }
                 if !sidebar.isCollapsed {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Acme Studio").tw("text-sm font-semibold")
-                        Text("Pro workspace").tw("text-xs text-mutedForeground")
+                        Text("Acme Studio").lineLimit(1).tw("text-sm font-semibold")
+                        if !typeSize.isAccessibilitySize {
+                            Text("Pro workspace").lineLimit(1).tw("text-xs text-mutedForeground")
+                        }
                     }.transition(.opacity)
                     Spacer()
                     if sidebar.isCompact { CNSidebarTrigger() }

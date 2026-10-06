@@ -10,7 +10,9 @@ public struct CNSidebar<Sidebar: View, Detail: View>: View {
     private let mobilePresented: Binding<Bool>?
     @State private var localMobilePresented = false
     @GestureState private var dragOffset: CGFloat = 0
+    @FocusState private var drawerFocused: Bool
     @Environment(\.layoutDirection) private var direction
+    @Environment(\.dynamicTypeSize) private var typeSize
     private let collapsible: CNSidebarCollapsible
     private let side: CNSidebarSide
     private let width: CGFloat
@@ -38,14 +40,15 @@ public struct CNSidebar<Sidebar: View, Detail: View>: View {
     public var body: some View {
         GeometryReader { geometry in
             let compact = geometry.size.width < compactBreakpoint
-            let panelWidth = compact ? min(width, max(0, geometry.size.width - 44)) : width
+            let compactWidth = max(0, geometry.size.width - 44)
+            let panelWidth = compact ? (typeSize.isAccessibilitySize ? compactWidth : min(width, compactWidth)) : width
             let railWidth = desktopOpen ? panelWidth : (collapsible == .icon ? collapsedWidth : 0)
             let visibleWidth = compact ? 0 : railWidth
             let context = CNSidebarContext(isCollapsed: !compact && !desktopOpen && collapsible == .icon,
                 isCompact: compact, isPresented: compact ? mobile.wrappedValue : desktopOpen,
                 canToggle: compact || collapsible != .none,
                 toggle: { if compact { mobile.wrappedValue.toggle() }
-                          else if collapsible != .none { visibility = desktopOpen ? .detailOnly : .all } },
+                          else if collapsible != .none { visibility = visibility == .detailOnly ? .all : .detailOnly } },
                 dismiss: { mobile.wrappedValue = false })
             ZStack(alignment: side == .leading ? .leading : .trailing) {
                 HStack(spacing: 0) {
@@ -77,6 +80,9 @@ public struct CNSidebar<Sidebar: View, Detail: View>: View {
                     .accessibilityHidden(compact ? !mobile.wrappedValue : visibleWidth == 0)
                     .accessibilityElement(children: .contain)
                     .accessibilityAddTraits(compact && mobile.wrappedValue ? .isModal : [])
+                    .focusable(compact && mobile.wrappedValue)
+                    .focusEffectDisabled()
+                    .focused($drawerFocused)
                     .simultaneousGesture(DragGesture(minimumDistance: 20)
                         .updating($dragOffset) { value, offset, transaction in
                             guard compact, mobile.wrappedValue,
@@ -92,7 +98,9 @@ public struct CNSidebar<Sidebar: View, Detail: View>: View {
                 .twAnimation("sidebar-motion", value: desktopOpen, tracksHover: false)
                 .twAnimation("sidebar-motion", value: mobile.wrappedValue, tracksHover: false)
                 .twAnimation("sidebar-motion", value: dragOffset, tracksHover: false)
-                .onChange(of: compact) { _, _ in mobile.wrappedValue = false }
+                .onChange(of: compact) { _, _ in mobile.wrappedValue = false; drawerFocused = false }
+                .onChange(of: mobile.wrappedValue) { _, presented in drawerFocused = compact && presented }
+                .onAppear { drawerFocused = compact && mobile.wrappedValue }
                 .onKeyPress(.escape) {
                     guard compact, mobile.wrappedValue else { return .ignored }
                     context.dismiss(); return .handled
@@ -160,6 +168,7 @@ public struct CNSidebarMenu<Content: View>: View {
 }
 public struct CNSidebarMenuButton: View {
     @Environment(\.cnSidebarContext) private var context
+    @ScaledMetric(relativeTo: .body) private var iconWidth: CGFloat = 20
     private let title: String
     private let systemImage: String
     private let isSelected: Bool
@@ -178,7 +187,7 @@ public struct CNSidebarMenuButton: View {
             if context.isCompact && dismissOnSelect { context.dismiss() }
         }) {
             HStack(spacing: 10) {
-                Image(systemName: systemImage).frame(width: 20).accessibilityHidden(true)
+                Image(systemName: systemImage).frame(width: context.isCollapsed ? 20 : iconWidth).accessibilityHidden(true)
                 if !context.isCollapsed {
                     Text(title).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading).transition(.opacity)
                     if let badge { Text(badge).tw("sidebar-menu-badge").transition(.opacity) }
