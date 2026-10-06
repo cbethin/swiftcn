@@ -50,6 +50,8 @@ for entry in catalog:
     (repo/'Tests/SourceOwnership/MixedComponentOptions.swift').read_bytes())
 (scratch/'component-copy'/'MixedDropdownParts.swift').write_bytes(
     (repo/'Tests/SourceOwnership/MixedDropdownParts.swift').read_bytes())
+(scratch/'component-copy'/'MixedSidebarParts.swift').write_bytes(
+    (repo/'Tests/SourceOwnership/MixedSidebarParts.swift').read_bytes())
 PYTHON
 cmp "$repo_dir/LICENSE" "$scratch_dir/owned/LICENSE"
 

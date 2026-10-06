@@ -7,6 +7,75 @@ import Testing
 @Suite("Catalog native controls", .serialized)
 @MainActor
 struct CatalogNativeRenderingTests {
+    @Test(arguments: [false, true])
+    func sidebarMotionReachesDetailAndHonorsGlobalOverrides(disableMotion: Bool) {
+        let model = SidebarControlModel()
+        let controller = NSHostingController(rootView:
+            SidebarControlHarness(model: model, collapsible: .icon)
+                .twRules(.init(named: ["sidebar-motion": disableMotion ? "animate-none" : "animate-smooth duration-250"])))
+        let host = controller.view
+        host.frame = CGRect(x: 0, y: 0, width: 800, height: 400)
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentViewController = controller; window.orderFront(nil)
+        defer { window.orderOut(nil); window.contentViewController = nil }
+        settle(host)
+        model.animations.removeAll()
+        model.context.toggle(); settle(host)
+        if disableMotion || model.reduceMotion {
+            #expect(model.animations.allSatisfy { $0 == nil })
+        } else {
+            #expect(model.animations.contains { $0 != nil }, "The sidebar must animate its detail layout transaction.")
+        }
+        #expect(Set(model.identities).count == 1)
+    }
+    @Test(arguments: [CNSidebarCollapsible.icon, .offcanvas, .none])
+    func sidebarRetargetsWithoutReplacingTheDetailEditor(collapsible: CNSidebarCollapsible) throws {
+        let model = SidebarControlModel()
+        let controller = NSHostingController(rootView: SidebarControlHarness(model: model, collapsible: collapsible))
+        let host = controller.view
+        host.frame = CGRect(x: 0, y: 0, width: 800, height: 400)
+        let window = NSWindow(contentRect: host.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        window.contentViewController = controller; window.orderFront(nil)
+        defer { window.orderOut(nil); window.contentViewController = nil }
+        settle(host)
+        let editor = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
+        editor.stringValue = "unfinished draft"
+        editor.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: editor))
+        for expected in [false, true, false, true, false, true] {
+            model.context.toggle()
+            host.layoutSubtreeIfNeeded(); RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.025))
+            #expect(model.context.isPresented == (collapsible == .none || expected))
+            #expect(model.context.canToggle == (collapsible != .none))
+            #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)
+        }
+        #expect(model.text == "unfinished draft")
+        #expect(Set(model.identities).count == 1)
+    }
+    @Test func compactSidebarStateDoesNotChangeDesktopVisibilityOrReplaceTheEditor() throws {
+        let model = SidebarControlModel()
+        let controller = NSHostingController(rootView: SidebarControlHarness(model: model, collapsible: .icon))
+        let host = controller.view
+        host.frame = CGRect(x: 0, y: 0, width: 800, height: 400)
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentViewController = controller
+        defer { window.contentViewController = nil }
+        settle(host)
+        let editor = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
+        model.visibility = .detailOnly; settle(host)
+        #expect(model.context.isCollapsed)
+        host.frame.size.width = 360; settle(host)
+        #expect(model.context.isCompact && !model.context.isPresented && !model.context.isCollapsed)
+        model.context.toggle(); settle(host)
+        #expect(model.mobile && model.context.isPresented)
+        #expect(model.visibility == .detailOnly)
+        model.context.dismiss(); settle(host)
+        #expect(!model.mobile)
+        model.context.toggle(); settle(host)
+        host.frame.size.width = 800; settle(host)
+        #expect(!model.context.isCompact && model.context.isCollapsed && !model.mobile)
+        #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)
+        #expect(Set(model.identities).count == 1)
+    }
     @Test func nativeTabsChangeSelectionWithoutReplacingTheirItems() throws {
         let model = CatalogControlModel()
         let view = CNTabs(selection: Binding(get: { model.tab }, set: { model.tab = $0 })) {
@@ -91,6 +160,39 @@ struct CatalogNativeRenderingTests {
     }
     private func settle(_ view: NSView) { view.layoutSubtreeIfNeeded(); RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.08)) }
     private func descendants(_ root: NSView) -> [NSView] { root.subviews.flatMap { [$0] + descendants($0) } }
+}
+@MainActor @Observable private final class SidebarControlModel {
+    var visibility: NavigationSplitViewVisibility = .all
+    var mobile = false
+    var text = "initial draft"
+    @ObservationIgnored var context = CNSidebarContext()
+    @ObservationIgnored var identities: [UUID] = []
+    @ObservationIgnored var animations: [Animation?] = []
+    @ObservationIgnored var reduceMotion = false
+}
+private struct SidebarControlHarness: View {
+    let model: SidebarControlModel
+    let collapsible: CNSidebarCollapsible
+    var body: some View {
+        CNSidebar(visibility: Binding(get: { model.visibility }, set: { model.visibility = $0 }),
+                  mobilePresented: Binding(get: { model.mobile }, set: { model.mobile = $0 }), collapsible: collapsible) {
+            CNSidebarHeader { Text("Workspace") }
+            CNSidebarContent { CNSidebarMenuButton("Overview", systemImage: "tray", action: {}) }
+        } detail: { SidebarDetailControlProbe(model: model) }
+    }
+}
+private struct SidebarDetailControlProbe: View {
+    let model: SidebarControlModel
+    @Environment(\.cnSidebarContext) private var context
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var identity = UUID()
+    var body: some View {
+        model.context = context
+        model.reduceMotion = reduceMotion
+        model.identities.append(identity)
+        return CNInput("Draft", text: Binding(get: { model.text }, set: { model.text = $0 }))
+            .transaction { model.animations.append($0.animation) }
+    }
 }
 @MainActor @Observable private final class CatalogControlModel {
     var text = "hello"

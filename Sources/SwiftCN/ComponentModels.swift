@@ -32,3 +32,28 @@ extension EnvironmentValues {
         set { self[CNDropdownMenuContextKey.self] = newValue }
     }
 }
+
+/// Shared context lets copied sidebar parts compose with the imported root.
+public struct CNSidebarContext {
+    public var isCollapsed: Bool
+    public var isCompact: Bool
+    public var isPresented: Bool
+    public var canToggle: Bool
+    public var toggle: () -> Void
+    public var dismiss: () -> Void
+    public init(isCollapsed: Bool = false, isCompact: Bool = false, isPresented: Bool = true, canToggle: Bool = true,
+                toggle: @escaping () -> Void = {}, dismiss: @escaping () -> Void = {}) {
+        self.isCollapsed = isCollapsed; self.isCompact = isCompact; self.isPresented = isPresented
+        self.canToggle = canToggle
+        self.toggle = toggle; self.dismiss = dismiss
+    }
+}
+private struct CNSidebarContextKey: EnvironmentKey {
+    static var defaultValue: CNSidebarContext { .init() }
+}
+extension EnvironmentValues {
+    public var cnSidebarContext: CNSidebarContext {
+        get { self[CNSidebarContextKey.self] }
+        set { self[CNSidebarContextKey.self] = newValue }
+    }
+}

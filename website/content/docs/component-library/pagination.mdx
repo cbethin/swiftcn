@@ -142,17 +142,4 @@ public struct CNTabs<Selection: Hashable, Content: View>: View {
     }
     public var body: some View { TabView(selection: $selection) { content }.tw(cn("tabs", classes)).cnControlUtilities() }
 }
-public struct CNSidebar<Sidebar: View, Detail: View>: View {
-    @Binding private var visibility: NavigationSplitViewVisibility
-    private let classes: TWClasses
-    private let sidebar: Sidebar
-    private let detail: Detail
-    public init(visibility: Binding<NavigationSplitViewVisibility>, classes: TWClasses = "",
-                @ViewBuilder sidebar: () -> Sidebar, @ViewBuilder detail: () -> Detail) {
-        _visibility = visibility; self.classes = classes; self.sidebar = sidebar(); self.detail = detail()
-    }
-    public var body: some View {
-        NavigationSplitView(columnVisibility: $visibility) { sidebar } detail: { detail }.tw(cn("sidebar", classes))
-    }
-}
 ```

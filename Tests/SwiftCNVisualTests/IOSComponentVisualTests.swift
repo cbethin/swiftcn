@@ -18,7 +18,7 @@ struct IOSComponentVisualTests {
         let references = try #require(environment["SWIFTCN_SNAPSHOT_DIRECTORY"])
         let record = environment["SWIFTCN_VISUAL_MODE"] == "record"
         let slug = component.rawValue.replacingOccurrences(of: "_", with: "-")
-        let narrow = ["field", "input-group", "message", "questionnaire", "empty", "card", "radio-group", "typography", "pagination"].contains(slug)
+        let narrow = ["field", "input-group", "message", "questionnaire", "empty", "card", "radio-group", "typography", "pagination", "sidebar"].contains(slug)
         for configuration in ["light-standard", "dark-standard"] + (narrow ? ["light-large-text"] : []) {
             let name = "component-\(slug)-\(configuration)"
             let image = try #require(NSImage(contentsOfFile: "\(directory)/\(name).png"))

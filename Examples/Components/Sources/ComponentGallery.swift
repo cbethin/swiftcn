@@ -68,7 +68,11 @@ enum CNComponentGallery: String, CaseIterable, Identifiable {
     case typography
     var id: String { rawValue }
     @MainActor var previewExample: AnyView {
-        self == .dropdown_menu ? AnyView(DropdownMenuExample(showsInlinePreview: true)) : example
+        switch self {
+        case .dropdown_menu: AnyView(DropdownMenuExample(showsInlinePreview: true))
+        case .sidebar: AnyView(SidebarExample(initialMobilePresented: true))
+        default: example
+        }
     }
     var title: String {
         switch self {

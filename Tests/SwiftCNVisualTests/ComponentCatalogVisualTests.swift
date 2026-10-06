@@ -21,7 +21,7 @@ struct ComponentCatalogVisualTests {
     func catalog(component: CNComponentGallery, dark: Bool) throws {
         try snapshot(component, dark: dark, width: 720, large: false)
     }
-    @Test(arguments: [CNComponentGallery.field, .input_group, .message, .questionnaire, .empty, .card, .radio_group, .typography, .pagination]
+    @Test(arguments: [CNComponentGallery.field, .input_group, .message, .questionnaire, .empty, .card, .radio_group, .typography, .pagination, .sidebar]
         .filter { selectedComponents.contains($0) })
     func narrowAndLarge(component: CNComponentGallery) throws {
         try snapshot(component, dark: false, width: 320, large: true)

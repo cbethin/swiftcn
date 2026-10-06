@@ -411,9 +411,9 @@
     "name": "Sidebar",
     "slug": "sidebar",
     "symbol": "CNSidebar",
-    "source": "Navigation.swift",
+    "source": "Sidebar.swift",
     "example": "SidebarExample.swift",
-    "notes": "A native NavigationSplitView binds column visibility and accepts custom sidebar and detail content. SwiftUI adapts the columns for compact layouts. The host owns row selection and navigation destinations."
+    "notes": "A custom SwiftUI sidebar composes pinned headers and footers, scrollable groups, selected menu buttons, badges, and nested menus. Desktop visibility supports icon rails, offcanvas collapse, or a fixed panel. Compact widths use a separate controlled or local drawer state; outside activation, menu selection, Escape, and a horizontal swipe dismiss it. Native buttons retain focus, disabled state, roles, and accessibility. The detail and sidebar remain mounted through reversible transitions. Set sidebar-motion to animate-none in global rules to disable motion; presets also respect Reduce Motion. The host owns navigation destinations and selection."
   },
   {
     "name": "Skeleton",

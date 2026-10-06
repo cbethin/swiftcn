@@ -78,15 +78,16 @@ struct TWResolvedMotion {
 extension View {
     /// Animate a subtree when a native state value changes, using the shared preset registry.
     /// Unlike `.tw`, this affects layout, transitions, and content as well as styled values.
-    @_disfavoredOverload public func twAnimation<Value: Equatable>(_ classes: String, value: Value) -> some View {
-        modifier(TWValueAnimationModifier(style: .classes(classes), value: value))
+    /// Set `tracksHover` to false on broad layout containers that should not observe pointer entry.
+    @_disfavoredOverload public func twAnimation<Value: Equatable>(_ classes: String, value: Value, tracksHover: Bool = true) -> some View {
+        modifier(TWValueAnimationModifier(style: .classes(classes), value: value, tracksHover: tracksHover))
     }
-    public func twAnimation<Value: Equatable>(_ classes: TWClasses, value: Value) -> some View {
-        modifier(TWValueAnimationModifier(style: .classes(classes), value: value))
+    public func twAnimation<Value: Equatable>(_ classes: TWClasses, value: Value, tracksHover: Bool = true) -> some View {
+        modifier(TWValueAnimationModifier(style: .classes(classes), value: value, tracksHover: tracksHover))
     }
 
-    public func twAnimation<Value: Equatable>(_ styles: TWStyle..., value: Value) -> some View {
-        modifier(TWValueAnimationModifier(style: TWStyle(styles), value: value))
+    public func twAnimation<Value: Equatable>(_ styles: TWStyle..., value: Value, tracksHover: Bool = true) -> some View {
+        modifier(TWValueAnimationModifier(style: TWStyle(styles), value: value, tracksHover: tracksHover))
     }
 }
 
