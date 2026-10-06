@@ -55,10 +55,13 @@ struct NativeUtilityRenderingTests {
                 var transaction = Transaction()
                 transaction.disablesAnimations = disabledTransaction
                 withTransaction(transaction) { model.phase = phase }
-                settle(host, seconds: 0.45)
+                settle(host, seconds: NativeMotionProbe.duration + 0.3)
                 #expect(Set(identities.values).count == 1)
                 if identities.reduceMotion == true || disabledTransaction { #expect(samples.times.isEmpty) }
-                else { #expect(samples.times.contains { $0 > 0 && $0 < 0.3 }, "Phase \(phase), native sample times: \(samples.times)") }
+                else {
+                    #expect(samples.times(for: phase).contains { $0 > 0 && $0 < NativeMotionProbe.duration },
+                        "Phase \(phase), native samples: \(samples.recentSamples)")
+                }
                 samples.clear()
             }
             #expect(Set(identities.phases) == [0, 1, 2])
@@ -78,8 +81,8 @@ struct NativeUtilityRenderingTests {
         withHost(view) { host in
             for phase in [1, 0] {
                 withAnimation(Animation(NativeMotionProbe(samples: samples))) { model.phase = phase }
-                settle(host, seconds: 0.45)
-                #expect(samples.times.contains { $0 > 0 && $0 < 0.3 })
+                settle(host, seconds: NativeMotionProbe.duration + 0.3)
+                #expect(samples.times.contains { $0 > 0 && $0 < NativeMotionProbe.duration })
                 #expect(Set(identities.values).count == 1)
                 #expect(Set(identities.modifierValues).count == 1)
                 samples.clear()
@@ -116,10 +119,10 @@ struct NativeUtilityRenderingTests {
         withHost(view) { host in
             for phase in [1, 2, 0] {
                 model.phase = phase
-                settle(host, seconds: 0.45)
+                settle(host, seconds: NativeMotionProbe.duration + 0.3)
                 #expect(Set(identities.values).count == 1)
                 if identities.reduceMotion == true { #expect(samples.times.isEmpty) }
-                else { #expect(samples.times.contains { $0 > 0 && $0 < 0.3 }) }
+                else { #expect(samples.times.contains { $0 > 0 && $0 < NativeMotionProbe.duration }) }
                 samples.clear()
             }
         }
@@ -232,20 +235,30 @@ private struct NativeUtilityChild: View {
 }
 private final class NativeMotionSamples: @unchecked Sendable {
     private let lock = NSLock()
-    private var storage: [TimeInterval] = []
-    var times: [TimeInterval] { lock.withLock { storage } }
-    func append(_ time: TimeInterval) { lock.withLock { storage.append(time) } }
+    private var storage: [(time: TimeInterval, generation: Int)] = []
+    var times: [TimeInterval] { lock.withLock { storage.map(\.time) } }
+    func times(for generation: Int) -> [TimeInterval] {
+        lock.withLock { storage.filter { $0.generation == generation }.map(\.time) }
+    }
+    var recentSamples: [String] {
+        lock.withLock { storage.suffix(12).map { "generation \($0.generation): \($0.time)" } }
+    }
+    func append(_ time: TimeInterval, generation: Int) {
+        lock.withLock { storage.append((time, generation)) }
+    }
     func clear() { lock.withLock { storage.removeAll() } }
 }
 private struct NativeMotionProbe: CustomAnimation {
+    // Give a loaded hosted renderer time to sample a transition before it completes.
+    static let duration: TimeInterval = 1
     let samples: NativeMotionSamples
     var generation = 0
     static func == (lhs: Self, rhs: Self) -> Bool { lhs.samples === rhs.samples && lhs.generation == rhs.generation }
     func hash(into hasher: inout Hasher) { hasher.combine(ObjectIdentifier(samples)); hasher.combine(generation) }
     func animate<V: VectorArithmetic>(value: V, time: TimeInterval, context: inout AnimationContext<V>) -> V? {
-        samples.append(time)
-        guard time < 0.3 else { return nil }
-        return value.scaled(by: max(0, time / 0.3))
+        samples.append(time, generation: generation)
+        guard time < Self.duration else { return nil }
+        return value.scaled(by: max(0, time / Self.duration))
     }
 }
 #endif
