@@ -25,13 +25,14 @@ public struct CNTextarea: View {
     private let title: String
     @Binding private var text: String
     private let classes: TWClasses
+    private let focus: FocusState<Bool>.Binding?
     @FocusState private var isFocused: Bool
-    public init(_ title: String, text: Binding<String>, classes: TWClasses = "") {
-        self.title = title; _text = text; self.classes = classes
+    public init(_ title: String, text: Binding<String>, focus: FocusState<Bool>.Binding? = nil, classes: TWClasses = "") {
+        self.title = title; _text = text; self.focus = focus; self.classes = classes
     }
     public var body: some View {
-        TextEditor(text: $text).scrollContentBackground(.hidden).focused($isFocused)
-            .modifier(TWFieldControlModifier(style: .classes(cn("textarea min-h-[100]", classes)), state: .init(isFocused: isFocused)))
+        TextEditor(text: $text).scrollContentBackground(.hidden).focused(focus ?? $isFocused)
+            .modifier(TWFieldControlModifier(style: .classes(cn("textarea min-h-[100]", classes)), state: .init(isFocused: focus?.wrappedValue ?? isFocused)))
             .accessibilityLabel(title)
     }
 }
@@ -40,18 +41,28 @@ public struct CNTextarea: View {
 public struct CNInputGroup<Content: View>: View {
     private let classes: TWClasses
     private let content: Content
-    public init(_ classes: TWClasses = "", @ViewBuilder content: () -> Content) {
-        self.classes = classes; self.content = content()
+    private let focus: FocusState<Bool>.Binding?
+    @FocusState private var isFocused: Bool
+    public init(_ classes: TWClasses = "", focus: FocusState<Bool>.Binding? = nil, @ViewBuilder content: () -> Content) {
+        self.classes = classes; self.focus = focus; self.content = content()
     }
     public var body: some View {
-        HStack(spacing: 8) { content }.modifier(TWFieldControlModifier(style: .classes(cn("input-group", classes))))
+        HStack(spacing: 8) { content }
+            .modifier(TWFieldControlModifier(style: .classes(cn("input-group", classes)), state: .init(isFocused: focus?.wrappedValue ?? isFocused)))
+            .environment(\.twInputGroupFocus, focus ?? $isFocused)
     }
 }
 public struct CNInputGroupField: View {
     private let title: LocalizedStringKey
     @Binding private var text: String
-    public init(_ title: LocalizedStringKey, text: Binding<String>) { self.title = title; _text = text }
-    public var body: some View { TextField(title, text: $text).textFieldStyle(.plain).tw("text-sm") }
+    private let classes: TWClasses
+    @Environment(\.twInputGroupFocus) private var groupFocus
+    @FocusState private var isFocused: Bool
+    public init(_ title: LocalizedStringKey, text: Binding<String>, classes: TWClasses = "") { self.title = title; _text = text; self.classes = classes }
+    public var body: some View {
+        TextField(title, text: $text).textFieldStyle(.plain).focused(groupFocus ?? $isFocused)
+            .tw(cn("input-group-field", classes))
+    }
 }
 
 /// One native field supports paste, selection, deletion and one-time-code autofill.

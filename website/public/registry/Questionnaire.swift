@@ -94,13 +94,12 @@ public struct CNQuestionnaire: View {
                     answerControl(question).id(question.id)
                     if let validationError, errorQuestionID == question.id { Text(validationError).tw("field-error") }
                 }
-                HStack {
+                CNAdaptiveActionLayout(spacing: 8, verticalAlignment: .trailing) {
                     CNButton("Previous", variant: .outline, action: { activeIndex = index - 1 }).disabled(index == 0)
-                    Spacer()
                     if let onCancel { CNButton("Cancel", role: .cancel, variant: .ghost, action: onCancel) }
                     if !question.isRequired { CNButton("Skip", variant: .ghost, action: { answers[question.id] = nil; continueFromCurrent() }) }
                     CNButton(index == questions.count - 1 ? "Submit" : "Next", action: continueFromCurrent).keyboardShortcut(.defaultAction)
-                }
+                }.frame(maxWidth: .infinity, alignment: .trailing)
             } else {
                 Text("No questions").tw("text-sm text-mutedForeground")
             }

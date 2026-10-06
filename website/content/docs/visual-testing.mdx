@@ -138,3 +138,14 @@ Check the runner version before accepting a new reference after an unexpected fa
 The recording workflow records candidates and verifies them in a second test process.
 It never commits or approves candidate images automatically.
 You can also start that workflow manually for a selected branch.
+
+## Component library coverage
+
+The component suite records every catalog example in light and dark appearances on iOS. The macOS suite covers 63 entries in both appearances. Both suites also check eight representative examples at narrow widths with large text. CI pins macOS 15 with Xcode 16.4 and iOS 18.5 on iPhone 16. Verification fails on a missing or changed reference; CI never updates references automatically.
+
+AppKit bitmap capture cannot composite the native TabView strip correctly, including an unstyled SwiftUI TabView. The macOS tab test checks native selection and item identity instead. The running gallery also supports manual keyboard and pointer review. The Tabs documentation uses native iOS captures, where the complete control renders correctly.
+
+```bash
+bash Scripts/component-visual-test.sh verify ci
+python3 Scripts/ios-visual-test.py verify ci --components
+```

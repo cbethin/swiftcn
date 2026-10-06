@@ -8,7 +8,7 @@ public struct CNAlert<Content: View>: View {
         self.classes = classes; self.spacing = spacing; self.content = content()
     }
     public var body: some View {
-        VStack(alignment: .leading, spacing: spacing) { content }.tw(cn("alert", classes))
+        VStack(alignment: .leading, spacing: spacing) { content }.frame(maxWidth: .infinity, alignment: .leading).tw(cn("alert", classes))
     }
 }
 
@@ -20,7 +20,7 @@ public struct CNItem<Content: View>: View {
         self.classes = classes; self.spacing = spacing; self.content = content()
     }
     public var body: some View {
-        HStack(alignment: .top, spacing: spacing) { content }.tw(cn("item", classes))
+        HStack(alignment: .center, spacing: spacing) { content }.frame(maxWidth: .infinity, alignment: .leading).tw(cn("item", classes))
     }
 }
 
@@ -56,7 +56,7 @@ public struct CNEmpty<Content: View>: View {
         self.classes = classes; self.spacing = spacing; self.content = content()
     }
     public var body: some View {
-        VStack(alignment: .leading, spacing: spacing) { content }.tw(cn("empty", classes))
+        VStack(alignment: .center, spacing: spacing) { content }.tw(cn("empty", classes))
     }
 }
 
@@ -104,7 +104,7 @@ public struct CNDialogFooter<Content: View>: View {
         self.classes = classes; self.spacing = spacing; self.content = content()
     }
     public var body: some View {
-        HStack(alignment: .top, spacing: spacing) { content }.tw(cn("dialog-footer", classes))
+        CNAdaptiveActionLayout(spacing: spacing, verticalAlignment: .trailing) { content }.frame(maxWidth: .infinity, alignment: .trailing).tw(cn("dialog-footer", classes))
     }
 }
 
@@ -176,7 +176,7 @@ public struct CNInputGroupAddon<Content: View>: View {
         self.classes = classes; self.spacing = spacing; self.content = content()
     }
     public var body: some View {
-        HStack(alignment: .top, spacing: spacing) { content }.tw(cn("text-mutedForeground", classes))
+        HStack(alignment: .center, spacing: spacing) { content }.tw(cn("text-mutedForeground", classes))
     }
 }
 

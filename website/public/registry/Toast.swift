@@ -31,7 +31,7 @@ public struct CNToastHost<Content: View>: View {
                     }
                     CNButton(variant: .ghost, size: .icon, action: { dismiss(current.id) }) { Image(systemName: "xmark") }
                         .accessibilityLabel("Dismiss notification")
-                }.tw(cn("toast max-w-[360]", classes)).accessibilityElement(children: .contain)
+                }.tw(cn("toast max-w-[360]", classes)).transition(.opacity).accessibilityElement(children: .contain)
                     .task(id: current) {
                         guard toast?.id == current.id else { return }
                         AccessibilityNotification.Announcement([current.title, current.message].compactMap { $0 }.joined(separator: ". ")).post()
@@ -41,7 +41,7 @@ public struct CNToastHost<Content: View>: View {
                         dismiss(current.id)
                     }
             }
-        }
+        }.twAnimation(cn("feedback-motion", classes), value: toast?.id)
     }
     private func dismiss(_ id: UUID) { if toast?.id == id { toast = nil } }
 }

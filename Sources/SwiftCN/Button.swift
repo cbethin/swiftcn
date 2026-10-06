@@ -55,7 +55,7 @@ public struct CNButtonGroup<Content: View>: View {
         self.axis = axis; self.classes = classes; self.content = content()
     }
     public var body: some View {
-        let layout = axis == .horizontal ? AnyLayout(HStackLayout(spacing: 4)) : AnyLayout(VStackLayout(spacing: 4))
+        let layout = axis == .horizontal ? AnyLayout(CNAdaptiveActionLayout(spacing: 4)) : AnyLayout(VStackLayout(spacing: 4))
         layout { content }.tw(cn("button-group", classes))
     }
 }

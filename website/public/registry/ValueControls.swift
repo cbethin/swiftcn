@@ -30,7 +30,7 @@ public struct CNProgress: View {
         self.total = total; self.classes = classes
     }
     public var body: some View {
-        ProgressView(title, value: value, total: total).tw(cn("progress", classes)).cnControlUtilities()
+        ProgressView(title, value: value, total: total).tw(cn("progress feedback-motion", classes), value: value, animationScope: .content).cnControlUtilities()
     }
 }
 public struct CNSpinner: View {

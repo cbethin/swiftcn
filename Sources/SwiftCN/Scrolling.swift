@@ -45,6 +45,7 @@ public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: Vi
 public struct CNCarousel<Data: RandomAccessCollection, Content: View>: View where Data.Element: Identifiable {
     private let data: Data
     @Binding private var selection: Data.Element.ID?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let classes: TWClasses
     private let content: (Data.Element) -> Content
     public init(_ data: Data, selection: Binding<Data.Element.ID?>, classes: TWClasses = "",
@@ -67,6 +68,8 @@ public struct CNCarousel<Data: RandomAccessCollection, Content: View>: View wher
         let ids = data.map(\.id)
         guard !ids.isEmpty else { return }
         let index = selection.flatMap { ids.firstIndex(of: $0) } ?? 0
-        selection = ids[min(ids.count - 1, max(0, index + delta))]
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.25)) {
+            selection = ids[min(ids.count - 1, max(0, index + delta))]
+        }
     }
 }

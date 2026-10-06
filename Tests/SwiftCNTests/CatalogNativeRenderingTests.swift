@@ -7,6 +7,41 @@ import Testing
 @Suite("Catalog native controls", .serialized)
 @MainActor
 struct CatalogNativeRenderingTests {
+    @Test func nativeTabsChangeSelectionWithoutReplacingTheirItems() throws {
+        let model = CatalogControlModel()
+        let view = CNTabs(selection: Binding(get: { model.tab }, set: { model.tab = $0 })) {
+            Text("Account settings").tabItem { Text("Account") }.tag(0)
+            Text("Security settings").tabItem { Text("Security") }.tag(1)
+        }.frame(height: 180)
+        let (host, window) = host(view)
+        defer { window.contentView = nil }
+        let tabs = try #require(descendants(host).compactMap { $0 as? NSTabView }.first)
+        #expect(tabs.numberOfTabViewItems == 2)
+        let account = tabs.tabViewItem(at: 0)
+        let security = tabs.tabViewItem(at: 1)
+        model.tab = 1
+        settle(host)
+        #expect(tabs.selectedTabViewItem === security)
+        #expect(tabs.tabViewItem(at: 0) === account)
+        tabs.selectTabViewItem(account)
+        settle(host)
+        #expect(model.tab == 0)
+    }
+    @Test func actionReflowKeepsTheSameNativeEditor() throws {
+        let model = CatalogControlModel()
+        let (host, window) = host(CatalogActionProbe(model: model))
+        defer { window.contentView = nil }
+        let editor = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
+        let rowHeight = host.fittingSize.height
+        editor.stringValue = "draft"
+        editor.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: editor))
+        model.narrow = true
+        settle(host)
+        let stacked = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
+        #expect(stacked === editor)
+        #expect(model.text == "draft")
+        #expect(host.fittingSize.height > rowHeight + 20)
+    }
     @Test func inputKeepsTheEditorThroughValidationThemeAndClassChanges() throws {
         let model = CatalogControlModel()
         let (host, window) = host(CatalogInputProbe(model: model))
@@ -61,8 +96,19 @@ struct CatalogNativeRenderingTests {
     var text = "hello"
     var invalid = false
     var large = false
+    var narrow = false
+    var tab = 0
     var on = false
     var toast: CNToast? = nil
+}
+private struct CatalogActionProbe: View {
+    let model: CatalogControlModel
+    var body: some View {
+        CNAdaptiveActionLayout {
+            CNInput("Name", text: Binding(get: { model.text }, set: { model.text = $0 }), classes: "w-[120]")
+            CNButton("Save workspace", action: {})
+        }.frame(width: model.narrow ? 140 : 360)
+    }
 }
 private struct CatalogInputProbe: View {
     let model: CatalogControlModel

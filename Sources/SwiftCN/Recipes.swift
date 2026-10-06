@@ -40,13 +40,16 @@ extension TWStyle {
          "field-error": Self(.text(.xs), .fg(.destructive)),
          "field-invalid": Self(.border(.destructive), .focus(.border(.destructive))),
          "input": Self(.px(3), .py(2), .minH(inputMinimumHeight), .bg(.background), .border(.border), .rounded(.md),
-                       .focus(.border(.primary)), .disabled(.opacity(0.45))),
+                       .focus(.border(.primary)), .classes("control-motion"), .disabled(.opacity(0.45))),
          "toggle": Self(.text(.sm), .disabled(.opacity(0.45))),
          "label": Self(.text(.sm))]
         let components: [String: TWClasses] = [
             "button-ghost": "px-4 py-2 text-sm font-semibold rounded-md hover:bg-accent pressed:opacity-80 disabled:opacity-45",
             "button-link": "text-sm font-medium text-primary hover:opacity-80 disabled:opacity-45",
             "button-group": "bg-surface rounded-md",
+            "control-motion": "animate-smooth duration-150",
+            "disclosure-motion": "animate-spring duration-250",
+            "feedback-motion": "animate-smooth duration-200",
             "badge": "px-2 py-1 text-xs font-semibold bg-primary text-onPrimary rounded-full",
             "alert": "p-4 bg-surface text-foreground border rounded-lg",
             "alert-title": "text-sm font-semibold",
@@ -60,7 +63,7 @@ extension TWStyle {
             "item": "p-4 bg-surface border rounded-lg",
             "item-title": "text-sm font-medium",
             "item-description": "text-sm text-mutedForeground",
-            "empty": "p-6 text-mutedForeground rounded-lg border",
+            "empty": "p-8 w-full text-center text-mutedForeground rounded-lg border",
             "empty-title": "text-lg font-semibold text-foreground",
             "empty-description": "text-sm text-mutedForeground",
             "kbd": "cn-mono px-2 py-1 text-xs bg-accent text-mutedForeground border rounded-sm",
@@ -75,7 +78,7 @@ extension TWStyle {
             "radio-group": "text-sm cn-tint-[primary]",
             "select": "text-sm cn-tint-[primary]",
             "calendar": "cn-tint-[primary]",
-            "textarea": "p-3 bg-background border rounded-md",
+            "textarea": "p-3 bg-background border rounded-md focus:border-primary disabled:opacity-45 control-motion",
             "input-group": "px-3 py-2 bg-background border rounded-md",
             "input-otp": "cn-mono text-xl",
             "accordion": "text-foreground",
@@ -88,7 +91,7 @@ extension TWStyle {
             "dialog-footer": "pt-4",
             "popover": "p-4 bg-surface text-foreground rounded-lg",
             "command": "p-2 bg-surface rounded-lg",
-            "command-item": "px-3 py-2 rounded-md",
+            "command-item": "px-3 py-2 text-sm rounded-md control-motion hover:bg-accent pressed:opacity-80 disabled:opacity-45",
             "combobox": "px-3 py-2 bg-background border rounded-md",
             "pagination": "text-sm",
             "scroll-area": "text-foreground",
@@ -103,7 +106,7 @@ extension TWStyle {
             "chart": "p-4 bg-surface rounded-lg border cn-tint-[primary]",
             "questionnaire": "p-6 bg-surface rounded-lg border",
             "resizable": "text-foreground",
-            "resizable-handle": "text-border",
+            "resizable-handle": "text-border hover:text-primary control-motion",
             "tooltip": "text-xs",
             "hover-card": "p-4 bg-surface rounded-lg",
             "toggle-selected": "bg-primary text-onPrimary",
@@ -112,7 +115,8 @@ extension TWStyle {
         for (name, classes) in components { recipes[name] = .classes(classes) }
         recipes["button-ghost"] = Self(buttonBase, .fg(.foreground), .hover(.bg(.accent)))
         recipes["button-link"] = Self(buttonBase, .px(0), .fg(.primary), .hover(.opacity(0.80)))
-        recipes["input-group"] = Self(.px(3), .minH(inputMinimumHeight), .bg(.background), .border(.border), .rounded(.md))
+        recipes["input-group"] = Self(.px(3), .minH(inputMinimumHeight), .bg(.background), .border(.border), .rounded(.md), .focus(.border(.primary)), .disabled(.opacity(0.45)), .classes("control-motion"))
+        recipes["input-group-field"] = Self(.text(.sm), .py(2), .minH(inputMinimumHeight))
         return recipes
     }()
 
@@ -134,6 +138,6 @@ extension TWStyle {
         let minimumHeight: CGFloat = 32
         #endif
         return Self(.px(4), .py(2), .minH(minimumHeight), .text(.sm), .weight(.semibold), .rounded(.md),
-                    .pressed(.opacity(0.80)), .disabled(.opacity(0.45)))
+                    .pressed(.opacity(0.80)), .classes("control-motion"), .disabled(.opacity(0.45)))
     }
 }

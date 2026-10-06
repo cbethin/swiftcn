@@ -70,7 +70,7 @@ public struct CNCardFooter<Content: View>: View {
     }
 
     public var body: some View {
-        HStack(alignment: .center, spacing: spacing) { content }
+        CNAdaptiveActionLayout(spacing: spacing) { content }
             .frame(maxWidth: .infinity, alignment: .leading)
             .tw(cn("card-footer", classes))
     }

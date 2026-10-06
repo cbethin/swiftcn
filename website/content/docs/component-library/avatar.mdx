@@ -35,6 +35,10 @@ Native AsyncImage displays a URL or fallback on loading and error. Cropping and 
 
 Visual recipes use `.tw` classes. Append `classes:` to override a recipe locally, or change the recipe in `TWGlobalRules.named` for your subtree. Native layout and interaction modifiers remain SwiftUI APIs. For control colors, append `cn-tint-[primary]`, another theme token, or an interpolated `Color`.
 
+Motion recipes are editable too: `control-motion` uses a 150 ms smooth response, `disclosure-motion` uses a 250 ms spring, and `feedback-motion` uses a 200 ms smooth response. Set a recipe to `animate-none` in your global rules to turn it off. Presets respect Reduce Motion. Static components stay still; native scrolling, drag tracking, and platform presentation keep their own gestures.
+
+Action groups and card, dialog, and questionnaire footers stack when their content does not fit. The native layout preserves the same child controls during this change.
+
 View builders preserve native child content. Native Button roles, labels, keyboard shortcuts, submit actions, and presentation modifiers still work. A string recipe does not replace a native control API or a typed chart mark.
 
 ## Own the source
@@ -116,7 +120,7 @@ public struct CNSkeleton<Content: View>: View {
     }
     public var body: some View {
         content.redacted(reason: isLoading ? .placeholder : []).disabled(isLoading)
-            .accessibilityHidden(isLoading).tw(cn(isLoading ? "skeleton" : "", classes))
+            .accessibilityHidden(isLoading).tw(cn("feedback-motion", isLoading ? "skeleton" : "", classes), value: isLoading, animationScope: .surface)
     }
 }
 public struct CNAvatar<Fallback: View>: View {

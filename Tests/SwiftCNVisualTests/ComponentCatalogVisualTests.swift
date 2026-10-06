@@ -10,7 +10,9 @@ import SwiftCN
        .enabled(if: ProcessInfo.processInfo.environment["SWIFTCN_COMPONENT_VISUAL_MODE"] != nil))
 @MainActor
 struct ComponentCatalogVisualTests {
-    @Test(arguments: CNComponentGallery.allCases, [false, true])
+    // AppKit cacheDisplay cannot composite the native tab strip. iOS covers both
+    // appearances; CatalogNativeRenderingTests verifies macOS selection and item identity.
+    @Test(arguments: CNComponentGallery.allCases.filter { $0 != .tabs }, [false, true])
     func catalog(component: CNComponentGallery, dark: Bool) throws {
         try snapshot(component, dark: dark, width: 720, large: false)
     }

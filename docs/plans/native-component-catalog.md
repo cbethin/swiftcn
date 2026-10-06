@@ -51,3 +51,14 @@ Record new baselines in the correct platform profiles.
 Compile the library and examples for macOS and iOS.
 Build the documentation site and check search, source downloads, and local links.
 Review the final implementation and open a pull request with the results.
+
+## Design refinement
+
+Use consistent spacing, typography, corners, borders, and control heights across related components.
+Stack action rows when their content exceeds the available width.
+Keep the same child controls when the layout changes.
+
+Animate control feedback, disclosure layout, and temporary feedback with editable class recipes.
+Respect Reduce Motion.
+Keep drag tracking immediate and preserve native scrolling gestures.
+Review native images in both appearances before accepting each reference.

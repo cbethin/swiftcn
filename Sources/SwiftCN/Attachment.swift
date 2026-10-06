@@ -24,7 +24,7 @@ public struct CNAttachment<Preview: View>: View {
         HStack(alignment: .center, spacing: 12) {
             preview.accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
-                Link(title, destination: url).tw("text-sm font-medium")
+                Link(title, destination: url).buttonStyle(.tw("button-link px-0"))
                 if let detail { Text(detail).tw("text-xs text-mutedForeground") }
                 if let progress { CNProgress("Upload progress", value: progress) }
             }

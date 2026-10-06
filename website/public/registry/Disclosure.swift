@@ -11,7 +11,7 @@ public struct CNCollapsible<Label: View, Content: View>: View {
         _isExpanded = isExpanded; self.classes = classes; self.content = content(); self.label = label()
     }
     public var body: some View {
-        DisclosureGroup(isExpanded: $isExpanded) { content } label: { label }.tw(cn("collapsible", classes))
+        DisclosureGroup(isExpanded: $isExpanded) { content } label: { label }.tw(cn("collapsible disclosure-motion", classes), value: isExpanded, animationScope: .layout)
     }
 }
 
@@ -39,6 +39,6 @@ public struct CNAccordion<Data: RandomAccessCollection, Label: View, Content: Vi
                 })) { content(item) } label: { label(item) }.tw("accordion-item")
                 CNSeparator()
             }
-        }.tw(cn("accordion", classes))
+        }.tw(cn("accordion disclosure-motion", classes), value: expanded, animationScope: .layout)
     }
 }

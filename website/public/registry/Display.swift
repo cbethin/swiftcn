@@ -68,7 +68,7 @@ public struct CNSkeleton<Content: View>: View {
     }
     public var body: some View {
         content.redacted(reason: isLoading ? .placeholder : []).disabled(isLoading)
-            .accessibilityHidden(isLoading).tw(cn(isLoading ? "skeleton" : "", classes))
+            .accessibilityHidden(isLoading).tw(cn("feedback-motion", isLoading ? "skeleton" : "", classes), value: isLoading, animationScope: .surface)
     }
 }
 public struct CNAvatar<Fallback: View>: View {

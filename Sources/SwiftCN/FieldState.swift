@@ -3,12 +3,20 @@ import SwiftUI
 private struct TWFieldInvalidKey: EnvironmentKey {
     static let defaultValue = false
 }
+private struct TWInputGroupFocusKey: EnvironmentKey {
+    static var defaultValue: FocusState<Bool>.Binding? { nil }
+}
 
 extension EnvironmentValues {
     /// Shared by imported and locally copied field parts and native control styles.
     public var twFieldInvalid: Bool {
         get { self[TWFieldInvalidKey.self] }
         set { self[TWFieldInvalidKey.self] = newValue }
+    }
+    /// A group shares one native editor's focus with its surrounding decoration.
+    public var twInputGroupFocus: FocusState<Bool>.Binding? {
+        get { self[TWInputGroupFocusKey.self] }
+        set { self[TWInputGroupFocusKey.self] = newValue }
     }
 }
 

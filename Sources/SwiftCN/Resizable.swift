@@ -21,7 +21,7 @@ public struct CNResizable<First: View, Second: View>: View {
     }
     public var body: some View {
         GeometryReader { geometry in
-            let length = max(0, (axis == .horizontal ? geometry.size.width : geometry.size.height) - 44)
+            let length = max(0, (axis == .horizontal ? geometry.size.width : geometry.size.height) - handleExtent)
             let split = Self.clamp(fraction, minimum: minimumFraction)
             let layout = axis == .horizontal ? AnyLayout(HStackLayout(spacing: 0)) : AnyLayout(VStackLayout(spacing: 0))
             layout {
@@ -31,11 +31,18 @@ public struct CNResizable<First: View, Second: View>: View {
             }
         }.tw(cn("resizable", classes))
     }
+    private var handleExtent: CGFloat {
+        #if os(macOS)
+        12
+        #else
+        44
+        #endif
+    }
     private func handle(length: CGFloat) -> some View {
         ZStack {
             Color.clear
             Rectangle().tw(axis == .horizontal ? "resizable-handle w-[2]" : "resizable-handle h-[2]")
-        }.frame(width: axis == .horizontal ? 44 : nil, height: axis == .vertical ? 44 : nil)
+        }.frame(width: axis == .horizontal ? handleExtent : nil, height: axis == .vertical ? handleExtent : nil)
             .contentShape(Rectangle())
             .gesture(DragGesture().updating($dragStart) { _, start, _ in
                 if start == nil { start = Self.clamp(fraction, minimum: minimumFraction) }
