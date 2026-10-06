@@ -1,5 +1,6 @@
 #if os(macOS)
 import AppKit
+import QuartzCore
 import SwiftUI
 import Testing
 @testable import SwiftCN
@@ -111,6 +112,56 @@ struct NativeUtilityRenderingTests {
         }
     }
 
+    @Test(arguments: [false, true])
+    func composedOffsetsInterpolatePresentationPixels(registered: Bool) throws {
+        let model = NativeUtilityModel()
+        model.phase = 1
+        let identities = NativeIdentityRecorder()
+        let rules = TWGlobalRules(modifiers: [
+            "glass": .view { view, active in view.background(active ? Color.blue : .clear) },
+            "shift": .argument(default: CGFloat.zero,
+                parse: { argument, _ in argument.points }) { view, distance in view.offset(x: distance) }
+        ])
+        try withHost(OffsetPixelHarness(model: model, identities: identities, registered: registered).twRules(rules)) { host in
+            for phase in [2, 1] {
+                let start = try bluePosition(host)
+                model.phase = phase
+                var positions: [CGFloat] = []
+                for _ in 0..<12 {
+                    settle(host, seconds: 0.1)
+                    positions.append(try bluePosition(host))
+                }
+                let end = start + (phase == 2 ? 40 : -40)
+                #expect(abs(try #require(positions.last) - end) < 1)
+                #expect(positions.contains { $0 > min(start, end) + 2 && $0 < max(start, end) - 2 },
+                    "Rendered offset positions: \(positions)")
+                #expect(Set(identities.values).count == 1)
+            }
+        }
+    }
+
+    private func bluePosition<V: View>(_ host: NSHostingView<V>) throws -> CGFloat {
+        host.wantsLayer = true
+        host.layoutSubtreeIfNeeded()
+        host.displayIfNeeded()
+        CATransaction.flush()
+        let layer = try #require(host.layer)
+        let scale = host.window?.backingScaleFactor ?? 1
+        let width = Int(host.bounds.width * scale), height = Int(host.bounds.height * scale)
+        let context = try #require(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+            bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
+        context.scaleBy(x: scale, y: scale)
+        (layer.presentation() ?? layer).render(in: context)
+        let bytes = try #require(context.data).assumingMemoryBound(to: UInt8.self)
+        let left = try #require((0..<width).first { x in
+            let index = ((height / 2) * width + x) * 4
+            return Int(bytes[index + 2]) > Int(bytes[index]) + 100
+                && Int(bytes[index + 2]) > Int(bytes[index + 1]) + 35
+        })
+        return CGFloat(left) / scale
+    }
+
     @Test func registryAllowsNativeModifierFactoriesAndCallerAnimations() {
         let model = NativeUtilityModel()
         let identities = NativeIdentityRecorder()
@@ -185,7 +236,7 @@ struct NativeUtilityRenderingTests {
         return Data(bytes: try #require(context.data), count: image.width * image.height * 4)
     }
 
-    private func withHost<V: View>(_ view: V, run: (NSHostingView<V>) -> Void) {
+    private func withHost<V: View>(_ view: V, run: (NSHostingView<V>) throws -> Void) rethrows {
         let host = NSHostingView(rootView: view)
         // Keep the decorated content visible through the largest tested offset.
         // macOS 15 can stop sampling a custom animation when its layer is clipped.
@@ -195,7 +246,7 @@ struct NativeUtilityRenderingTests {
         window.orderFront(nil)
         defer { window.orderOut(nil); window.contentView = nil }
         settle(host, seconds: 0.1)
-        run(host)
+        try run(host)
     }
 
     private func settle<V: View>(_ host: NSHostingView<V>, seconds: TimeInterval) {
@@ -288,6 +339,21 @@ private struct NativeOffsetHarness: View {
             }
         }
         .animation(animation, value: model.phase)
+    }
+}
+private struct OffsetPixelHarness: View {
+    @ObservedObject var model: NativeUtilityModel
+    let identities: NativeIdentityRecorder
+    let registered: Bool
+    @ViewBuilder var body: some View {
+        if registered {
+            NativeUtilityChild(phase: model.phase, identities: identities)
+                .tw("p-3 glass shift-[\(model.phase * 40)] animate-linear duration-1000", value: model.phase)
+        } else {
+            NativeUtilityChild(phase: model.phase, identities: identities)
+                .padding(12).background(Color.blue).offset(x: CGFloat(model.phase * 40))
+                .animation(.linear(duration: 1), value: model.phase)
+        }
     }
 }
 private struct TypedMotionHarness: View {
