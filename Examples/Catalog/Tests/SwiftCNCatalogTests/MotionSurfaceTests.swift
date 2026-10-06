@@ -1,4 +1,5 @@
 import AppKit
+import QuartzCore
 import SwiftUI
 import SwiftCN
 import Testing
@@ -7,12 +8,21 @@ import Testing
 @Suite("Motion demo geometry", .serialized)
 @MainActor
 struct MotionSurfaceTests {
-    @Test func expansionAndCollapseInterpolateActualCardSize() throws {
-        try check(preset: "linear", expectsMotion: true)
+    @Test(arguments: [false, true])
+    func expansionAndCollapseInterpolateActualCardSize(demoEffectsEnabled: Bool) throws {
+        try check(preset: "linear", expectsMotion: true, demoEffectsEnabled: demoEffectsEnabled)
     }
 
     @Test func noneChangesSizeImmediately() throws {
-        try check(preset: "none", expectsMotion: false)
+        try check(preset: "none", expectsMotion: false, demoEffectsEnabled: true)
+    }
+
+    @Test func nativePaddingUsesTheSamePresentationCapture() throws {
+        try check(preset: "linear", expectsMotion: true, native: true)
+    }
+
+    @Test func plainUtilitiesInterpolateWithoutDemoEffects() throws {
+        try check(preset: "linear", expectsMotion: true, plainUtilities: true)
     }
 
     @Test(arguments: [TWAnimationScope.surface, .layout])
@@ -20,29 +30,33 @@ struct MotionSurfaceTests {
         try check(preset: "linear", expectsMotion: scope != .content, animationScope: scope)
     }
 
-    private func check(preset: String, expectsMotion: Bool, animationScope: TWAnimationScope = .all) throws {
+    private func check(preset: String, expectsMotion: Bool, animationScope: TWAnimationScope = .all,
+                       native: Bool = false, plainUtilities: Bool = false, demoEffectsEnabled: Bool = false) throws {
         let model = SurfaceModel()
         let recorder = SurfaceEnvironment()
         let blue = TWAdaptiveColor(light: .blue, dark: .blue)
-        let host = NSHostingView(rootView: SurfaceHarness(model: model, recorder: recorder, preset: preset, animationScope: animationScope)
+        let host = NSHostingView(rootView: SurfaceHarness(model: model, recorder: recorder, preset: preset,
+            animationScope: animationScope, native: native, plainUtilities: plainUtilities)
             .twTheme(TWTheme(colors: [.primary: blue, .accent: blue,
                 .onPrimary: .init(light: .white, dark: .white), .foreground: .init(light: .black, dark: .black)]))
             .environment(\.colorScheme, .light)
-            .environment(\.demoMotionEnabled, false))
+            .environment(\.demoMotionEnabled, demoEffectsEnabled))
         host.frame = CGRect(x: 0, y: 0, width: 400, height: 180)
+        host.wantsLayer = true
         let window = NSWindow(contentRect: host.bounds, styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = host
         window.orderFront(nil)
         defer { window.orderOut(nil); window.contentView = nil }
         host.layoutSubtreeIfNeeded()
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
+        let label = "\(native ? "native" : "tw")\(plainUtilities ? "-plain" : "")\(demoEffectsEnabled ? "-live" : "")-\(preset)-\(animationScope.rawValue)"
         var contentFrames: [CGRect] = []
-        let compact = try bounds(host, name: "\(preset)-\(animationScope.rawValue)-compact", contentFrames: &contentFrames)
+        let compact = try bounds(host, name: "\(label)-compact", contentFrames: &contentFrames)
         var expansion: [CGRect] = []
         model.expanded = true
         for frame in 0..<12 {
             RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
-            expansion.append(try bounds(host, name: "\(preset)-\(animationScope.rawValue)-expand-\(frame)", contentFrames: &contentFrames))
+            expansion.append(try bounds(host, name: "\(label)-expand-\(frame)", contentFrames: &contentFrames))
         }
         let expanded = try #require(expansion.last)
         #expect(expanded.width > compact.width + 30)
@@ -51,7 +65,7 @@ struct MotionSurfaceTests {
         model.expanded = false
         for frame in 0..<12 {
             RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
-            collapse.append(try bounds(host, name: "\(preset)-\(animationScope.rawValue)-collapse-\(frame)", contentFrames: &contentFrames))
+            collapse.append(try bounds(host, name: "\(label)-collapse-\(frame)", contentFrames: &contentFrames))
         }
         let restingContent = try #require(contentFrames.first)
         #expect(contentFrames.allSatisfy {
@@ -73,13 +87,27 @@ struct MotionSurfaceTests {
             }
             #expect(frames.allSatisfy { abs($0.midX - compact.midX) < 1 && abs($0.midY - compact.midY) < 1 })
         }
-        print("Motion \(preset): compact=\(compact.size), expanded=\(expanded.size), expansion=\(expansion.map(\.size)), collapse=\(collapse.map(\.size))")
+        print("Motion \(label): compact=\(compact.size), expanded=\(expanded.size), expansion=\(expansion.map(\.size)), collapse=\(collapse.map(\.size))")
     }
 
     /// Read the native presentation pixels, not the target SwiftUI layout proposal.
     private func bounds<V: View>(_ host: NSHostingView<V>, name: String, contentFrames: inout [CGRect]) throws -> CGRect {
-        let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-        host.cacheDisplay(in: host.bounds, to: bitmap)
+        // Flush pending AppKit layout before each capture, including on older runners.
+        host.layoutSubtreeIfNeeded()
+        host.displayIfNeeded()
+        CATransaction.flush()
+        let layer = try #require(host.layer)
+        let scale = host.window?.backingScaleFactor ?? 1
+        let width = Int(host.bounds.width * scale), height = Int(host.bounds.height * scale)
+        let presentation = try #require(CGContext(data: nil, width: width, height: height,
+            bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
+        presentation.scaleBy(x: scale, y: scale)
+        // Match AppKit's top-left layer coordinates in the exported image.
+        presentation.translateBy(x: 0, y: host.bounds.height)
+        presentation.scaleBy(x: 1, y: -1)
+        (layer.presentation() ?? layer).render(in: presentation)
+        let bitmap = NSBitmapImageRep(cgImage: try #require(presentation.makeImage()))
         if let path = ProcessInfo.processInfo.environment["SWIFTCN_MOTION_ARTIFACTS"] {
             let directory = URL(fileURLWithPath: path, isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -93,17 +121,15 @@ struct MotionSurfaceTests {
         let ys = (0..<bitmap.pixelsHigh).filter { isBlue(bitmap.pixelsWide / 2, $0) }
         let left = try #require(xs.first), right = try #require(xs.last)
         let top = try #require(ys.first), bottom = try #require(ys.last)
-        let scale = CGFloat(bitmap.pixelsWide) / host.bounds.width
-        // Measure only the label's ink, excluding the independently animated symbol.
-        // This central region stays inside the blue surface at both endpoint sizes.
-        let bytes = try #require(bitmap.bitmapData)
-        try #require(bitmap.bitsPerSample == 8 && !bitmap.isPlanar && bitmap.samplesPerPixel >= 3)
-        let littleEndian = bitmap.bitmapFormat.contains(.thirtyTwoBitLittleEndian)
-        let firstColor = bitmap.hasAlpha && (bitmap.bitmapFormat.contains(.alphaFirst) != littleEndian) ? 1 : 0
+        // Measure the trailing word of the single Text value. The moving icon can paint
+        // over the leading glyphs, so keep its presentation pixels outside this region.
+        // This region stays inside the blue surface at both endpoint sizes.
+        // Read the explicit RGBA layout rather than AppKit's platform-specific bitmap format.
+        let bytes = try #require(presentation.data).assumingMemoryBound(to: UInt8.self)
         var glyphX: [Int] = [], glyphY: [Int] = []
         for y in Int(76 * scale)..<Int(106 * scale) {
-            for x in Int(165 * scale)..<Int(260 * scale) {
-                let offset = y * bitmap.bytesPerRow + x * bitmap.samplesPerPixel + firstColor
+            for x in Int(205 * scale)..<Int(260 * scale) {
+                let offset = (y * bitmap.pixelsWide + x) * 4
                 let colors = [bytes[offset], bytes[offset + 1], bytes[offset + 2]]
                 // Black, white, and their interpolated grays differ from the blue background.
                 if colors.max()! - colors.min()! < 35 {
@@ -129,11 +155,32 @@ private struct SurfaceHarness: View {
     let recorder: SurfaceEnvironment
     let preset: String
     let animationScope: TWAnimationScope
+    var native = false
+    var plainUtilities = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         recorder.reduceMotion = reduceMotion
-        return MotionSurface(expanded: model.expanded, motionClasses: "animate-\(preset) duration-1000 delay-0", animationScope: animationScope)
-            .frame(width: 400, height: 180)
-            .background(.white)
+        return Group {
+            if native {
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles").accessibilityHidden(true)
+                    Text("Hello, SwiftUI").contentTransition(.identity)
+                }
+                .foregroundStyle(.black)
+                .padding(model.expanded ? 32 : 12)
+                .background(RoundedRectangle(cornerRadius: model.expanded ? 16 : 8).fill(.blue))
+                .animation(.linear(duration: 1), value: model.expanded)
+            } else if plainUtilities {
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles").accessibilityHidden(true)
+                    Text("Hello, SwiftUI").contentTransition(.identity)
+                }
+                .tw(MotionSurface.classes(expanded: model.expanded, motion: "animate-linear duration-1000"), value: model.expanded)
+            } else {
+                MotionSurface(expanded: model.expanded, motionClasses: "animate-\(preset) duration-1000 delay-0", animationScope: animationScope)
+            }
+        }
+        .frame(width: 400, height: 180)
+        .background(.white)
     }
 }

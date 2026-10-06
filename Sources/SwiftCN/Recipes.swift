@@ -23,7 +23,7 @@ extension TWStyle {
     }
 
     /// Built-in classes stay editable when you copy these source files.
-    static var defaultClasses: [String: Self] {
+    static let defaultClasses: [String: Self] = {
         ["card": Self(.p(6), .bg(.surface), .fg(.foreground), .rounded(.lg), .border(.border), .shadow(.sm)),
          "button-primary": Self(buttonBase, .bg(.primary), .fg(.onPrimary), .hover(.opacity(0.92))),
          "button-secondary": Self(buttonBase, .bg(.accent), .fg(.onAccent), .hover(.opacity(0.85))),
@@ -43,7 +43,7 @@ extension TWStyle {
                        .focus(.border(.primary)), .disabled(.opacity(0.45))),
          "toggle": Self(.text(.sm), .disabled(.opacity(0.45))),
          "label": Self(.text(.sm))]
-    }
+    }()
 
     /// Read a built-in definition when extending that same class globally.
     public static func defaultStyle(for name: String) -> Self? { defaultClasses[name] }

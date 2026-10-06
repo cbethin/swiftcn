@@ -107,8 +107,7 @@ struct MotionPlayground: View {
                             Button { presses += 1 } label: {
                                 HStack(spacing: 6) {
                                     Image(systemName: "hand.tap")
-                                        .symbolEffect(.bounce, options: .speed(1.5), value: presses)
-                                        .symbolEffectsRemoved(!motion.isEnabled || preset == "none")
+                                        .demoSymbolBounce(presses, enabled: preset != "none")
                                     Text("Press me")
                                 }
                             }
@@ -200,9 +199,8 @@ struct GlobalRulesPlayground: View {
                             Button { saves += 1 } label: {
                                 HStack(spacing: 6) {
                                     Image(systemName: saves == 0 ? "square.and.arrow.down" : "checkmark.circle.fill")
-                                        .contentTransition(.symbolEffect(.replace))
-                                        .symbolEffect(.bounce, options: .speed(1.5), value: saves)
-                                        .symbolEffectsRemoved(!motion.isEnabled)
+                                        .contentTransition(motion.isEnabled ? .opacity : .identity)
+                                        .demoSymbolBounce(saves)
                                     Text("Save workspace")
                                 }
                             }

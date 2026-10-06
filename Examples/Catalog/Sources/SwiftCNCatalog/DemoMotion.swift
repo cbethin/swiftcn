@@ -24,6 +24,35 @@ struct DemoMotion: DynamicProperty {
 extension View {
     func demoEntrance(delay: Double = 0) -> some View { modifier(DemoEntrance(delay: delay)) }
     func demoNumber(_ value: Int) -> some View { modifier(DemoNumber(value: value)) }
+    func demoSymbolBounce<Value: Equatable>(_ value: Value, speed: Double = 1.5, enabled: Bool = true) -> some View {
+        modifier(DemoSymbolBounce(value: value, speed: speed, enabled: enabled))
+    }
+}
+
+private struct DemoSymbolBounce<Value: Equatable>: ViewModifier {
+    let value: Value
+    let speed: Double
+    let enabled: Bool
+    private var motion = DemoMotion()
+
+    init(value: Value, speed: Double, enabled: Bool) {
+        self.value = value
+        self.speed = speed
+        self.enabled = enabled
+    }
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if enabled && motion.isEnabled {
+            // Native symbol effects can stop parent layout motion on the macOS 15 renderer.
+            content.phaseAnimator([false, true], trigger: value) { symbol, raised in
+                symbol.offset(y: raised ? -2 : 0)
+            } animation: { _ in
+                .spring(duration: 0.32 / speed, bounce: 0.2)
+            }
+        } else {
+            content
+        }
+    }
 }
 
 private struct DemoEntrance: ViewModifier {

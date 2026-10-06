@@ -7,7 +7,11 @@ public struct TWGlobalRules: Sendable {
     public var named: [String: TWStyle]
     public var animations: [String: TWAnimation]
     public var utilities: [String: TWUtility]
-    public var modifiers: [String: TWNativeUtility]
+    public var modifiers: [String: TWNativeUtility] {
+        didSet { nativeSlots = Self.orderedSlots(modifiers) }
+    }
+    // Prepare order when the registry changes, rather than sorting it on every styled render.
+    var nativeSlots: [TWNativeSlot]
 
     public init(view: TWStyle = TWStyle(), button: TWStyle = TWStyle(), named: [String: TWStyle] = [:],
                 animations: [String: TWAnimation] = [:], utilities: [String: TWUtility] = [:],
@@ -18,6 +22,15 @@ public struct TWGlobalRules: Sendable {
         self.animations = TWAnimation.defaults.merging(animations) { _, override in override }
         self.utilities = utilities
         self.modifiers = modifiers
+        self.nativeSlots = Self.orderedSlots(modifiers)
+    }
+
+    private static func orderedSlots(_ modifiers: [String: TWNativeUtility]) -> [TWNativeSlot] {
+        modifiers.map { TWNativeSlot(name: $0.key, utility: $0.value) }.sorted {
+            if $0.utility.phase != $1.utility.phase { return $0.utility.phase.rawValue < $1.utility.phase.rawValue }
+            if $0.utility.order != $1.utility.order { return $0.utility.order < $1.utility.order }
+            return $0.name < $1.name
+        }
     }
 }
 

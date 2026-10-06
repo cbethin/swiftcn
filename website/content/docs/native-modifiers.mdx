@@ -224,19 +224,25 @@ Unselected registrations for other targets do not run on the source.
 
 `AnyShape` exposes general shape methods; it does not retain methods unique to a concrete shape or `InsettableShape`.
 Apply those methods in native Swift before `.tw`.
-Target-specific defaults must preserve the intended source appearance when their tags are absent.
+Unselected Text and Image registrations leave the source unchanged.
+This prevents an inactive text attribute from masking the selected conflict winner.
+Their factories run only for selected tags, with `active` set to true.
+The typed default parameters remain available for source compatibility.
+Shape registrations retain an inactive transformation to preserve their erased animation structure.
+Their defaults must preserve the intended appearance when their tags are absent.
 
 ## Keep state and animation native
 
 Every explicit `.tw` surface retains a slot for each inherited general view registration, even when its tag is absent.
-Target-specific registrations run only on their matching native sources.
+Text and Image registrations run only when selected on their matching native sources.
+Shape registrations retain inactive slots on native shapes.
 An inactive slot applies its neutral modifier instead of removing a wrapper.
 This keeps child state and modifier structure stable during class changes.
 Scope large registries to the subtree that needs them.
 
 Keep the same concrete modifier type for each registration.
 In `.view` factories, change modifier values rather than branching between differently wrapped content.
-The inactive factory must leave layout, appearance, and interaction unchanged.
+General view and shape inactive factories must leave layout, appearance, and interaction unchanged.
 Its default argument must remain valid in every inherited theme.
 
 Changing the registry's names, order, or returned view structure changes the chain and can reset child state.

@@ -1,5 +1,6 @@
 #if os(macOS)
 import AppKit
+import QuartzCore
 import SwiftUI
 import Testing
 @testable import SwiftCN
@@ -34,12 +35,14 @@ struct NativeUtilityRenderingTests {
         }
     }
 
-    @Test(arguments: [false, true], [false, true])
-    func argumentChangesAndTagRemovalPreserveIdentityAndNativeMotion(disabledTransaction: Bool, transform: Bool) {
+    @Test(arguments: [
+        (false, false, false), (false, false, true), (false, true, false), (false, true, true),
+        (true, false, false), (true, false, true), (true, true, false), (true, true, true)
+    ])
+    func argumentChangesAndTagRemovalPreserveIdentityAndNativeMotion(disabledTransaction: Bool, transform: Bool, reconfigureAnimation: Bool) throws {
         let model = NativeUtilityModel()
         let identities = NativeIdentityRecorder()
-        let samples = NativeMotionSamples()
-        var rules = TWGlobalRules(animations: ["probe": TWAnimation(Animation(NativeMotionProbe(samples: samples)))], modifiers: [
+        var rules = TWGlobalRules(animations: ["probe": TWAnimation(.linear(duration: 1))], modifiers: [
             "glass": .view { view, active in view.background(active ? Color.blue : .clear) },
             "shift": .argument(default: "0") { argument, _ in argument.points.map { NativeShift(distance: $0) } }
         ])
@@ -47,22 +50,123 @@ struct NativeUtilityRenderingTests {
             rules.modifiers["shift"] = .argument(default: CGFloat.zero,
                 parse: { argument, _ in argument.points }) { view, distance in view.offset(x: distance) }
         }
-        let view = NativeUtilityHarness(model: model, identities: identities, samples: samples)
+        let view = NativeUtilityHarness(model: model, identities: identities, reconfigureAnimation: reconfigureAnimation)
             .twRules(rules)
-        withHost(view) { host in
-            #expect(samples.times.isEmpty)
+        // Read actual motion; macOS 15 can retain stale custom-animation callback times
+        // for colored compositions, including the matching plain SwiftUI control.
+        try withHost(view) { host in
+            let origin = try bluePosition(host)
             for phase in [1, 2, 0] {
+                let start = try bluePosition(host)
                 var transaction = Transaction()
                 transaction.disablesAnimations = disabledTransaction
                 withTransaction(transaction) { model.phase = phase }
-                settle(host, seconds: 0.45)
+                var positions: [CGFloat] = []
+                for _ in 0..<12 {
+                    settle(host, seconds: 0.1)
+                    positions.append(try bluePosition(host))
+                }
+                let end = origin + CGFloat(phase * 40)
+                #expect(abs(try #require(positions.last) - end) < 1)
+                let intermediate = positions.contains { $0 > min(start, end) + 2 && $0 < max(start, end) - 2 }
+                #expect(intermediate == (identities.reduceMotion != true && !disabledTransaction),
+                    "Phase \(phase), rendered offset positions: \(positions)")
                 #expect(Set(identities.values).count == 1)
-                if identities.reduceMotion == true || disabledTransaction { #expect(samples.times.isEmpty) }
-                else { #expect(samples.times.contains { $0 > 0 && $0 < 0.3 }, "Phase \(phase), native sample times: \(samples.times)") }
-                samples.clear()
             }
             #expect(Set(identities.phases) == [0, 1, 2])
         }
+    }
+
+    @Test(arguments: [false, true], [false, true])
+    func nativeOffsetAllowsReplacingTheCustomAnimation(zeroDelay: Bool, scoped: Bool) {
+        let model = NativeUtilityModel()
+        let identities = NativeIdentityRecorder()
+        let samples = NativeMotionSamples()
+        withHost(NativeOffsetHarness(model: model, identities: identities, samples: samples,
+            zeroDelay: zeroDelay, scoped: scoped)) { host in
+            for phase in [1, 2, 0] {
+                model.phase = phase
+                settle(host, seconds: NativeMotionProbe.duration + 0.3)
+                #expect(samples.times(for: phase).contains { $0 > 0 && $0 < NativeMotionProbe.duration },
+                    "Native phase \(phase), samples: \(samples.recentSamples)")
+                #expect(Set(identities.values).count == 1)
+                samples.clear()
+            }
+        }
+    }
+
+    @Test func registeredOffsetRetargetsWithoutSiblingDecorations() {
+        let model = NativeUtilityModel()
+        let identities = NativeIdentityRecorder()
+        let samples = NativeMotionSamples()
+        let rules = TWGlobalRules(animations: ["probe": TWAnimation(Animation(NativeMotionProbe(samples: samples)))], modifiers: [
+            "shift": .argument(default: "0") { argument, _ in argument.points.map { NativeShift(distance: $0) } }
+        ])
+        withHost(BareNativeUtilityHarness(model: model, identities: identities).twRules(rules)) { host in
+            for phase in [1, 2, 0] {
+                model.phase = phase
+                settle(host, seconds: NativeMotionProbe.duration + 0.3)
+                if identities.reduceMotion == true {
+                    #expect(samples.times.isEmpty)
+                } else {
+                    #expect(samples.times.contains { $0 > 0 && $0 < NativeMotionProbe.duration },
+                        "Bare phase \(phase), samples: \(samples.recentSamples)")
+                }
+                #expect(Set(identities.values).count == 1)
+                samples.clear()
+            }
+        }
+    }
+
+    @Test(arguments: [false, true])
+    func composedOffsetsInterpolatePresentationPixels(registered: Bool) throws {
+        let model = NativeUtilityModel()
+        model.phase = 1
+        let identities = NativeIdentityRecorder()
+        let rules = TWGlobalRules(modifiers: [
+            "glass": .view { view, active in view.background(active ? Color.blue : .clear) },
+            "shift": .argument(default: CGFloat.zero,
+                parse: { argument, _ in argument.points }) { view, distance in view.offset(x: distance) }
+        ])
+        try withHost(OffsetPixelHarness(model: model, identities: identities, registered: registered).twRules(rules)) { host in
+            for phase in [2, 1] {
+                let start = try bluePosition(host)
+                model.phase = phase
+                var positions: [CGFloat] = []
+                for _ in 0..<12 {
+                    settle(host, seconds: 0.1)
+                    positions.append(try bluePosition(host))
+                }
+                let end = start + (phase == 2 ? 40 : -40)
+                #expect(abs(try #require(positions.last) - end) < 1)
+                let intermediate = positions.contains { $0 > min(start, end) + 2 && $0 < max(start, end) - 2 }
+                #expect(intermediate == (!registered || identities.reduceMotion != true),
+                    "Rendered offset positions: \(positions)")
+                #expect(Set(identities.values).count == 1)
+            }
+        }
+    }
+
+    private func bluePosition<V: View>(_ host: NSHostingView<V>) throws -> CGFloat {
+        host.wantsLayer = true
+        host.layoutSubtreeIfNeeded()
+        host.displayIfNeeded()
+        CATransaction.flush()
+        let layer = try #require(host.layer)
+        let scale = host.window?.backingScaleFactor ?? 1
+        let width = Int(host.bounds.width * scale), height = Int(host.bounds.height * scale)
+        let context = try #require(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+            bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
+        context.scaleBy(x: scale, y: scale)
+        (layer.presentation() ?? layer).render(in: context)
+        let bytes = try #require(context.data).assumingMemoryBound(to: UInt8.self)
+        let left = try #require((0..<width).first { x in
+            let index = ((height / 2) * width + x) * 4
+            return Int(bytes[index + 2]) > Int(bytes[index]) + 100
+                && Int(bytes[index + 2]) > Int(bytes[index + 1]) + 35
+        })
+        return CGFloat(left) / scale
     }
 
     @Test func registryAllowsNativeModifierFactoriesAndCallerAnimations() {
@@ -78,8 +182,8 @@ struct NativeUtilityRenderingTests {
         withHost(view) { host in
             for phase in [1, 0] {
                 withAnimation(Animation(NativeMotionProbe(samples: samples))) { model.phase = phase }
-                settle(host, seconds: 0.45)
-                #expect(samples.times.contains { $0 > 0 && $0 < 0.3 })
+                settle(host, seconds: NativeMotionProbe.duration + 0.3)
+                #expect(samples.times.contains { $0 > 0 && $0 < NativeMotionProbe.duration })
                 #expect(Set(identities.values).count == 1)
                 #expect(Set(identities.modifierValues).count == 1)
                 samples.clear()
@@ -116,10 +220,10 @@ struct NativeUtilityRenderingTests {
         withHost(view) { host in
             for phase in [1, 2, 0] {
                 model.phase = phase
-                settle(host, seconds: 0.45)
+                settle(host, seconds: NativeMotionProbe.duration + 0.3)
                 #expect(Set(identities.values).count == 1)
                 if identities.reduceMotion == true { #expect(samples.times.isEmpty) }
-                else { #expect(samples.times.contains { $0 > 0 && $0 < 0.3 }) }
+                else { #expect(samples.times.contains { $0 > 0 && $0 < NativeMotionProbe.duration }) }
                 samples.clear()
             }
         }
@@ -139,15 +243,16 @@ struct NativeUtilityRenderingTests {
         return Data(bytes: try #require(context.data), count: image.width * image.height * 4)
     }
 
-    private func withHost<V: View>(_ view: V, run: (NSHostingView<V>) -> Void) {
+    private func withHost<V: View>(_ view: V, run: (NSHostingView<V>) throws -> Void) rethrows {
         let host = NSHostingView(rootView: view)
-        host.frame = CGRect(x: 0, y: 0, width: 220, height: 100)
+        // Keep the decorated content visible through the largest tested offset.
+        host.frame = CGRect(x: 0, y: 0, width: 500, height: 100)
         let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = host
         window.orderFront(nil)
         defer { window.orderOut(nil); window.contentView = nil }
         settle(host, seconds: 0.1)
-        run(host)
+        try run(host)
     }
 
     private func settle<V: View>(_ host: NSHostingView<V>, seconds: TimeInterval) {
@@ -182,23 +287,71 @@ private struct NativeUtilityHarness: View {
     @ObservedObject var model: NativeUtilityModel
     let identities: NativeIdentityRecorder
     var callerAnimation = false
-    var samples: NativeMotionSamples? = nil
+    var reconfigureAnimation = false
+    @ViewBuilder
     var body: some View {
-        NativeUtilityChild(phase: model.phase, identities: identities)
+        let content = NativeUtilityChild(phase: model.phase, identities: identities)
             .tw(cn {
                 if callerAnimation {
                     if model.phase != 0 { "shift" }
                 } else {
-                    "animate-probe"
-                    if model.phase != 0 { "glass shift-[\(model.phase * 40)]" }
+                    "glass animate-probe"
+                    if model.phase != 0 { "shift-[\(model.phase * 40)]" }
                 }
             }, value: model.phase)
-            .twRules { rules in
-                if let samples {
-                    // Distinguish each transition from the previous probe's completed timeline.
-                    rules.animations["probe"] = TWAnimation(Animation(NativeMotionProbe(samples: samples, generation: model.phase)))
-                }
+        if reconfigureAnimation {
+            content.twRules { rules in
+                rules.animations["probe"] = TWAnimation(.linear(duration: model.phase == 2 ? 0.8 : 1))
             }
+        } else {
+            content
+        }
+    }
+}
+private struct BareNativeUtilityHarness: View {
+    @ObservedObject var model: NativeUtilityModel
+    let identities: NativeIdentityRecorder
+    var body: some View {
+        NativeUtilityChild(phase: model.phase, identities: identities)
+            .tw("shift-[\(model.phase * 40)] animate-probe", value: model.phase)
+    }
+}
+private struct NativeOffsetHarness: View {
+    @ObservedObject var model: NativeUtilityModel
+    let identities: NativeIdentityRecorder
+    let samples: NativeMotionSamples
+    var zeroDelay = false
+    var scoped = false
+    var body: some View {
+        let native = Animation(NativeMotionProbe(samples: samples, generation: model.phase))
+        let animation = zeroDelay ? native.delay(0) : native
+        return Group {
+            if scoped {
+                NativeUtilityChild(phase: model.phase, identities: identities)
+                    .transaction { $0.animation = animation } body: { surface in
+                        AnyView(surface).offset(x: CGFloat(model.phase * 40))
+                    }
+            } else {
+                NativeUtilityChild(phase: model.phase, identities: identities)
+                    .offset(x: CGFloat(model.phase * 40))
+            }
+        }
+        .animation(animation, value: model.phase)
+    }
+}
+private struct OffsetPixelHarness: View {
+    @ObservedObject var model: NativeUtilityModel
+    let identities: NativeIdentityRecorder
+    let registered: Bool
+    @ViewBuilder var body: some View {
+        if registered {
+            NativeUtilityChild(phase: model.phase, identities: identities)
+                .tw("p-3 glass shift-[\(model.phase * 40)] animate-linear duration-1000", value: model.phase)
+        } else {
+            NativeUtilityChild(phase: model.phase, identities: identities)
+                .padding(12).background(Color.blue).offset(x: CGFloat(model.phase * 40))
+                .animation(.linear(duration: 1), value: model.phase)
+        }
     }
 }
 private struct TypedMotionHarness: View {
@@ -232,20 +385,30 @@ private struct NativeUtilityChild: View {
 }
 private final class NativeMotionSamples: @unchecked Sendable {
     private let lock = NSLock()
-    private var storage: [TimeInterval] = []
-    var times: [TimeInterval] { lock.withLock { storage } }
-    func append(_ time: TimeInterval) { lock.withLock { storage.append(time) } }
+    private var storage: [(time: TimeInterval, generation: Int)] = []
+    var times: [TimeInterval] { lock.withLock { storage.map(\.time) } }
+    func times(for generation: Int) -> [TimeInterval] {
+        lock.withLock { storage.filter { $0.generation == generation }.map(\.time) }
+    }
+    var recentSamples: [String] {
+        lock.withLock { storage.suffix(12).map { "generation \($0.generation): \($0.time)" } }
+    }
+    func append(_ time: TimeInterval, generation: Int) {
+        lock.withLock { storage.append((time, generation)) }
+    }
     func clear() { lock.withLock { storage.removeAll() } }
 }
 private struct NativeMotionProbe: CustomAnimation {
+    // Give a loaded hosted renderer time to sample a transition before it completes.
+    static let duration: TimeInterval = 1
     let samples: NativeMotionSamples
     var generation = 0
     static func == (lhs: Self, rhs: Self) -> Bool { lhs.samples === rhs.samples && lhs.generation == rhs.generation }
     func hash(into hasher: inout Hasher) { hasher.combine(ObjectIdentifier(samples)); hasher.combine(generation) }
     func animate<V: VectorArithmetic>(value: V, time: TimeInterval, context: inout AnimationContext<V>) -> V? {
-        samples.append(time)
-        guard time < 0.3 else { return nil }
-        return value.scaled(by: max(0, time / 0.3))
+        samples.append(time, generation: generation)
+        guard time < Self.duration else { return nil }
+        return value.scaled(by: max(0, time / Self.duration))
     }
 }
 #endif
