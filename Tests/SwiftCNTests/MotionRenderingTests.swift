@@ -117,6 +117,22 @@ struct MotionRenderingTests {
         }
     }
 
+    @Test func valueAnimationNoneCancelsTheNativeCaller() {
+        let model = MotionModel()
+        let recorder = ContentRecorder()
+        let native = Animation.linear(duration: 0.2)
+        let view = ValueAnimationHarness(model: model, recorder: recorder, typed: false,
+            classes: "animate-none")
+        withHost(view) { host in
+            recorder.animations.removeAll()
+            withAnimation(native) { model.active = true }
+            settle(host, seconds: 0.2)
+            #expect(!recorder.animations.isEmpty)
+            #expect(recorder.animations.allSatisfy { $0 == nil })
+            #expect(Set(recorder.identities).count == 1)
+        }
+    }
+
     @Test(arguments: [false, true])
     func styleChangesInvokeNativeInterpolationWithoutAnimatingContent(dynamicString: Bool) {
         let samples = MotionSamples()
