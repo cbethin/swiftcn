@@ -71,13 +71,16 @@ struct NativeUtilityRenderingTests {
         }
     }
 
-    @Test(arguments: [false, true], [false, true])
-    func nativeOffsetAllowsReplacingTheCustomAnimation(zeroDelay: Bool, scoped: Bool) {
+    @Test(arguments: [
+        (false, false, false), (false, false, true), (false, true, false), (false, true, true),
+        (true, false, false), (true, false, true), (true, true, false), (true, true, true)
+    ])
+    func nativeOffsetAllowsReplacingTheCustomAnimation(zeroDelay: Bool, scoped: Bool, decorated: Bool) {
         let model = NativeUtilityModel()
         let identities = NativeIdentityRecorder()
         let samples = NativeMotionSamples()
         withHost(NativeOffsetHarness(model: model, identities: identities, samples: samples,
-            zeroDelay: zeroDelay, scoped: scoped)) { host in
+            zeroDelay: zeroDelay, scoped: scoped, decorated: decorated)) { host in
             for phase in [1, 2, 0] {
                 model.phase = phase
                 settle(host, seconds: NativeMotionProbe.duration + 0.3)
@@ -261,6 +264,14 @@ private struct NativeOffsetHarness: View {
     let samples: NativeMotionSamples
     var zeroDelay = false
     var scoped = false
+    var decorated = false
+    private func shifted<V: View>(_ view: V) -> AnyView {
+        if decorated {
+            return AnyView(AnyView(AnyView(view).background(model.phase != 0 ? Color.blue : .clear))
+                .offset(x: CGFloat(model.phase * 40)))
+        }
+        return AnyView(view.offset(x: CGFloat(model.phase * 40)))
+    }
     var body: some View {
         let native = Animation(NativeMotionProbe(samples: samples, generation: model.phase))
         let animation = zeroDelay ? native.delay(0) : native
@@ -268,11 +279,10 @@ private struct NativeOffsetHarness: View {
             if scoped {
                 NativeUtilityChild(phase: model.phase, identities: identities)
                     .transaction { $0.animation = animation } body: { surface in
-                        AnyView(surface).offset(x: CGFloat(model.phase * 40))
+                        shifted(surface)
                     }
             } else {
-                NativeUtilityChild(phase: model.phase, identities: identities)
-                    .offset(x: CGFloat(model.phase * 40))
+                shifted(NativeUtilityChild(phase: model.phase, identities: identities))
             }
         }
         .animation(animation, value: model.phase)
