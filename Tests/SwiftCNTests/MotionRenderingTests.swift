@@ -53,10 +53,20 @@ struct MotionRenderingTests {
         let recorder = ContentRecorder()
         withHost(RetargetMotionHarness(model: model, recorder: recorder, tracksHover: tracksHover)) { host in
             model.active = true
-            settle(host, seconds: 0.12)
+            if recorder.reduceMotion != true {
+                #expect(waitForFrame(host) {
+                    guard let amount = recorder.amounts.last else { return false }
+                    return amount > 0.1 && amount < 0.9
+                }, "Opening must render an intermediate frame before reversal.")
+            } else { settle(host, seconds: 0.12) }
             let opening = recorder.amounts.last ?? 0
             model.active = false
-            settle(host, seconds: 0.12)
+            if recorder.reduceMotion != true {
+                #expect(waitForFrame(host) {
+                    guard let amount = recorder.amounts.last else { return false }
+                    return amount > 0 && amount < opening
+                }, "Closing must render an intermediate frame below the unfinished opening.")
+            } else { settle(host, seconds: 0.12) }
             let closing = recorder.amounts.last ?? 1
             if recorder.reduceMotion != true {
                 #expect(opening > 0 && opening < 1)
@@ -227,6 +237,15 @@ struct MotionRenderingTests {
     private func settle<V: View>(_ host: NSHostingView<V>, seconds: TimeInterval) {
         host.layoutSubtreeIfNeeded()
         RunLoop.main.run(until: Date(timeIntervalSinceNow: seconds))
+    }
+
+    private func waitForFrame<V: View>(_ host: NSHostingView<V>, condition: () -> Bool) -> Bool {
+        let deadline = Date(timeIntervalSinceNow: 1)
+        repeat {
+            settle(host, seconds: 0.01)
+            if condition() { return true }
+        } while Date() < deadline
+        return false
     }
 
     private func expectMotion(_ samples: MotionSamples, reduceMotion: Bool?) {
