@@ -151,3 +151,5 @@ python3 Scripts/ios-visual-test.py verify ci --components
 ```
 
 For a focused iOS design pass, append `--only` with catalog slugs, such as `--only aspect-ratio chart`. This captures and compares only those entries. Normal CI verification uses the complete catalog.
+
+After accepting component references, run `python3 Scripts/generate-components.py`. This updates each documentation preview from its reviewed native reference.

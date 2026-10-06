@@ -48,11 +48,10 @@ jobs:
           swift test --filter NativeUtilityRenderingTests
       - name: Verify visual baselines
         run: bash Scripts/visual-test.sh verify ci
-      # Bootstrap reviewed references once; this becomes verify before the PR is ready.
-      - name: Capture component reference candidates
-        run: bash Scripts/component-visual-test.sh record ci
-      - name: Capture iOS component reference candidates
-        run: python3 Scripts/ios-visual-test.py record ci --components --only aspect-ratio
+      - name: Verify component visual baselines
+        run: bash Scripts/component-visual-test.sh verify ci
+      - name: Verify iOS component visual baselines
+        run: python3 Scripts/ios-visual-test.py verify ci --components
       - name: Verify generated component sources
         run: python3 Scripts/generate-components.py --check
       - name: Verify iOS visual baselines

@@ -22,7 +22,12 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
       - name: Native tests
-        run: swift test --skip SwiftCNVisualTests
+        run: |
+          swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests|ComponentRenderingTests|CompositionRenderingTests|CatalogNativeRenderingTests'
+          swift test --filter CompositionRenderingTests
+          swift test --filter ComponentRenderingTests
+          swift test --filter CatalogNativeRenderingTests
+          swift test --filter NativeUtilityRenderingTests
       - name: Record candidates
         run: bash Scripts/visual-test.sh record ci
       - name: Verify candidates
@@ -31,6 +36,14 @@ jobs:
         run: python3 Scripts/ios-visual-test.py record ci
       - name: Verify iOS candidates
         run: python3 Scripts/ios-visual-test.py verify ci
+      - name: Record component candidates
+        run: bash Scripts/component-visual-test.sh record ci
+      - name: Verify component candidates
+        run: bash Scripts/component-visual-test.sh verify ci
+      - name: Record iOS component candidates
+        run: python3 Scripts/ios-visual-test.py record ci --components
+      - name: Verify iOS component candidates
+        run: python3 Scripts/ios-visual-test.py verify ci --components
       - name: Upload candidates for review
         if: always()
         uses: actions/upload-artifact@v7
@@ -39,4 +52,6 @@ jobs:
           path: |
             Tests/SwiftCNVisualTests/__Snapshots__/macos-15-xcode-16.4/
             Tests/SwiftCNVisualTests/__Snapshots__/ios-18.5-iphone-16/
+            Tests/SwiftCNVisualTests/__Snapshots__/components-macos-15-xcode-16.4/
+            Tests/SwiftCNVisualTests/__Snapshots__/components-ios-18.5-iphone-16/
             artifacts/visual-diffs/

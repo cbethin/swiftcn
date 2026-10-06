@@ -57,7 +57,7 @@ public struct CNCardContent<Content: View>: View {
     }
 }
 
-/// A composable native HStack with editable `card-footer` defaults.
+/// A native action row that stacks when needed, with editable `card-footer` defaults.
 public struct CNCardFooter<Content: View>: View {
     private let classes: TWClasses
     private let spacing: CGFloat
