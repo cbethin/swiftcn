@@ -89,6 +89,25 @@ struct NativeUtilityRenderingTests {
         }
     }
 
+    @Test func registeredOffsetRetargetsWithoutSiblingDecorations() {
+        let model = NativeUtilityModel()
+        let identities = NativeIdentityRecorder()
+        let samples = NativeMotionSamples()
+        let rules = TWGlobalRules(animations: ["probe": TWAnimation(Animation(NativeMotionProbe(samples: samples)))], modifiers: [
+            "shift": .argument(default: "0") { argument, _ in argument.points.map { NativeShift(distance: $0) } }
+        ])
+        withHost(BareNativeUtilityHarness(model: model, identities: identities).twRules(rules)) { host in
+            for phase in [1, 2, 0] {
+                model.phase = phase
+                settle(host, seconds: NativeMotionProbe.duration + 0.3)
+                #expect(samples.times.contains { $0 > 0 && $0 < NativeMotionProbe.duration },
+                    "Bare phase \(phase), samples: \(samples.recentSamples)")
+                #expect(Set(identities.values).count == 1)
+                samples.clear()
+            }
+        }
+    }
+
     @Test func registryAllowsNativeModifierFactoriesAndCallerAnimations() {
         let model = NativeUtilityModel()
         let identities = NativeIdentityRecorder()
@@ -207,8 +226,9 @@ private struct NativeUtilityHarness: View {
     let identities: NativeIdentityRecorder
     var callerAnimation = false
     var samples: NativeMotionSamples? = nil
+    @ViewBuilder
     var body: some View {
-        NativeUtilityChild(phase: model.phase, identities: identities)
+        let content = NativeUtilityChild(phase: model.phase, identities: identities)
             .tw(cn {
                 if callerAnimation {
                     if model.phase != 0 { "shift" }
@@ -217,12 +237,22 @@ private struct NativeUtilityHarness: View {
                     if model.phase != 0 { "glass shift-[\(model.phase * 40)]" }
                 }
             }, value: model.phase)
-            .twRules { rules in
-                if let samples {
+        if let samples {
+            content.twRules { rules in
                     // Distinguish each transition from the previous probe's completed timeline.
                     rules.animations["probe"] = TWAnimation(Animation(NativeMotionProbe(samples: samples, generation: model.phase)))
-                }
             }
+        } else {
+            content
+        }
+    }
+}
+private struct BareNativeUtilityHarness: View {
+    @ObservedObject var model: NativeUtilityModel
+    let identities: NativeIdentityRecorder
+    var body: some View {
+        NativeUtilityChild(phase: model.phase, identities: identities)
+            .tw("shift-[\(model.phase * 40)] animate-probe", value: model.phase)
     }
 }
 private struct NativeOffsetHarness: View {
