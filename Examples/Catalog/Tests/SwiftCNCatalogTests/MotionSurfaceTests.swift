@@ -1,4 +1,5 @@
 import AppKit
+import QuartzCore
 import SwiftUI
 import SwiftCN
 import Testing
@@ -34,6 +35,7 @@ struct MotionSurfaceTests {
             .environment(\.colorScheme, .light)
             .environment(\.demoMotionEnabled, false))
         host.frame = CGRect(x: 0, y: 0, width: 400, height: 180)
+        host.wantsLayer = true
         let window = NSWindow(contentRect: host.bounds, styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = host
         window.orderFront(nil)
@@ -85,8 +87,17 @@ struct MotionSurfaceTests {
     private func bounds<V: View>(_ host: NSHostingView<V>, name: String, contentFrames: inout [CGRect]) throws -> CGRect {
         // Flush pending AppKit layout before each capture, including on older runners.
         host.layoutSubtreeIfNeeded()
-        let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-        host.cacheDisplay(in: host.bounds, to: bitmap)
+        host.displayIfNeeded()
+        CATransaction.flush()
+        let layer = try #require(host.layer)
+        let scale = host.window?.backingScaleFactor ?? 1
+        let width = Int(host.bounds.width * scale), height = Int(host.bounds.height * scale)
+        let presentation = try #require(CGContext(data: nil, width: width, height: height,
+            bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
+        presentation.scaleBy(x: scale, y: scale)
+        (layer.presentation() ?? layer).render(in: presentation)
+        let bitmap = NSBitmapImageRep(cgImage: try #require(presentation.makeImage()))
         if let path = ProcessInfo.processInfo.environment["SWIFTCN_MOTION_ARTIFACTS"] {
             let directory = URL(fileURLWithPath: path, isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -100,15 +111,10 @@ struct MotionSurfaceTests {
         let ys = (0..<bitmap.pixelsHigh).filter { isBlue(bitmap.pixelsWide / 2, $0) }
         let left = try #require(xs.first), right = try #require(xs.last)
         let top = try #require(ys.first), bottom = try #require(ys.last)
-        let scale = CGFloat(bitmap.pixelsWide) / host.bounds.width
         // Measure only the label's ink, excluding the independently animated symbol.
         // This central region stays inside the blue surface at both endpoint sizes.
-        // AppKit chooses different bitmap channel layouts on different macOS releases.
-        let context = try #require(CGContext(data: nil, width: bitmap.pixelsWide, height: bitmap.pixelsHigh,
-            bitsPerComponent: 8, bytesPerRow: bitmap.pixelsWide * 4, space: CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
-        context.draw(try #require(bitmap.cgImage), in: CGRect(x: 0, y: 0, width: bitmap.pixelsWide, height: bitmap.pixelsHigh))
-        let bytes = try #require(context.data).assumingMemoryBound(to: UInt8.self)
+        // Read the explicit RGBA layout rather than AppKit's platform-specific bitmap format.
+        let bytes = try #require(presentation.data).assumingMemoryBound(to: UInt8.self)
         var glyphX: [Int] = [], glyphY: [Int] = []
         for y in Int(76 * scale)..<Int(106 * scale) {
             for x in Int(165 * scale)..<Int(260 * scale) {
