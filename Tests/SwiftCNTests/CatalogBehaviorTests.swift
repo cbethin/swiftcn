@@ -21,6 +21,31 @@ struct CatalogBehaviorTests {
         #expect(CNOptionSearch.filter(options, query: "archived").first?.isDisabled == true)
         #expect(CNOptionSearch.filter(options, query: "missing").isEmpty)
     }
+    @Test func commandNavigationSkipsDisabledResultsAndClampsAtEdges() {
+        let options = [CNOption("a", title: "A"), CNOption("b", title: "B", isDisabled: true), CNOption("c", title: "C")]
+        #expect(CNCommandNavigation.move(options, highlighted: nil, direction: 1) == "a")
+        #expect(CNCommandNavigation.move(options, highlighted: nil, direction: -1) == "c")
+        #expect(CNCommandNavigation.move(options, highlighted: "a", direction: 1) == "c")
+        #expect(CNCommandNavigation.move(options, highlighted: "c", direction: -1) == "a")
+        #expect(CNCommandNavigation.move(options, highlighted: "c", direction: 1) == "c")
+        #expect(CNCommandNavigation.move(options, highlighted: "a", direction: -1) == "a")
+    }
+    @Test func commandHighlightRevalidatesDisabledChangedAndEmptyResults() {
+        let options = [CNOption("a", title: "A", isDisabled: true), CNOption("b", title: "B"), CNOption("c", title: "C")]
+        #expect(CNCommandNavigation.reconcile(options, highlighted: "a") == "b")
+        #expect(CNCommandNavigation.reconcile(options, highlighted: "removed") == "b")
+        #expect(CNCommandNavigation.reconcile(options, highlighted: "c") == "c")
+        #expect(CNCommandNavigation.reconcile(Array(options.prefix(1)), highlighted: "a") == nil)
+        #expect(CNCommandNavigation.move(Array(options.prefix(1)), highlighted: "a", direction: 1) == nil)
+        #expect(CNCommandNavigation.reconcile([CNOption<String>](), highlighted: "c") == nil)
+    }
+    @Test @MainActor func commandPointerDoesNotStealHighlightOnEntryOrStationaryScrolling() {
+        let pointer = CNCommandPointer()
+        #expect(!pointer.moved(to: CGPoint(x: 50, y: 80)))
+        #expect(!pointer.moved(to: CGPoint(x: 50, y: 80)))
+        #expect(pointer.moved(to: CGPoint(x: 51, y: 80)))
+        #expect(!pointer.moved(to: CGPoint(x: 51, y: 80)))
+    }
     @Test func questionnaireRejectsMissingStaleDisabledAndWrongTypeAnswers() {
         let requiredText = CNQuestion("name", title: "Name")
         #expect(CNQuestionnaireValidation.error(for: requiredText, answer: nil) != nil)

@@ -149,7 +149,7 @@
     "symbol": "CNCommand",
     "source": "Command.swift",
     "example": "CommandExample.swift",
-    "notes": "Search filters titles and details. Disabled options cannot activate. Native list selection, Return, and macOS arrow commands support keyboard use. The host owns command effects."
+    "notes": "Search filters titles and details. Disabled options cannot activate. Native search and buttons share one pointer and keyboard highlight. Arrow keys reveal the active result; Return chooses it. The host owns command effects."
   },
   {
     "name": "Context Menu",
@@ -269,7 +269,7 @@
     "symbol": "CNKbd",
     "source": "ComponentParts.swift",
     "example": "KbdExample.swift",
-    "notes": "CNKbd displays a keycap with native monospaced font design and editable classes. Place it inside the action label, then attach SwiftUI keyboardShortcut to that action control. The example opens the same searchable command dialog by click or Command-K. Choosing a result updates the label; Close or Escape dismisses the dialog."
+    "notes": "CNKbd displays a keycap with native monospaced font design and editable classes. Place it inside the action label, then attach SwiftUI keyboardShortcut to that action control. The example opens the same compact command palette by click or Command-K. Choosing a result updates the label; Close or Escape dismisses the dialog."
   },
   {
     "name": "Label",
