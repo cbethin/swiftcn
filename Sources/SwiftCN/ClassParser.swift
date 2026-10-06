@@ -21,6 +21,17 @@ public enum TWClassError: Error, Equatable, CustomStringConvertible {
 }
 
 enum TWClassParser {
+    // These tables do not depend on the theme, registry, or interpolated values.
+    private static let fonts: [String: TWText] = ["xs": .xs, "sm": .sm, "base": .base, "lg": .lg,
+                                                 "xl": .xl, "2xl": .xxl, "3xl": .xxxl]
+    private static let weights: [String: Font.Weight] = ["regular": .regular, "normal": .regular, "medium": .medium,
+                                                       "semibold": .semibold, "bold": .bold, "light": .light]
+    private static let radii: [String: TWRadius] = ["none": .none, "sm": .sm, "md": .md, "lg": .lg, "xl": .xl, "full": .full]
+    private static let shadows: [String: TWShadow] = ["none": .none, "sm": .sm, "md": .md, "lg": .lg]
+    private static let aliases: [String: TWColor] = ["primary-foreground": .onPrimary, "accent-foreground": .onAccent,
+                                                   "destructive-foreground": .onDestructive, "card": .surface,
+                                                   "card-foreground": .foreground, "muted-foreground": .mutedForeground]
+
     static func expand(_ style: TWStyle, rules: TWGlobalRules, theme: TWTheme,
                        stack: [String] = [], depth: Int = 0, target: TWTarget? = nil) throws -> TWStyle {
         guard depth < 32 else { throw TWClassError.expansionLimit }
@@ -145,15 +156,6 @@ enum TWClassParser {
         if name == "border" { return .border(.border) }
         if name == "rounded" { return .rounded(.md) }
         if name == "shadow" { return .shadow(.sm) }
-        let fonts: [String: TWText] = ["xs": .xs, "sm": .sm, "base": .base, "lg": .lg,
-                                       "xl": .xl, "2xl": .xxl, "3xl": .xxxl]
-        let weights: [String: Font.Weight] = ["regular": .regular, "normal": .regular, "medium": .medium,
-                                              "semibold": .semibold, "bold": .bold, "light": .light]
-        let radii: [String: TWRadius] = ["none": .none, "sm": .sm, "md": .md, "lg": .lg, "xl": .xl, "full": .full]
-        let shadows: [String: TWShadow] = ["none": .none, "sm": .sm, "md": .md, "lg": .lg]
-        let aliases: [String: TWColor] = ["primary-foreground": .onPrimary, "accent-foreground": .onAccent,
-                                         "destructive-foreground": .onDestructive, "card": .surface,
-                                         "card-foreground": .foreground, "muted-foreground": .mutedForeground]
         func color(_ value: String) -> TWColor? {
             let token = aliases[value] ?? TWColor(value)
             return theme.colors[token] == nil ? nil : token

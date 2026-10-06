@@ -13,7 +13,7 @@ expected = {
     "quick-start": {"ContentView.swift", "SwiftCNDemoApp.swift"},
     "native-controls": {"FocusExample.swift"},
     "components": {"ComponentPartsExample.swift"},
-    "interpolation": {"TypedInterpolationExample.swift"},
+    "interpolation": {"TypedInterpolationExample.swift", "InterpolatedListExample.swift"},
     "native-modifiers": {"NativeRegistryExample.swift", "NativeCompositionExample.swift"},
     "troubleshooting": {"StyleValidation.swift"},
 }

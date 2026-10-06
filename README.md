@@ -579,6 +579,9 @@ bash Scripts/check-ios.sh
 ```
 
 Tests cover property resolution, state precedence, color inheritance, adaptive themes, native rendering, and child state identity.
+Collection tests cover interpolated row values, reordering, insertion, deletion, and edited field state in native stacks and lists.
+Run `bash Scripts/benchmark-interpolation.sh` for release CPU measurements of construction and resolution.
+These measurements do not include layout, scrolling, or frame time.
 The iOS script compiles the library against the simulator SDK.
 Simulator compilation does not establish physical device behavior.
 Keyboard activation and VoiceOver still require checks in an application host.

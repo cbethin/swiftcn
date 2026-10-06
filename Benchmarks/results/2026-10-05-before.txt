@@ -1,0 +1,14 @@
+swift-driver version: 1.168.6 Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)
+Target: arm64-apple-macosx27.0.0
+Apple M4
+Release CPU benchmark; 5000 operations/sample, 7 samples, 200 warm-up operations/case
+OS: Version 27.0 (Build 26A5388g)
+typed construct + tokenize: CPU median 2.86 us/op; CPU range 2.81–2.92; elapsed median 5.23 us/op
+runtime String resolve: CPU median 46.27 us/op; CPU range 45.48–47.23; elapsed median 89.36 us/op
+typed interpolation resolve: CPU median 48.73 us/op; CPU range 48.00–52.29; elapsed median 86.74 us/op
+cn + typed interpolation resolve: CPU median 53.48 us/op; CPU range 52.47–53.85; elapsed median 317.47 us/op
+prepared base + typed styles resolve: CPU median 5.83 us/op; CPU range 5.72–5.93; elapsed median 20.43 us/op
+one registered modifier resolve: CPU median 51.79 us/op; CPU range 50.80–53.85; elapsed median 231.51 us/op
+32 registered modifiers resolve: CPU median 60.42 us/op; CPU range 57.03–62.23; elapsed median 320.63 us/op
+Checksum: 36368640.000061
+This measures construction and resolution, not SwiftUI layout, drawing, scrolling, or FPS.

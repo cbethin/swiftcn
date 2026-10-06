@@ -8,6 +8,66 @@ import Testing
 @Suite("Hosted native utilities", .serialized)
 @MainActor
 struct NativeUtilityRenderingTests {
+    @Test(arguments: CollectionContainer.allCases)
+    func interpolatedCollectionRowsRetainTheirOwnState(container: CollectionContainer) throws {
+        let model = CollectionModel()
+        let recorder = CollectionRecorder()
+        defer { recorder.editors.removeAll() }
+        let rules = TWGlobalRules(modifiers: [
+            "row-probe": .value(default: CollectionPayload(id: 0, amount: 0, label: "")) { view, payload in
+                view.modifier(CollectionModifierProbe(payload: payload, recorder: recorder))
+            },
+            "shift": .value(default: CGFloat.zero) { view, amount in view.offset(x: amount) }
+        ])
+        let view = CollectionHarness(model: model, recorder: recorder, container: container).twRules(rules)
+        try withHost(view, size: CGSize(width: 500, height: 400)) { host in
+            let originalChildren = recorder.children
+            let originalModifiers = recorder.modifiers
+            #expect(Set(originalChildren.keys) == Set(model.rows.map(\.id)))
+            #expect(Set(originalModifiers.keys) == Set(model.rows.map(\.id)))
+            let editSecond = try #require(recorder.editors[2])
+            let editFourth = try #require(recorder.editors[4])
+            editSecond.wrappedValue = "Edited second row"
+            editFourth.wrappedValue = "Edited fourth row"
+            settle(host, seconds: 0.1)
+
+            // Values change independently; interpolation carries punctuation as data.
+            model.rows = model.rows.reversed().map {
+                CollectionRow(id: $0.id, amount: CGFloat($0.id * 3), label: "Row \($0.id) ] hover:opacity-0")
+            }
+            settle(host, seconds: 0.2)
+            verifyCollection(model, recorder: recorder, children: originalChildren, modifiers: originalModifiers)
+            #expect(recorder.drafts[2] == "Edited second row")
+            #expect(recorder.drafts[4] == "Edited fourth row")
+
+            model.rows.removeAll { $0.id == 3 }
+            model.rows.insert(CollectionRow(id: 5, amount: 5, label: "Inserted"), at: 1)
+            settle(host, seconds: 0.2)
+            verifyCollection(model, recorder: recorder, children: originalChildren, modifiers: originalModifiers)
+            #expect(recorder.drafts[5] == "Draft 5")
+            let insertedChild = try #require(recorder.children[5])
+            let insertedModifier = try #require(recorder.modifiers[5])
+            #expect(!Set(originalChildren.values).contains(insertedChild))
+            #expect(!Set(originalModifiers.values).contains(insertedModifier))
+
+            // Remove a conditional registered tag, while preserving editor and modifier state.
+            model.rows = model.rows.map { CollectionRow(id: $0.id, amount: 0, label: "Reset \($0.id)") }
+            settle(host, seconds: 0.2)
+            verifyCollection(model, recorder: recorder, children: originalChildren, modifiers: originalModifiers)
+            #expect(recorder.drafts[2] == "Edited second row")
+            #expect(recorder.drafts[4] == "Edited fourth row")
+        }
+    }
+
+    private func verifyCollection(_ model: CollectionModel, recorder: CollectionRecorder,
+                                  children: [Int: UUID], modifiers: [Int: UUID]) {
+        for row in model.rows {
+            if let identity = children[row.id] { #expect(recorder.children[row.id] == identity) }
+            if let identity = modifiers[row.id] { #expect(recorder.modifiers[row.id] == identity) }
+            #expect(recorder.payloads[row.id] == CollectionPayload(id: row.id, amount: row.amount, label: row.label))
+        }
+    }
+
     @Test(arguments: [false, true])
     func registeredFactoriesProduceTheNativePixels(dark: Bool) throws {
         let rules = TWGlobalRules(modifiers: [
@@ -243,10 +303,10 @@ struct NativeUtilityRenderingTests {
         return Data(bytes: try #require(context.data), count: image.width * image.height * 4)
     }
 
-    private func withHost<V: View>(_ view: V, run: (NSHostingView<V>) throws -> Void) rethrows {
+    private func withHost<V: View>(_ view: V, size: CGSize = CGSize(width: 500, height: 100), run: (NSHostingView<V>) throws -> Void) rethrows {
         let host = NSHostingView(rootView: view)
         // Keep the decorated content visible through the largest tested offset.
-        host.frame = CGRect(x: 0, y: 0, width: 500, height: 100)
+        host.frame = CGRect(origin: .zero, size: size)
         let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = host
         window.orderFront(nil)
@@ -258,6 +318,74 @@ struct NativeUtilityRenderingTests {
     private func settle<V: View>(_ host: NSHostingView<V>, seconds: TimeInterval) {
         host.layoutSubtreeIfNeeded()
         RunLoop.main.run(until: Date(timeIntervalSinceNow: seconds))
+    }
+}
+
+enum CollectionContainer: CaseIterable, Sendable { case stack, lazyStack, list }
+private struct CollectionPayload: Sendable, Equatable {
+    let id: Int
+    let amount: CGFloat
+    let label: String
+}
+private struct CollectionRow: Identifiable {
+    let id: Int
+    let amount: CGFloat
+    let label: String
+}
+@MainActor private final class CollectionModel: ObservableObject {
+    @Published var rows = (1...4).map { CollectionRow(id: $0, amount: CGFloat($0), label: "Row \($0)") }
+}
+@MainActor private final class CollectionRecorder {
+    var children: [Int: UUID] = [:]
+    var modifiers: [Int: UUID] = [:]
+    var payloads: [Int: CollectionPayload] = [:]
+    var drafts: [Int: String] = [:]
+    var editors: [Int: Binding<String>] = [:]
+}
+private struct CollectionModifierProbe: ViewModifier {
+    let payload: CollectionPayload
+    let recorder: CollectionRecorder
+    @State private var identity = UUID()
+    func body(content: Content) -> some View {
+        recorder.modifiers[payload.id] = identity
+        recorder.payloads[payload.id] = payload
+        return content.opacity(1 - Double(payload.amount) / 100)
+    }
+}
+private struct CollectionChild: View {
+    let id: Int
+    let recorder: CollectionRecorder
+    @State private var identity = UUID()
+    @State private var draft: String
+    init(id: Int, recorder: CollectionRecorder) {
+        self.id = id
+        self.recorder = recorder
+        _draft = State(initialValue: "Draft \(id)")
+    }
+    var body: some View {
+        recorder.children[id] = identity
+        recorder.drafts[id] = draft
+        recorder.editors[id] = $draft
+        return TextField("Row \(id)", text: $draft)
+    }
+}
+private struct CollectionHarness: View {
+    @ObservedObject var model: CollectionModel
+    let recorder: CollectionRecorder
+    let container: CollectionContainer
+    private var rows: some View {
+        ForEach(model.rows) { row in
+            CollectionChild(id: row.id, recorder: recorder)
+                .tw(cn("p-1", "row-probe-[\(CollectionPayload(id: row.id, amount: row.amount, label: row.label))]",
+                       row.amount > 0 ? "shift-[\(row.amount)]" : nil), value: row.amount)
+        }
+    }
+    @ViewBuilder var body: some View {
+        switch container {
+        case .stack: VStack { rows }
+        case .lazyStack: ScrollView { LazyVStack { rows } }
+        case .list: List { rows }
+        }
     }
 }
 

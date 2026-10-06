@@ -147,3 +147,73 @@ Explicit presets respect Reduce Motion and disabled animation transactions.
 Without a preset, caller animations such as `withAnimation(.default)` remain native.
 
 See [native modifier plugins](/docs/native-modifiers) for registration and identity rules.
+
+## Lists and row state
+
+Use a stable model ID with `ForEach`.
+Keep one row view per item and store editor state in that row.
+Changing classes must not change the row's ID.
+Avoid IDs based on array positions, class strings, or a new UUID during each render.
+Apple explains these identity and row-count requirements in [Demystify SwiftUI performance](https://developer.apple.com/videos/play/wwdc2023/10160/).
+
+```swift title="InterpolatedListExample.swift"
+import SwiftUI
+import SwiftCN
+
+struct InterpolatedListExample: View {
+    struct Item: Identifiable {
+        let id: Int
+        let title: String
+    }
+    @State private var items = [Item(id: 1, title: "First"), Item(id: 2, title: "Second")]
+
+    var body: some View {
+        VStack {
+            Button("Reverse rows") { items.reverse() }
+            List {
+                ForEach(items) { item in
+                    EditableRow(item: item)
+                }
+            }
+        }
+    }
+
+    private struct EditableRow: View {
+        let item: Item
+        @State private var draft = ""
+        @State private var selected = false
+        private static let base: TWClasses = "p-3 rounded-lg"
+
+        var body: some View {
+            VStack(alignment: .leading) {
+                TextField(item.title, text: $draft)
+                Button(selected ? "Deselect" : "Select") { selected.toggle() }
+            }
+            .tw(cn(Self.base, "bg-[\(selected ? Color.indigo.opacity(0.15) : Color.clear)] animate-[\(Animation.default)]"),
+                value: selected)
+        }
+    }
+}
+```
+
+Declare shared modifier registrations above the collection.
+Keep registration names, order, and returned modifier types stable during row updates.
+Scope large registries to the subtree that needs them.
+Each styled surface retains inherited general-view slots to preserve state, including inactive registrations.
+
+## Resolution cost
+
+Bracket interpolation stores a native value; it does not serialize that value.
+The class syntax still parses and resolves when the styled view updates.
+Storing a `TWClasses` fragment avoids reconstructing that fragment, but does not remove resolution work.
+Native animation interpolates resolved modifier values; swiftcn does not parse strings on an animation timer.
+SwiftUI can still reevaluate a view's body during animation or other updates.
+
+For a measured hot path, native modifiers or typed `TWStyle` values can reduce parsing work.
+`TWStyle.parse` can prepare fixed classes once, but expansion uses the supplied theme and rules.
+Prepare them again when those inputs change; do not reuse resolved state or typed arguments across different rows.
+
+Run the repository's release CPU benchmark with `bash Scripts/benchmark-interpolation.sh`.
+It measures construction and resolution for dynamic strings, typed interpolation, `cn`, prepared styles, and different registry sizes.
+It reports medians and ranges without a machine-dependent pass threshold.
+Use Instruments and a device workload to measure layout, scrolling, and frame time.

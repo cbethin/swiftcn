@@ -116,6 +116,28 @@ struct InterpolationTests {
         #expect(cn("card", "p-3") == "card p-3")
         #expect(cn("card", "p-3") == cn { "card"; "p-3" })
     }
+
+    @Test func repeatedResolutionKeepsEachRowsCurrentPayload() throws {
+        let rules = TWGlobalRules(modifiers: [
+            "payload": .value(default: InterpolationPayload(amount: 0, label: "")) { view, payload in
+                view.opacity(payload.amount)
+            }
+        ])
+        let base: TWClasses = "p-3 rounded-md"
+        for generation in 0..<3 {
+            for row in 0..<1000 {
+                let width = CGFloat(20 + row + generation)
+                let payload = InterpolationPayload(amount: Double(row % 100) / 100,
+                    label: "Generation \(generation), row \(row) ] opacity-0")
+                let classes = cn(base, "w-[\(width)] payload-[\(payload)]")
+                let result = try resolve(classes, rules: rules)
+                #expect(result.width == width)
+                #expect(result.opacity == 1)
+                #expect(result.nativeSlots[0].argument?.value(as: InterpolationPayload.self) == payload)
+                #expect(result.padding.top == 12)
+            }
+        }
+    }
 }
 
 private struct InterpolationPayload: Sendable, Equatable, CustomStringConvertible {
