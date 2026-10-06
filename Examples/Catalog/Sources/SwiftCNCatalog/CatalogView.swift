@@ -29,7 +29,7 @@ struct CatalogView: View {
                     Button { saves += 1 } label: {
                         HStack(spacing: 6) {
                             Image(systemName: saves == 0 ? "square.and.arrow.down" : "checkmark.circle.fill")
-                                .contentTransition(motion.isEnabled ? .symbolEffect(.replace) : .identity)
+                                .contentTransition(motion.isEnabled ? .opacity : .identity)
                                 .demoSymbolBounce(saves)
                             Text("Save changes")
                         }

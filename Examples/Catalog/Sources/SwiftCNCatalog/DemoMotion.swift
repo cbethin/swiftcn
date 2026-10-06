@@ -43,9 +43,13 @@ private struct DemoSymbolBounce<Value: Equatable>: ViewModifier {
 
     @ViewBuilder func body(content: Content) -> some View {
         if enabled && motion.isEnabled {
-            content.symbolEffect(.bounce, options: .speed(speed), value: value)
+            // Native symbol effects can stop parent layout motion on the macOS 15 renderer.
+            content.phaseAnimator([false, true], trigger: value) { symbol, raised in
+                symbol.offset(y: raised ? -2 : 0)
+            } animation: { _ in
+                .spring(duration: 0.32 / speed, bounce: 0.2)
+            }
         } else {
-            // On macOS 15, removing an installed effect can stop the parent's layout animation.
             content
         }
     }

@@ -118,13 +118,14 @@ struct MotionSurfaceTests {
         let ys = (0..<bitmap.pixelsHigh).filter { isBlue(bitmap.pixelsWide / 2, $0) }
         let left = try #require(xs.first), right = try #require(xs.last)
         let top = try #require(ys.first), bottom = try #require(ys.last)
-        // Measure only the label's ink, excluding the independently animated symbol.
-        // This central region stays inside the blue surface at both endpoint sizes.
+        // Measure the trailing word of the single Text value. The moving icon can paint
+        // over the leading glyphs, so keep its presentation pixels outside this region.
+        // This region stays inside the blue surface at both endpoint sizes.
         // Read the explicit RGBA layout rather than AppKit's platform-specific bitmap format.
         let bytes = try #require(presentation.data).assumingMemoryBound(to: UInt8.self)
         var glyphX: [Int] = [], glyphY: [Int] = []
         for y in Int(76 * scale)..<Int(106 * scale) {
-            for x in Int(165 * scale)..<Int(260 * scale) {
+            for x in Int(205 * scale)..<Int(260 * scale) {
                 let offset = (y * bitmap.pixelsWide + x) * 4
                 let colors = [bytes[offset], bytes[offset + 1], bytes[offset + 2]]
                 // Black, white, and their interpolated grays differ from the blue background.
