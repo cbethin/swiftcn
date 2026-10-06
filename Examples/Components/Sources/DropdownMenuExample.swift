@@ -31,7 +31,7 @@ struct DropdownMenuExample: View {
         VStack(alignment: .leading, spacing: 16) {
             CNDropdownMenu("Workspace actions") { actions }
             // The same composable surface stays visible in the documentation preview.
-            CNDropdownMenuContent("border max-w-[260]") { actions }
+            CNDropdownMenuContent("border max-w-[260]", autofocus: false) { actions }
             Text(lastAction).tw("text-xs text-mutedForeground")
         }
     }

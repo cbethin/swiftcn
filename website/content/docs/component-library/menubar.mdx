@@ -57,9 +57,10 @@ To own the styling engine too, download the complete source bundle. It contains 
 import SwiftUI
 import SwiftCN
 
-/// A styled SwiftUI action surface presented in an anchored native popover.
+/// A styled SwiftUI action surface presented in an anchored SwiftUI popover.
 public struct CNDropdownMenu<Label: View, Content: View>: View {
     @State private var presented = false
+    @FocusState private var triggerFocused: Bool
     private let externalPresentation: Binding<Bool>?
     private let classes: TWClasses
     private let contentClasses: TWClasses
@@ -81,45 +82,74 @@ public struct CNDropdownMenu<Label: View, Content: View>: View {
     }
     private var presentation: Binding<Bool> { externalPresentation ?? $presented }
     public var body: some View {
-        CNButton(variant: .outline, classes: classes, action: { presentation.wrappedValue.toggle() }) { label }
+        Button(action: { presentation.wrappedValue.toggle() }) { label }
+            .focusable().focusEffectDisabled().focused($triggerFocused)
+            .buttonStyle(.tw(cn("button-outline", classes), state: .init(isFocused: triggerFocused)))
             .accessibilityValue(presentation.wrappedValue ? Text("Expanded") : Text("Collapsed"))
-            .popover(isPresented: presentation, arrowEdge: edge) {
-                CNDropdownMenuContent(contentClasses, onDismiss: { presentation.wrappedValue = false }, content: content)
-                    .presentationCompactAdaptation(.popover)
+            .onKeyPress(keys: [.return, .space, .downArrow]) { key in
+                if key.key == .downArrow { presentation.wrappedValue = true }
+                else { presentation.wrappedValue.toggle() }
+                return .handled
             }
+            .cnPopover(isPresented: presentation, arrowEdge: edge) {
+                CNDropdownMenuContent(contentClasses, isPresented: presentation,
+                                      onDismiss: { presentation.wrappedValue = false }, content: content)
+            }
+            .onChange(of: presentation.wrappedValue) { _, value in if !value { triggerFocused = true } }
     }
 }
 
 /// Also usable as an inline surface for previews or application-owned presentation.
 public struct CNDropdownMenuContent<Content: View>: View {
     @FocusState private var focusedID: UUID?
+    @Namespace private var focusScope
+    @Binding private var isPresented: Bool
     @State private var itemIDs: [UUID] = []
     private let classes: TWClasses
     private let onDismiss: () -> Void
+    private let autofocus: Bool
     private let content: Content
-    public init(_ classes: TWClasses = "", onDismiss: @escaping () -> Void = {}, @ViewBuilder content: () -> Content) {
-        self.classes = classes; self.onDismiss = onDismiss; self.content = content()
+    public init(_ classes: TWClasses = "", autofocus: Bool = true, isPresented: Binding<Bool>? = nil,
+                onDismiss: @escaping () -> Void = {}, @ViewBuilder content: () -> Content) {
+        _isPresented = isPresented ?? .constant(true)
+        self.classes = classes; self.autofocus = autofocus; self.onDismiss = onDismiss; self.content = content()
     }
     public var body: some View {
         VStack(alignment: .leading, spacing: 2) { content }
             .tw(cn("dropdown-content", classes))
-            .environment(\.cnDropdownMenuContext, .init(focusedID: $focusedID, dismiss: onDismiss))
+            .environment(\.cnDropdownMenuContext, .init(focusedID: $focusedID, dismiss: onDismiss, navigate: navigate))
             .onPreferenceChange(CNMenuItemIDs.self) { ids in
                 itemIDs = ids
-                if !ids.contains(where: { $0 == focusedID }) { focusedID = ids.first }
+                if autofocus && !ids.contains(where: { $0 == focusedID }) { focusedID = ids.first }
             }
-            .defaultFocus($focusedID, itemIDs.first)
+            .defaultFocus($focusedID, autofocus ? itemIDs.first : nil)
+            #if os(macOS)
+            .focusScope(focusScope)
+            #endif
+            .task(id: isPresented) {
+                guard autofocus else { return }
+                focusedID = nil
+                guard isPresented else { return }
+                // Let the focusable rows attach before entering this scope.
+                // Presentation changes cancel this request, including reversals.
+                await Task.yield()
+                guard !Task.isCancelled, isPresented else { return }
+                focusedID = itemIDs.first
+            }
             .onKeyPress(keys: [.upArrow, .downArrow, .home, .end, .escape]) { key in
-                switch key.key {
-                case .escape: onDismiss()
-                case .home: focusedID = itemIDs.first
-                case .end: focusedID = itemIDs.last
-                case .upArrow: focusedID = CNMenuNavigation.next(itemIDs, current: focusedID, step: -1)
-                case .downArrow: focusedID = CNMenuNavigation.next(itemIDs, current: focusedID, step: 1)
-                default: return .ignored
-                }
-                return .handled
+                navigate(key.key)
             }
+    }
+    private func navigate(_ key: KeyEquivalent) -> KeyPress.Result {
+        switch key {
+        case .escape: onDismiss()
+        case .home: focusedID = itemIDs.first
+        case .end: focusedID = itemIDs.last
+        case .upArrow: focusedID = CNMenuNavigation.next(itemIDs, current: focusedID, step: -1)
+        case .downArrow: focusedID = CNMenuNavigation.next(itemIDs, current: focusedID, step: 1)
+        default: return .ignored
+        }
+        return .handled
     }
 }
 
@@ -166,6 +196,7 @@ public struct CNDropdownMenuItem<Label: View>: View {
         .preference(key: CNMenuItemIDs.self, value: isEnabled ? [id] : [])
         .onHover { hovering in if hovering && isEnabled { focus.wrappedValue = id } }
         .onKeyPress(keys: [.return, .space]) { _ in activate(); return .handled }
+        .onKeyPress(keys: [.upArrow, .downArrow, .home, .end, .escape]) { context.navigate($0.key) }
     }
 }
 public struct CNDropdownMenuLink<Label: View>: View {
@@ -196,7 +227,7 @@ public struct CNDropdownMenuLabel<Content: View>: View {
 public struct CNDropdownMenuSeparator: View {
     private let classes: TWClasses
     public init(_ classes: TWClasses = "") { self.classes = classes }
-    public var body: some View { Rectangle().tw(cn("h-[1] w-full bg-border my-1", classes)).accessibilityHidden(true) }
+    public var body: some View { Color.clear.tw(cn("h-[1] w-full bg-border", classes)).tw("py-1").accessibilityHidden(true) }
 }
 public struct CNDropdownMenuShortcut: View {
     private let text: String

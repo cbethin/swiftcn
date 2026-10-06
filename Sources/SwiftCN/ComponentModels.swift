@@ -17,8 +17,10 @@ public struct CNOption<ID: Hashable & Sendable>: Identifiable, Hashable, Sendabl
 public struct CNDropdownMenuContext {
     public var focusedID: FocusState<UUID?>.Binding?
     public var dismiss: () -> Void
-    public init(focusedID: FocusState<UUID?>.Binding? = nil, dismiss: @escaping () -> Void = {}) {
-        self.focusedID = focusedID; self.dismiss = dismiss
+    public var navigate: (KeyEquivalent) -> KeyPress.Result
+    public init(focusedID: FocusState<UUID?>.Binding? = nil, dismiss: @escaping () -> Void = {},
+                navigate: @escaping (KeyEquivalent) -> KeyPress.Result = { _ in .ignored }) {
+        self.focusedID = focusedID; self.dismiss = dismiss; self.navigate = navigate
     }
 }
 private struct CNDropdownMenuContextKey: EnvironmentKey {

@@ -141,7 +141,7 @@
     "symbol": "CNCombobox",
     "source": "Command.swift",
     "example": "ComboboxExample.swift",
-    "notes": "A searchable native popover selects stable option IDs. Empty results and disabled options are handled. The selected value remains in the caller binding."
+    "notes": "A searchable custom SwiftUI popover selects stable option IDs. Empty results and disabled options are handled. The selected value remains in the caller binding."
   },
   {
     "name": "Command",
@@ -205,7 +205,7 @@
     "symbol": "CNDropdownMenu",
     "source": "Menus.swift",
     "example": "DropdownMenuExample.swift",
-    "notes": "A custom SwiftUI action surface opens in an anchored popover, including compact iOS layouts. Compose CNDropdownMenuItem, Label, Separator, Shortcut, and CheckboxItem. Arrow keys wrap through enabled items; Home and End move to the first and last item. Return activates, and Escape or outside interaction dismisses. Action items close the popover; checkbox items keep it open. A shortcut label is a visual hint; attach keyboardShortcut to install the action. Use isPresented to control presentation externally, contentClasses to style the surface, or CNDropdownMenuContent for your own presentation. Use these parts instead of native Menu items."
+    "notes": "A custom SwiftUI action surface opens in an anchored popover, including compact iOS layouts. Compose CNDropdownMenuItem, Label, Separator, Shortcut, and CheckboxItem. Arrow keys wrap through enabled items; Home and End move to the first and last item. Return activates, and Escape or outside interaction dismisses. Action items close the popover; checkbox items keep it open. A shortcut label is a visual hint; attach keyboardShortcut to install the action. Use isPresented to control presentation externally, contentClasses to style the surface, or CNDropdownMenuContent for your own presentation. Use these parts instead of native Menu items. Add .cnPopoverHost() at the screen root for the custom in-window surface and repeatable trigger clicks. Without a host, presentation uses the system popover. The popover-motion recipe controls interruptible entry and exit; repeated trigger clicks immediately reverse presentation."
   },
   {
     "name": "Empty",
@@ -229,7 +229,7 @@
     "symbol": "CNHoverCard",
     "source": "Presentation.swift",
     "example": "HoverCardExample.swift",
-    "notes": "A native popover opens after a short pointer delay. A delayed close allows travel from the trigger into the popover. Explicit button activation keeps the content open for keyboard and touch users. Native outside dismissal remains available. Supply noninteractive trigger content."
+    "notes": "A custom SwiftUI popover opens after a short pointer delay. A delayed close allows travel from the trigger into the popover. Explicit button activation keeps the content open for keyboard and touch users. Outside interaction dismisses the popover. Supply noninteractive trigger content."
   },
   {
     "name": "Input",
@@ -341,7 +341,7 @@
     "symbol": "CNPopover",
     "source": "Presentation.swift",
     "example": "PopoverExample.swift",
-    "notes": "A native button toggles the presentation binding. Choose its arrow edge and compose arbitrary popover content. SwiftUI owns outside dismissal and platform adaptation; classes style the trigger."
+    "notes": "A native button toggles a custom SwiftUI popover. Choose its preferred side and compose arbitrary content. Classes style the trigger. Add .cnPopoverHost() at the screen root for custom in-window presentation beyond scrolling children. Without a host, presentation uses the system popover. The popover-motion recipe controls interruptible entry and exit. Outside interaction dismisses the surface."
   },
   {
     "name": "Progress",

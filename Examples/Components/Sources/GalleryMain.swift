@@ -27,6 +27,6 @@ struct ComponentGalleryView: View {
                     Text("Edit the same source you import. Style it with .tw classes.").tw("text-sm text-mutedForeground")
                 }.tw("p-6 w-full")
             }.tw("bg-background")
-        }.preferredColorScheme(dark ? .dark : .light)
+        }.preferredColorScheme(dark ? .dark : .light).cnPopoverHost()
     }
 }

@@ -33,10 +33,11 @@ jobs:
       - name: Native tests
         if: inputs.ios_component == ''
         run: |
-          swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests|ComponentRenderingTests|CompositionRenderingTests|CatalogNativeRenderingTests'
+          swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests|ComponentRenderingTests|CompositionRenderingTests|CatalogNativeRenderingTests|PopoverInteractionTests'
           swift test --filter CompositionRenderingTests
           swift test --filter ComponentRenderingTests
           swift test --filter CatalogNativeRenderingTests
+          swift test --filter PopoverInteractionTests
           swift test --filter NativeUtilityRenderingTests
       - name: Record candidates
         if: inputs.ios_component == ''

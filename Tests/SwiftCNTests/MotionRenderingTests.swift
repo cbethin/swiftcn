@@ -275,7 +275,7 @@ private struct RetargetMotionHarness: View {
     var body: some View {
         MotionContent(recorder: recorder, active: model.active)
             .modifier(RetargetMotionProbe(amount: model.active ? 1 : 0, recorder: recorder))
-            .tw("feedback-motion duration-400", value: model.active, animationScope: .content)
+            .twAnimation("popover-motion duration-400", value: model.active)
     }
 }
 private struct RetargetMotionProbe: ViewModifier, Animatable {

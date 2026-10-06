@@ -35,7 +35,7 @@ struct PopoverExample: View {
 
 ## Native behavior
 
-A native button toggles the presentation binding. Choose its arrow edge and compose arbitrary popover content. SwiftUI owns outside dismissal and platform adaptation; classes style the trigger.
+A native button toggles a custom SwiftUI popover. Choose its preferred side and compose arbitrary content. Classes style the trigger. Add .cnPopoverHost() at the screen root for custom in-window presentation beyond scrolling children. Without a host, presentation uses the system popover. The popover-motion recipe controls interruptible entry and exit. Outside interaction dismisses the surface.
 
 ## Style and compose
 
@@ -157,11 +157,11 @@ public struct CNPopover<Label: View, Content: View>: View {
     }
     public var body: some View {
         CNButton(variant: .outline, classes: classes, action: { isPresented.toggle() }) { label }
-            .popover(isPresented: $isPresented, arrowEdge: edge) { content().tw("popover") }
+            .cnPopover(isPresented: $isPresented, arrowEdge: edge) { content().tw("popover") }
     }
 }
 /// Pointer entry opens after a short delay. Pointer exit allows travel into the popover.
-/// Explicit activation keeps the popover open until native outside or keyboard dismissal.
+/// Explicit activation keeps the popover open until outside or keyboard dismissal.
 public struct CNHoverCard<Label: View, Content: View>: View {
     @State private var isPresented = false
     @State private var triggerHovered = false
@@ -176,7 +176,7 @@ public struct CNHoverCard<Label: View, Content: View>: View {
     public var body: some View {
         CNButton(variant: .outline, classes: classes, action: { openedByHover = false; isPresented.toggle() }) { label }
             .onHover { triggerHovered = $0 }
-            .popover(isPresented: $isPresented) {
+            .cnPopover(isPresented: $isPresented) {
                 content().tw("hover-card").onHover { contentHovered = $0 }
             }
             .onChange(of: isPresented) { _, presented in if !presented { openedByHover = false; contentHovered = false } }
