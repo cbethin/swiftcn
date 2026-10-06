@@ -94,6 +94,7 @@ struct TWValueAnimationModifier<Value: Equatable>: ViewModifier {
     let style: TWStyle
     let value: Value
     let state: TWState
+    let tracksHover: Bool
     @Environment(\.twTheme) private var theme
     @Environment(\.twRules) private var rules
     @Environment(\.colorScheme) private var scheme
@@ -102,10 +103,11 @@ struct TWValueAnimationModifier<Value: Equatable>: ViewModifier {
     @Environment(\.isEnabled) private var isEnabled
     @State private var isHovered = false
 
-    init(style: TWStyle, value: Value, state: TWState = TWState()) {
+    init(style: TWStyle, value: Value, state: TWState = TWState(), tracksHover: Bool = true) {
         self.style = style
         self.value = value
         self.state = state
+        self.tracksHover = tracksHover
     }
 
     func body(content: Content) -> some View {
@@ -114,9 +116,12 @@ struct TWValueAnimationModifier<Value: Equatable>: ViewModifier {
         activeState.isHovered = activeState.isHovered || isHovered
         let motion = TWStyleResolver.resolve(TWStyle(rules.view, style), theme: theme,
             scheme: scheme, state: activeState, globalRules: rules, groupStates: groups.states, target: nil).motion
-        return content.transaction(value: value) { transaction in
+        let animated = content.transaction(value: value) { transaction in
             motion.update(&transaction, reduceMotion: reduceMotion)
         }
-        .onHover { isHovered = $0 }
+        return Group {
+            if tracksHover { animated.onHover { isHovered = $0 } }
+            else { animated }
+        }
     }
 }

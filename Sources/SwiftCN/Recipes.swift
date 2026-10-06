@@ -86,7 +86,7 @@ extension TWStyle {
             "calendar-today": "border border-primary",
             "calendar-outside": "text-mutedForeground",
             "dropdown-content": "p-1 w-[240] bg-surface text-foreground rounded-lg border shadow-md",
-            "dropdown-item": "px-2 py-2 text-sm rounded-md hover:bg-accent focus:bg-accent pressed:opacity-80 disabled:opacity-40 control-motion",
+            "dropdown-item": "px-2 py-2 text-sm rounded-md hover:bg-accent focus:bg-accent pressed:opacity-80 disabled:opacity-40 animate-none",
             "dropdown-label": "px-2 py-2 text-sm font-semibold",
             "textarea": "p-3 bg-background border rounded-md focus:border-primary disabled:opacity-45 control-motion",
             "input-group": "px-3 py-2 bg-background border rounded-md",

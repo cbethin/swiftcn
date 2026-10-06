@@ -45,7 +45,10 @@ public struct CNPopoverHost<Content: View>: View {
                                 }
                             }
                         }
-                        .twAnimation("popover-motion", value: visible.map(\.id))
+                        // This full-window layer must not track hover over the
+                        // native controls beneath it, including trigger holes.
+                        .modifier(TWValueAnimationModifier(style: .classes("popover-motion"),
+                            value: visible.map(\.id), tracksHover: false))
                         .onChange(of: visible.map(\.id)) { old, new in
                             guard let newest = new.first(where: { !old.contains($0) }) else { return }
                             for request in visible where request.id != newest { request.presentation.wrappedValue = false }

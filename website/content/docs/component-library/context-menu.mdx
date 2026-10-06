@@ -193,7 +193,14 @@ public struct CNDropdownMenuItem<Label: View>: View {
         .buttonStyle(.tw(cn("dropdown-item", minimumHeight, role == .destructive ? "text-destructive" : "", classes),
                           state: .init(isFocused: focused)))
         .preference(key: CNMenuItemIDs.self, value: isEnabled ? [id] : [])
-        .onHover { hovering in if hovering && isEnabled { focus.wrappedValue = id } }
+        .onHover { hovering in
+            guard hovering, isEnabled, !focused else { return }
+            // Pointer focus must move with the highlight, without inheriting
+            // the popup's entry animation or cross-fading two active rows.
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { focus.wrappedValue = id }
+        }
         .onKeyPress(keys: [.return, .space]) { _ in activate(); return .handled }
         .onKeyPress(keys: [.upArrow, .downArrow, .home, .end, .escape]) { context.navigate($0.key) }
     }

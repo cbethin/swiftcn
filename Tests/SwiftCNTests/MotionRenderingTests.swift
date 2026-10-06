@@ -48,10 +48,10 @@ struct MotionRenderingTests {
         }
     }
 
-    @Test func motionRecipeRetargetsBeforeOpeningOrClosingFinishes() {
+    @Test(arguments: [true, false]) func motionRecipeRetargetsBeforeOpeningOrClosingFinishes(tracksHover: Bool) {
         let model = MotionModel()
         let recorder = ContentRecorder()
-        withHost(RetargetMotionHarness(model: model, recorder: recorder)) { host in
+        withHost(RetargetMotionHarness(model: model, recorder: recorder, tracksHover: tracksHover)) { host in
             model.active = true
             settle(host, seconds: 0.12)
             let opening = recorder.amounts.last ?? 0
@@ -272,10 +272,12 @@ private struct MotionProbeAnimation: CustomAnimation {
 private struct RetargetMotionHarness: View {
     @ObservedObject var model: MotionModel
     let recorder: ContentRecorder
+    let tracksHover: Bool
     var body: some View {
         MotionContent(recorder: recorder, active: model.active)
             .modifier(RetargetMotionProbe(amount: model.active ? 1 : 0, recorder: recorder))
-            .twAnimation("popover-motion duration-400", value: model.active)
+            .modifier(TWValueAnimationModifier(style: .classes("popover-motion duration-400"),
+                value: model.active, tracksHover: tracksHover))
     }
 }
 private struct RetargetMotionProbe: ViewModifier, Animatable {
