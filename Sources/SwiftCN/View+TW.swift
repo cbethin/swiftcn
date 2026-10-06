@@ -56,7 +56,7 @@ struct TWModifier: ViewModifier {
             globalRules: rules, groupStates: groups.states, target: target)
         return source(content, appearance: appearance)
             .transaction { transaction in
-                if (animationScope == .content || animationValue == nil && animationScope == .all),
+                if (animationScope == .content || animationScope == .all),
                    animationValue == nil || transaction[TWAnimationChangeKey.self] == animationID {
                     appearance.motion.update(&transaction, reduceMotion: reduceMotion)
                 }
@@ -71,9 +71,16 @@ struct TWModifier: ViewModifier {
             .modifier(phase(.layout, appearance: appearance))
             .modifier(phase(.decoration, appearance: appearance))
             .modifier(phase(.effects, appearance: appearance))
-            .modifier(TWDrivenAnimationModifier(motion: appearance.motion, value: animationValue,
-                appliesToRoot: animationValue != nil && animationScope != .content,
-                animationID: animationValue != nil ? animationID : nil))
+            .transaction(value: animationValue) { transaction in
+                if animationValue != nil {
+                    transaction[TWAnimationChangeKey.self] = animationID
+                    // Intrinsic size and placement interpolate at the surface boundary.
+                    if animationScope != .content { appearance.motion.update(&transaction, reduceMotion: reduceMotion) }
+                }
+            }
+            .transaction { transaction in
+                transaction[TWCallerAnimationKey.self] = TWCallerAnimation(animation: transaction.animation)
+            }
             .onHover { isHovered = $0 }
             .transformEnvironment(\.twGroups) { inherited in
                 if let name = appearance.group {
@@ -218,9 +225,6 @@ struct TWPhaseModifier: ViewModifier {
                 if let caller = transaction[TWCallerAnimationKey.self] { transaction.animation = caller.animation }
                 return
             }
-            // The native value driver already owns selected watched phases. Replacing its
-            // transaction here can retain a completed custom-animation timeline on macOS 15.
-            if watched && scope != .content { return }
             appearance.motion.update(&transaction, reduceMotion: reduceMotion)
         } body: { surface in
             stage(surface)
