@@ -12,3 +12,21 @@ public struct CNOption<ID: Hashable & Sendable>: Identifiable, Hashable, Sendabl
     }
 }
 
+
+/// Public context keeps copied and imported dropdown parts interoperable.
+public struct CNDropdownMenuContext {
+    public var focusedID: FocusState<UUID?>.Binding?
+    public var dismiss: () -> Void
+    public init(focusedID: FocusState<UUID?>.Binding? = nil, dismiss: @escaping () -> Void = {}) {
+        self.focusedID = focusedID; self.dismiss = dismiss
+    }
+}
+private struct CNDropdownMenuContextKey: EnvironmentKey {
+    static var defaultValue: CNDropdownMenuContext { .init() }
+}
+extension EnvironmentValues {
+    public var cnDropdownMenuContext: CNDropdownMenuContext {
+        get { self[CNDropdownMenuContextKey.self] }
+        set { self[CNDropdownMenuContextKey.self] = newValue }
+    }
+}

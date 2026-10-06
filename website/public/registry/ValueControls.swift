@@ -41,20 +41,6 @@ public struct CNSpinner: View {
         ProgressView(title).progressViewStyle(.circular).tw(cn("spinner", classes)).cnControlUtilities()
     }
 }
-public struct CNCalendar: View {
-    private let title: LocalizedStringKey
-    @Binding private var date: Date
-    private let range: ClosedRange<Date>
-    private let classes: TWClasses
-    public init(_ title: LocalizedStringKey = "Date", selection: Binding<Date>,
-                in range: ClosedRange<Date> = Date.distantPast...Date.distantFuture, classes: TWClasses = "") {
-        self.title = title; _date = selection; self.range = range; self.classes = classes
-    }
-    public var body: some View {
-        DatePicker(title, selection: $date, in: range, displayedComponents: .date)
-            .datePickerStyle(.graphical).tw(cn("calendar", classes)).cnControlUtilities()
-    }
-}
 public struct CNDatePicker: View {
     private let title: LocalizedStringKey
     @Binding private var date: Date
@@ -68,6 +54,6 @@ public struct CNDatePicker: View {
     }
     public var body: some View {
         DatePicker(title, selection: $date, in: range, displayedComponents: components)
-            .datePickerStyle(.compact).tw(cn("calendar", classes)).cnControlUtilities()
+            .datePickerStyle(.compact).tw(cn("date-picker", classes)).cnControlUtilities()
     }
 }

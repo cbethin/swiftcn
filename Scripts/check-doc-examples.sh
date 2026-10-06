@@ -48,6 +48,8 @@ for entry in catalog:
     (scratch/'component-copy'/entry['example']).write_bytes((scratch/'consumer'/entry['example']).read_bytes())
 (scratch/'component-copy'/'MixedComponentOptions.swift').write_bytes(
     (repo/'Tests/SourceOwnership/MixedComponentOptions.swift').read_bytes())
+(scratch/'component-copy'/'MixedDropdownParts.swift').write_bytes(
+    (repo/'Tests/SourceOwnership/MixedDropdownParts.swift').read_bytes())
 PYTHON
 cmp "$repo_dir/LICENSE" "$scratch_dir/owned/LICENSE"
 

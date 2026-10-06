@@ -8,7 +8,7 @@ struct ButtonGroupExample: View {
             CNButtonGroup {
                 CNButton("Previous", variant: .outline, action: {})
                 CNButton("Next", variant: .outline, action: {})
-                CNDropdownMenu("More") { Button("Export") {} }
+                CNDropdownMenu("More") { CNDropdownMenuItem("Export") {} }
             }
 
         }

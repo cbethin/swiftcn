@@ -12,11 +12,17 @@ import SwiftCN
 struct ComponentCatalogVisualTests {
     // AppKit cacheDisplay cannot composite the native tab strip. iOS covers both
     // appearances; CatalogNativeRenderingTests verifies macOS selection and item identity.
-    @Test(arguments: CNComponentGallery.allCases.filter { $0 != .tabs }, [false, true])
+    nonisolated private static var selectedComponents: [CNComponentGallery] {
+        let requested = Set((ProcessInfo.processInfo.environment["SWIFTCN_COMPONENT_VISUAL_ONLY"] ?? "")
+            .split(whereSeparator: { $0.isWhitespace }).map { $0.replacingOccurrences(of: "-", with: "_") })
+        return CNComponentGallery.allCases.filter { $0 != .tabs && (requested.isEmpty || requested.contains($0.rawValue)) }
+    }
+    @Test(arguments: selectedComponents, [false, true])
     func catalog(component: CNComponentGallery, dark: Bool) throws {
         try snapshot(component, dark: dark, width: 720, large: false)
     }
-    @Test(arguments: [CNComponentGallery.field, .input_group, .message, .questionnaire, .empty, .card, .radio_group, .typography])
+    @Test(arguments: [CNComponentGallery.field, .input_group, .message, .questionnaire, .empty, .card, .radio_group, .typography]
+        .filter { selectedComponents.contains($0) })
     func narrowAndLarge(component: CNComponentGallery) throws {
         try snapshot(component, dark: false, width: 320, large: true)
     }

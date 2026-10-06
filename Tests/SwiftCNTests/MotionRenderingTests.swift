@@ -48,6 +48,27 @@ struct MotionRenderingTests {
         }
     }
 
+    @Test func motionRecipeRetargetsBeforeOpeningOrClosingFinishes() {
+        let model = MotionModel()
+        let recorder = ContentRecorder()
+        withHost(RetargetMotionHarness(model: model, recorder: recorder)) { host in
+            model.active = true
+            settle(host, seconds: 0.12)
+            let opening = recorder.amounts.last ?? 0
+            model.active = false
+            settle(host, seconds: 0.12)
+            let closing = recorder.amounts.last ?? 1
+            if recorder.reduceMotion != true {
+                #expect(opening > 0 && opening < 1)
+                #expect(closing < opening, "Closing must reverse the unfinished opening: \(opening) -> \(closing)")
+            }
+            model.active = true
+            settle(host, seconds: 0.7)
+            #expect(abs((recorder.amounts.last ?? 0) - 1) < 0.001)
+            #expect(Set(recorder.identities).count == 1)
+        }
+    }
+
     @Test func valueAnimationHonorsDisabledTransactionsAndPreservesUnrelatedUpdates() {
         let samples = MotionSamples()
         let model = MotionModel()
@@ -245,6 +266,29 @@ private struct MotionProbeAnimation: CustomAnimation {
     var animations: [Animation?] = []
     var identities: [UUID] = []
     var reduceMotion: Bool?
+    var amounts: [Double] = []
+}
+
+private struct RetargetMotionHarness: View {
+    @ObservedObject var model: MotionModel
+    let recorder: ContentRecorder
+    var body: some View {
+        MotionContent(recorder: recorder, active: model.active)
+            .modifier(RetargetMotionProbe(amount: model.active ? 1 : 0, recorder: recorder))
+            .tw("feedback-motion duration-400", value: model.active, animationScope: .content)
+    }
+}
+private struct RetargetMotionProbe: ViewModifier, Animatable {
+    var amount: Double
+    let recorder: ContentRecorder
+    nonisolated var animatableData: Double {
+        get { amount }
+        set { amount = newValue }
+    }
+    func body(content: Content) -> some View {
+        recorder.amounts.append(amount)
+        return content.opacity(amount)
+    }
 }
 
 private struct MotionHarness: View {

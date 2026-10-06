@@ -91,9 +91,9 @@
     "name": "Calendar",
     "slug": "calendar",
     "symbol": "CNCalendar",
-    "source": "ValueControls.swift",
+    "source": "Calendar.swift",
     "example": "CalendarExample.swift",
-    "notes": "Uses the native graphical DatePicker. Locale, calendar, time zone, allowed range, and accessibility remain native environment values."
+    "notes": "A custom six-week SwiftUI grid uses styled day buttons and month navigation. Calendar arithmetic respects the environment calendar, locale, time zone, and daylight-saving changes. Selected, today, adjacent-month, and disabled days have separate recipes. Bounds apply to days and month navigation. Day buttons expose full date labels and selected state. External selection changes reveal that month. Override dayClasses or reuse CNCalendarDay in your own layout."
   },
   {
     "name": "Card",
@@ -205,7 +205,7 @@
     "symbol": "CNDropdownMenu",
     "source": "Menus.swift",
     "example": "DropdownMenuExample.swift",
-    "notes": "A native Menu owns activation, keyboard navigation, and dismissal. Compose native buttons, submenus, roles, shortcuts, and disabled items. Classes style the surrounding control; system menu interiors retain their native appearance."
+    "notes": "A custom SwiftUI action surface opens in an anchored popover, including compact iOS layouts. Compose CNDropdownMenuItem, Label, Separator, Shortcut, and CheckboxItem. Arrow keys wrap through enabled items; Home and End move to the first and last item. Return activates, and Escape or outside interaction dismisses. Action items close the popover; checkbox items keep it open. A shortcut label is a visual hint; attach keyboardShortcut to install the action. Use isPresented to control presentation externally, contentClasses to style the surface, or CNDropdownMenuContent for your own presentation. Use these parts instead of native Menu items."
   },
   {
     "name": "Empty",
