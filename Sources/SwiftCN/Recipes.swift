@@ -82,7 +82,7 @@ extension TWStyle {
             "accordion-item": "py-3",
             "collapsible": "text-foreground",
             "menu": "text-sm text-foreground",
-            "dialog": "p-6 bg-surface text-foreground rounded-lg",
+            "dialog": "p-6 min-w-[320] max-w-[480] bg-surface text-foreground rounded-lg",
             "dialog-title": "text-lg font-semibold",
             "dialog-description": "text-sm text-mutedForeground",
             "dialog-footer": "pt-4",
@@ -110,6 +110,9 @@ extension TWStyle {
             "toggle-unselected": "bg-surface text-foreground border"
         ]
         for (name, classes) in components { recipes[name] = .classes(classes) }
+        recipes["button-ghost"] = Self(buttonBase, .fg(.foreground), .hover(.bg(.accent)))
+        recipes["button-link"] = Self(buttonBase, .px(0), .fg(.primary), .hover(.opacity(0.80)))
+        recipes["input-group"] = Self(.px(3), .minH(inputMinimumHeight), .bg(.background), .border(.border), .rounded(.md))
         return recipes
     }()
 

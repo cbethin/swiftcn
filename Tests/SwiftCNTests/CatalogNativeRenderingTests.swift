@@ -62,9 +62,6 @@ struct CatalogNativeRenderingTests {
     var invalid = false
     var large = false
     var on = false
-    var answers: [String: CNAnswer] = [:]
-    var index = 0
-    var submissions = 0
     var toast: CNToast? = nil
 }
 private struct CatalogInputProbe: View {

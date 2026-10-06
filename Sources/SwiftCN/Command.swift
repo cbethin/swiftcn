@@ -23,6 +23,7 @@ public struct CNCommand<ID: Hashable & Sendable>: View {
     }
     private var results: [CNOption<ID>] { CNOptionSearch.filter(options, query: query) }
     public var body: some View {
+        let results = self.results
         VStack(alignment: .leading, spacing: 8) {
             CNInput("Search…", text: $query, focus: $searchFocused).onSubmit(activateHighlighted)
             if results.isEmpty { Text("No results").tw("p-3 text-sm text-mutedForeground") }
@@ -44,7 +45,7 @@ public struct CNCommand<ID: Hashable & Sendable>: View {
             }.listStyle(.plain).scrollContentBackground(.hidden)
         }.tw(cn("command min-h-[220]", classes))
             .onChange(of: results.map(\.id), initial: true) { _, ids in
-                if highlighted == nil || !ids.contains(highlighted!) { highlighted = results.first { !$0.isDisabled }?.id }
+                if highlighted.map({ !ids.contains($0) }) ?? true { highlighted = results.first { !$0.isDisabled }?.id }
             }
             .onAppear { searchFocused = true }
         #if os(macOS)

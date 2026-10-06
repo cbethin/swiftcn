@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftCN
+import Accessibility
 
 public struct CNQuestion: Identifiable, Equatable, Sendable {
     public enum Kind: Equatable, Sendable {
@@ -19,8 +20,13 @@ public struct CNQuestion: Identifiable, Equatable, Sendable {
 public enum CNAnswer: Equatable, Sendable {
     case text(String)
     case choices(Set<String>)
+    public var textValue: String? { if case .text(let value) = self { return value }; return nil }
+    public var choiceValues: Set<String>? { if case .choices(let value) = self { return value }; return nil }
 }
 public enum CNQuestionnaireValidation {
+    /// Native controls can write the displayed value during focus without a user edit.
+    public static func changesText(_ answer: CNAnswer?, to value: String) -> Bool { (answer?.textValue ?? "") != value }
+
     public static func error(for question: CNQuestion, answer: CNAnswer?) -> String? {
         switch (question.kind, answer) {
         case (.text, .text(let text)):
@@ -109,9 +115,22 @@ public struct CNQuestionnaire: View {
         case .text:
             CNInput("Your answer", text: Binding(get: {
                 if case .text(let value) = answers[question.id] { return value }; return ""
-            }, set: { answers[question.id] = .text($0); validationError = nil }), focus: $textFocused)
+            }, set: { value in
+                guard CNQuestionnaireValidation.changesText(answers[question.id], to: value) else { return }
+                answers[question.id] = .text(value); validationError = nil
+            }), focus: $textFocused)
+                .accessibilityLabel(question.title)
                 .onSubmit(continueFromCurrent)
-        case .single(let options), .multiple(let options):
+        case .single(let options):
+            CNRadioGroup("Your answer", options: options, selection: Binding<String?>(get: {
+                guard case .choices(let ids) = answers[question.id] else { return nil }
+                return options.first { ids.contains($0.id) }?.id
+            }, set: { value in
+                let current = options.first { answers[question.id]?.choiceValues?.contains($0.id) ?? false }?.id
+                guard value != current else { return }
+                answers[question.id] = value.map { .choices([$0]) }; validationError = nil
+            })).accessibilityLabel(question.title)
+        case .multiple(let options):
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(options) { option in
                     CNCheckbox(isOn: Binding(get: {
@@ -120,7 +139,7 @@ public struct CNQuestionnaire: View {
                         var ids: Set<String> = []
                         if case .choices(let stored) = answers[question.id] { ids = stored }
                         if isOn {
-                            if case .single = question.kind { ids = [option.id] } else { ids.insert(option.id) }
+                            ids.insert(option.id)
                         } else { ids.remove(option.id) }
                         answers[question.id] = .choices(ids); validationError = nil
                     })) { Text(option.title) }.disabled(option.isDisabled)
@@ -136,6 +155,7 @@ public struct CNQuestionnaire: View {
         case .submit(let validated): validationError = nil; onSubmit(validated)
         case .invalid(let invalid, let message):
             activeIndex = invalid; errorQuestionID = questions[invalid].id; validationError = message
+            AccessibilityNotification.Announcement(message).post()
             if case .text = questions[invalid].kind { textFocused = true }
         }
     }

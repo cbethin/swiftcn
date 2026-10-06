@@ -79,11 +79,12 @@ public struct CNToggleGroup<ID: Hashable & Sendable>: View {
     private let options: [CNOption<ID>]
     @Binding private var selection: Set<ID>
     private let classes: TWClasses
-    public init(_ options: [CNOption<ID>], selection: Binding<Set<ID>>, classes: TWClasses = "") {
-        self.options = options; _selection = selection; self.classes = classes
+    private let axis: Axis
+    public init(_ options: [CNOption<ID>], selection: Binding<Set<ID>>, axis: Axis = .horizontal, classes: TWClasses = "") {
+        self.options = options; _selection = selection; self.axis = axis; self.classes = classes
     }
     public var body: some View {
-        CNButtonGroup(classes: classes) {
+        CNButtonGroup(axis: axis, classes: classes) {
             ForEach(options) { option in
                 CNToggle(isOn: Binding(get: { selection.contains(option.id) }, set: { on in
                     if on { selection.insert(option.id) } else { selection.remove(option.id) }
@@ -122,17 +123,25 @@ public struct CNNativeSelect<ID: Hashable & Sendable>: View {
         }.tw(cn("select", classes)).cnControlUtilities()
     }
 }
+/// Native single selection. The optional binding exposes an explicit empty choice.
 public struct CNRadioGroup<ID: Hashable & Sendable>: View {
     private let title: LocalizedStringKey
     private let options: [CNOption<ID>]
-    @Binding private var selection: ID
+    @Binding private var selection: ID?
+    private let allowsEmpty: Bool
     private let classes: TWClasses
     public init(_ title: LocalizedStringKey, options: [CNOption<ID>], selection: Binding<ID>, classes: TWClasses = "") {
-        self.title = title; self.options = options; _selection = selection; self.classes = classes
+        self.title = title; self.options = options
+        _selection = Binding(get: { selection.wrappedValue }, set: { if let value = $0 { selection.wrappedValue = value } })
+        allowsEmpty = false; self.classes = classes
+    }
+    public init(_ title: LocalizedStringKey, options: [CNOption<ID>], selection: Binding<ID?>, classes: TWClasses = "") {
+        self.title = title; self.options = options; _selection = selection; allowsEmpty = true; self.classes = classes
     }
     public var body: some View {
         let picker = Picker(title, selection: $selection) {
-            ForEach(options) { option in Text(option.title).tag(option.id).disabled(option.isDisabled) }
+            if allowsEmpty { Text("Choose an option").tag(Optional<ID>.none) }
+            ForEach(options) { option in Text(option.title).tag(Optional(option.id)).disabled(option.isDisabled) }
         }.tw(cn("radio-group", classes)).cnControlUtilities()
         #if os(macOS)
         picker.pickerStyle(.radioGroup)

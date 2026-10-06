@@ -119,6 +119,10 @@ public struct CNInputOTP: View {
                 let clean = Self.normalize(value, length: length)
                 if clean != code { code = clean }
             }
+            .onChange(of: length) { _, count in
+                let clean = Self.normalize(code, length: count)
+                if clean != code { code = clean }
+            }
             .accessibilityHint("Enter \(length) digits")
         #if os(iOS)
         field.textContentType(.oneTimeCode).keyboardType(.numberPad)

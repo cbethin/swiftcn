@@ -13,6 +13,7 @@ struct CatalogBehaviorTests {
         #expect(CNPagination.visiblePages(page: 500_000, pageCount: 1_000_000) == [1, 499_998, 499_999, 500_000, 500_001, 500_002, 1_000_000])
         #expect(CNPagination.visiblePages(page: -10, pageCount: 3) == [1, 2, 3])
         #expect(CNPagination.visiblePages(page: 1, pageCount: 0).isEmpty)
+        #expect(CNPagination.visiblePages(page: .max, pageCount: .max) == [1, Int.max - 2, Int.max - 1, Int.max])
     }
     @Test func commandSearchUsesDetailsAndKeepsDisabledMetadata() {
         let options = [CNOption("a", title: "Résumé", detail: "Design team"), CNOption("b", title: "Archived", isDisabled: true)]
@@ -36,6 +37,13 @@ struct CatalogBehaviorTests {
         #expect(CNQuestionnaireValidation.error(for: optional, answer: nil) == nil)
         let multiple = CNQuestion("features", title: "Features", kind: .multiple(choices))
         #expect(CNQuestionnaireValidation.error(for: multiple, answer: .choices(["a", "b"])) == nil)
+    }
+    @Test func focusingAnEmptyQuestionIsNotAnAnswerEdit() {
+        #expect(!CNQuestionnaireValidation.changesText(nil, to: ""))
+        #expect(!CNQuestionnaireValidation.changesText(.text(""), to: ""))
+        #expect(!CNQuestionnaireValidation.changesText(.text("Charles"), to: "Charles"))
+        #expect(CNQuestionnaireValidation.changesText(.text("Charles"), to: ""))
+        #expect(CNQuestionnaireValidation.changesText(nil, to: "Charles"))
     }
     @Test func questionnaireNavigationRevalidatesEarlierAnswersAndDropsUnknownIDs() {
         let questions = [CNQuestion("name", title: "Name"), CNQuestion("optional", title: "Optional", isRequired: false)]

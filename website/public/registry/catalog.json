@@ -51,7 +51,7 @@
     "name": "Badge",
     "slug": "badge",
     "symbol": "CNBadge",
-    "source": "ComponentParts.swift",
+    "source": "Badge.swift",
     "example": "BadgeExample.swift",
     "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
   },
@@ -229,7 +229,7 @@
     "symbol": "CNHoverCard",
     "source": "Presentation.swift",
     "example": "HoverCardExample.swift",
-    "notes": "A native popover supports pointer hover and explicit button activation. Clicking and outside dismissal remain available. Supply noninteractive trigger content."
+    "notes": "A native popover opens after a short pointer delay. A delayed close allows travel from the trigger into the popover. Explicit button activation keeps the content open for keyboard and touch users. Native outside dismissal remains available. Supply noninteractive trigger content."
   },
   {
     "name": "Input",
@@ -309,7 +309,7 @@
     "symbol": "CNMessageScroller",
     "source": "Scrolling.swift",
     "example": "MessageScrollerExample.swift",
-    "notes": "Preserves reading position by default. Opt into followNewMessages only while the user follows the conversation. The host owns that decision. Following uses native scroll positioning and respects Reduce Motion."
+    "notes": "Preserves reading position by default. Opt into followNewMessages only while the user follows the conversation. The host owns that decision. Following uses native scroll positioning and respects Reduce Motion. Pass scrollRevision when an existing message grows during streaming."
   },
   {
     "name": "Native Select",
@@ -477,7 +477,7 @@
     "symbol": "CNToastHost",
     "source": "Toast.swift",
     "example": "ToastExample.swift",
-    "notes": "The host owns one optional toast per window. Replacement cancels the old timeout; identity checks prevent an older task from dismissing a newer toast. Nil duration requires explicit dismissal."
+    "notes": "The host owns one optional toast per window. Replacement cancels the old timeout; identity checks prevent an older task from dismissing a newer toast. Nil duration requires explicit dismissal. Native accessibility announcements expose new notifications without moving editing focus."
   },
   {
     "name": "Toggle",

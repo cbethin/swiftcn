@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftCN
+import Accessibility
 
 public struct CNToast: Identifiable, Equatable, Sendable {
     public let id: UUID
@@ -32,6 +33,8 @@ public struct CNToastHost<Content: View>: View {
                         .accessibilityLabel("Dismiss notification")
                 }.tw(cn("toast max-w-[360]", classes)).accessibilityElement(children: .contain)
                     .task(id: current) {
+                        guard toast?.id == current.id else { return }
+                        AccessibilityNotification.Announcement([current.title, current.message].compactMap { $0 }.joined(separator: ". ")).post()
                         guard let seconds = current.duration, seconds.isFinite, seconds > 0 else { return }
                         do { try await Task.sleep(for: .seconds(seconds)) } catch { return }
                         guard !Task.isCancelled else { return }

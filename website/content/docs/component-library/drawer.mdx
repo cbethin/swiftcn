@@ -152,8 +152,13 @@ public struct CNPopover<Label: View, Content: View>: View {
             .popover(isPresented: $isPresented, arrowEdge: edge) { content().tw("popover") }
     }
 }
+/// Pointer entry opens after a short delay. Pointer exit allows travel into the popover.
+/// Explicit activation keeps the popover open until native outside or keyboard dismissal.
 public struct CNHoverCard<Label: View, Content: View>: View {
     @State private var isPresented = false
+    @State private var triggerHovered = false
+    @State private var contentHovered = false
+    @State private var openedByHover = false
     private let classes: TWClasses
     private let label: Label
     private let content: () -> Content
@@ -161,8 +166,19 @@ public struct CNHoverCard<Label: View, Content: View>: View {
         self.classes = classes; self.content = content; self.label = label()
     }
     public var body: some View {
-        CNPopover(isPresented: $isPresented, classes: classes) { content().tw("hover-card") } label: { label }
-            .onHover { hovering in if hovering { isPresented = true } }
+        CNButton(variant: .outline, classes: classes, action: { openedByHover = false; isPresented.toggle() }) { label }
+            .onHover { triggerHovered = $0 }
+            .popover(isPresented: $isPresented) {
+                content().tw("hover-card").onHover { contentHovered = $0 }
+            }
+            .onChange(of: isPresented) { _, presented in if !presented { openedByHover = false; contentHovered = false } }
+            .task(id: triggerHovered || contentHovered) {
+                let hovering = triggerHovered || contentHovered
+                do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
+                guard !Task.isCancelled else { return }
+                if hovering && !isPresented { openedByHover = true; isPresented = true }
+                else if !hovering && openedByHover { isPresented = false }
+            }
     }
 }
 public struct CNTooltip<Label: View>: View {

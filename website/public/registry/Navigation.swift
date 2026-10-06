@@ -30,7 +30,7 @@ public struct CNPagination: View {
     public nonisolated static func visiblePages(page: Int, pageCount: Int) -> [Int] {
         guard pageCount > 0 else { return [] }
         let current = min(pageCount, max(1, page))
-        return Array(Set([1, pageCount] + Array(max(1, current - 2)...min(pageCount, current + 2)))).sorted()
+        return Array(Set([1, pageCount] + Array(max(1, current - 2)...(current + min(2, pageCount - current))))).sorted()
     }
     public var body: some View {
         HStack(spacing: 4) {
@@ -44,6 +44,10 @@ public struct CNPagination: View {
             }
             CNButton("Next", variant: .ghost, action: { page = min(pageCount, page + 1) }).disabled(pageCount == 0 || page >= pageCount)
         }.tw(cn("pagination", classes))
+            .onChange(of: page) { _, value in
+                let normalized = pageCount == 0 ? 0 : min(pageCount, max(1, value))
+                if page != normalized { page = normalized }
+            }
             .onChange(of: pageCount, initial: true) { _, count in
                 let normalized = count == 0 ? 0 : min(count, max(1, page))
                 if page != normalized { page = normalized }

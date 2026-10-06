@@ -46,18 +46,6 @@ To own the styling engine too, download the complete source bundle. It contains 
 import SwiftUI
 import SwiftCN
 
-public struct CNBadge<Content: View>: View {
-    private let classes: TWClasses
-    private let content: Content
-    public init(_ classes: TWClasses = "", @ViewBuilder content: () -> Content) {
-        self.classes = classes; self.content = content()
-    }
-    public init(_ title: LocalizedStringKey, classes: TWClasses = "") where Content == Text {
-        self.classes = classes; content = Text(title)
-    }
-    public var body: some View { content.tw(cn("badge", classes)) }
-}
-
 public struct CNAlertTitle<Content: View>: View {
     private let classes: TWClasses
     private let content: Content

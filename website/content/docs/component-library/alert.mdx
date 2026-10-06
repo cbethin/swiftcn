@@ -129,7 +129,7 @@ public struct CNDialogContent<Content: View>: View {
         self.classes = classes; self.spacing = spacing; self.content = content()
     }
     public var body: some View {
-        VStack(alignment: .leading, spacing: spacing) { content }.tw(cn("dialog", classes))
+        VStack(alignment: .leading, spacing: spacing) { content }.frame(maxWidth: .infinity, alignment: .leading).tw(cn("dialog", classes))
     }
 }
 

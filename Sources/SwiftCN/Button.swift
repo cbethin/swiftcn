@@ -29,6 +29,7 @@ public struct CNButton<Label: View>: View {
     private let classes: TWClasses
     private let action: () -> Void
     private let label: Label
+    @FocusState private var isFocused: Bool
 
     public init(role: ButtonRole? = nil, variant: CNButtonVariant = .primary, size: CNButtonSize = .regular,
                 classes: TWClasses = "", action: @escaping () -> Void, @ViewBuilder label: () -> Label) {
@@ -41,7 +42,8 @@ public struct CNButton<Label: View>: View {
     }
     public var body: some View {
         Button(role: role, action: action) { label }
-            .buttonStyle(.tw(cn(variant.classes, size.classes, classes)))
+            .focused($isFocused)
+            .buttonStyle(.tw(cn(variant.classes, size.classes, classes), state: .init(isFocused: isFocused)))
     }
 }
 

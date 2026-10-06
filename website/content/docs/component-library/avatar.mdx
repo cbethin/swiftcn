@@ -77,9 +77,13 @@ public struct CNTypography: View {
     }
 }
 public struct CNSeparator: View {
+    private let axis: Axis
     private let classes: TWClasses
-    public init(_ classes: TWClasses = "") { self.classes = classes }
-    public var body: some View { Divider().hidden().tw(cn("separator", classes)).accessibilityHidden(true) }
+    public init(_ classes: TWClasses = "", axis: Axis = .horizontal) { self.classes = classes; self.axis = axis }
+    public var body: some View {
+        Divider().hidden().frame(maxHeight: axis == .vertical ? .infinity : nil)
+            .tw(cn("separator", axis == .horizontal ? "h-[1] w-full" : "w-[1]", classes)).accessibilityHidden(true)
+    }
 }
 public struct CNAspectRatio<Content: View>: View {
     private let ratio: CGFloat
