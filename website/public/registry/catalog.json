@@ -269,7 +269,7 @@
     "symbol": "CNKbd",
     "source": "ComponentParts.swift",
     "example": "KbdExample.swift",
-    "notes": "Display a keyboard hint with native monospaced font design and editable classes. The hint does not install a shortcut. Attach keyboardShortcut to the actual native action control."
+    "notes": "CNKbd displays a keycap with native monospaced font design and editable classes. Place it inside the action label, then attach SwiftUI keyboardShortcut to that action control. The example opens the same searchable command dialog by click or Command-K. Choosing a result updates the label; Close or Escape dismisses the dialog."
   },
   {
     "name": "Label",
