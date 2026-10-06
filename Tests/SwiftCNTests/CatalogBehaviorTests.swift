@@ -57,6 +57,29 @@ struct CatalogBehaviorTests {
         #expect(CNResizable<Text, Text>.clamp(-5, minimum: 0.15) == 0.15)
         #expect(CNResizable<Text, Text>.clamp(5, minimum: 0.15) == 0.85)
     }
+    @Test func resizeCoordinatesRespectAxisDirectionAndHandleWidth() {
+        #expect(CNResizeDrag.position(CGPoint(x: 356, y: 806), axis: .horizontal,
+            direction: .leftToRight, length: 1_000, handleExtent: 12) == 350)
+        #expect(CNResizeDrag.position(CGPoint(x: 656, y: 806), axis: .horizontal,
+            direction: .rightToLeft, length: 1_000, handleExtent: 12) == 350)
+        #expect(CNResizeDrag.position(CGPoint(x: 356, y: 806), axis: .vertical,
+            direction: .rightToLeft, length: 1_000, handleExtent: 12) == 800)
+        #expect(CNResizeDrag.position(CGPoint(x: 372, y: 822), axis: .horizontal,
+            direction: .leftToRight, length: 1_000, handleExtent: 44) == 350)
+    }
+    @Test func resizeGrabTracksSmallMovesReversalsAndContainerChanges() {
+        // Grab four points off-center at a non-default split.
+        let drag = CNResizeDrag(fraction: 0.35, start: 354, length: 1_000)
+        #expect(abs(drag.fraction(at: 358, length: 1_000, minimum: 0.15) - 0.354) < 0.000_001)
+        #expect(abs(drag.fraction(at: 454, length: 1_000, minimum: 0.15) - 0.45) < 0.000_001)
+        #expect(abs(drag.fraction(at: 304, length: 1_000, minimum: 0.15) - 0.30) < 0.000_001)
+        #expect(drag.fraction(at: -100, length: 1_000, minimum: 0.15) == 0.15)
+        #expect(drag.fraction(at: 1_100, length: 1_000, minimum: 0.15) == 0.85)
+        // Resizing the window retains the physical grab position instead of multiplying the old fraction.
+        #expect(abs(drag.fraction(at: 304, length: 600, minimum: 0.15) - 0.50) < 0.000_001)
+        let next = CNResizeDrag(fraction: 0.30, start: 296, length: 1_000)
+        #expect(abs(next.fraction(at: 300, length: 1_000, minimum: 0.15) - 0.304) < 0.000_001)
+    }
     @Test @MainActor func recipesHaveNoUnknownUtilitiesAndLocalOverridesWin() throws {
         let rules = TWGlobalRules(modifiers: ["cn-tint": CNUtilities.tint, "cn-mono": CNUtilities.monospaced,
                                               "cn-avatar-crop": CNUtilities.avatarCrop, "cn-avatar-image": CNUtilities.avatarImage,

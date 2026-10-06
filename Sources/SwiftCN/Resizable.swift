@@ -9,7 +9,11 @@ public struct CNResizable<First: View, Second: View>: View {
     private let classes: TWClasses
     private let first: First
     private let second: Second
-    @GestureState private var dragStart: Double?
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.layoutDirection) private var direction
+    @Namespace private var coordinateSpace
+    @GestureState private var isDragging = false
+    @State private var drag: CNResizeDrag?
     public init(fraction: Binding<Double>, axis: Axis = .horizontal, minimumFraction: Double = 0.15,
                 classes: TWClasses = "", @ViewBuilder first: () -> First, @ViewBuilder second: () -> Second) {
         precondition(minimumFraction.isFinite && (0...0.5).contains(minimumFraction))
@@ -28,8 +32,13 @@ public struct CNResizable<First: View, Second: View>: View {
                 first.frame(width: axis == .horizontal ? length * split : nil, height: axis == .vertical ? length * split : nil)
                 handle(length: length)
                 second.frame(width: axis == .horizontal ? length * (1 - split) : nil, height: axis == .vertical ? length * (1 - split) : nil)
-            }
+            }.coordinateSpace(name: coordinateSpace)
         }.tw(cn("resizable", classes))
+            .onChange(of: isDragging) { _, active in
+                // GestureState also resets after system cancellation, which has no onEnded callback.
+                if !active { drag = nil }
+            }
+            .onChange(of: isEnabled) { _, enabled in if !enabled { drag = nil } }
     }
     private var handleExtent: CGFloat {
         #if os(macOS)
@@ -44,16 +53,57 @@ public struct CNResizable<First: View, Second: View>: View {
             Rectangle().tw(axis == .horizontal ? "resizable-handle w-[2]" : "resizable-handle h-[2]")
         }.frame(width: axis == .horizontal ? handleExtent : nil, height: axis == .vertical ? handleExtent : nil)
             .contentShape(Rectangle())
-            .gesture(DragGesture().updating($dragStart) { _, start, _ in
-                if start == nil { start = Self.clamp(fraction, minimum: minimumFraction) }
-            }.onChanged { value in
-                guard length > 0 else { return }
-                let translation = axis == .horizontal ? value.translation.width : value.translation.height
-                fraction = Self.clamp((dragStart ?? 0.5) + translation / length, minimum: minimumFraction)
-            })
+            .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .named(coordinateSpace))
+                .updating($isDragging) { _, active, transaction in
+                    active = true
+                    transaction.disablesAnimations = true
+                }.onChanged { value in
+                    guard isEnabled, length > 0 else { return }
+                    // The containing split, rather than the moving divider, defines pointer coordinates.
+                    // Capture the grab offset before publishing any binding change.
+                    if drag == nil {
+                        drag = CNResizeDrag(fraction: Self.clamp(fraction, minimum: minimumFraction),
+                            start: position(value.startLocation, length: length), length: length)
+                    }
+                    update(at: value.location, length: length)
+                }.onEnded { value in
+                    if isEnabled { update(at: value.location, length: length) }
+                    drag = nil
+                })
             .accessibilityElement().accessibilityLabel("Resize panels").accessibilityValue("\(Int(Self.clamp(fraction, minimum: minimumFraction) * 100)) percent")
             .accessibilityAdjustableAction { direction in
-                fraction = Self.clamp(fraction + (direction == .increment ? 0.05 : -0.05), minimum: minimumFraction)
+                guard isEnabled else { return }
+                fraction = Self.clamp(Self.clamp(fraction, minimum: minimumFraction) +
+                    (direction == .increment ? 0.05 : -0.05), minimum: minimumFraction)
             }
+    }
+    private func position(_ point: CGPoint, length: CGFloat) -> CGFloat {
+        CNResizeDrag.position(point, axis: axis, direction: direction, length: length, handleExtent: handleExtent)
+    }
+    private func update(at point: CGPoint, length: CGFloat) {
+        guard let drag, length > 0 else { return }
+        var transaction = Transaction(animation: nil)
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            fraction = drag.fraction(at: position(point, length: length), length: length, minimum: minimumFraction)
+        }
+    }
+}
+
+/// A pointer grab keeps its offset when the container or the divider moves.
+struct CNResizeDrag {
+    private let grabOffset: CGFloat
+    static func position(_ point: CGPoint, axis: Axis, direction: LayoutDirection,
+                         length: CGFloat, handleExtent: CGFloat) -> CGFloat {
+        let coordinate = axis == .horizontal ? point.x : point.y
+        let logical = axis == .horizontal && direction == .rightToLeft ? length + handleExtent - coordinate : coordinate
+        return logical - handleExtent / 2
+    }
+    init(fraction: Double, start: CGFloat, length: CGFloat) {
+        grabOffset = fraction * length - start
+    }
+    func fraction(at position: CGFloat, length: CGFloat, minimum: Double) -> Double {
+        guard length.isFinite, length > 0, position.isFinite else { return 0.5 }
+        return CNResizable<EmptyView, EmptyView>.clamp((position + grabOffset) / length, minimum: minimum)
     }
 }

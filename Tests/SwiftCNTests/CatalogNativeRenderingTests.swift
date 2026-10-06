@@ -7,6 +7,28 @@ import Testing
 @Suite("Catalog native controls", .serialized)
 @MainActor
 struct CatalogNativeRenderingTests {
+    @Test(arguments: [0, 1, 2])
+    func resizableReflowPreservesItsNativeEditor(configuration: Int) throws {
+        let model = ResizeControlModel()
+        let controller = NSHostingController(rootView: ResizeControlHarness(model: model,
+            vertical: configuration == 2, rtl: configuration == 1))
+        let host = controller.view
+        host.frame = CGRect(x: 0, y: 0, width: 600, height: 240)
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentViewController = controller
+        defer { window.contentViewController = nil }
+        settle(host)
+        let editor = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
+        editor.stringValue = "resize draft"
+        editor.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: editor))
+        for split in [0.36, 0.70, 0.15, 0.85, 0.35] {
+            model.fraction = split; settle(host)
+            #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)
+        }
+        window.setContentSize(NSSize(width: 480, height: 200)); settle(host)
+        #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)
+        #expect(model.text == "resize draft")
+    }
     @Test func skeletonPreservesTheEditorAndDraftWhenLoadingChanges() throws {
         let model = LoadingControlModel()
         let (host, window) = host(SkeletonControlHarness(model: model))
@@ -218,6 +240,22 @@ struct CatalogNativeRenderingTests {
     }
     private func settle(_ view: NSView) { view.layoutSubtreeIfNeeded(); RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.08)) }
     private func descendants(_ root: NSView) -> [NSView] { root.subviews.flatMap { [$0] + descendants($0) } }
+}
+@MainActor @Observable private final class ResizeControlModel {
+    var fraction = 0.35
+    var text = "initial draft"
+}
+private struct ResizeControlHarness: View {
+    let model: ResizeControlModel
+    let vertical: Bool
+    let rtl: Bool
+    var body: some View {
+        CNResizable(fraction: Binding(get: { model.fraction }, set: { model.fraction = $0 }),
+                    axis: vertical ? .vertical : .horizontal) {
+            CNInput("Draft", text: Binding(get: { model.text }, set: { model.text = $0 }))
+        } second: { Text("Editor").frame(maxWidth: .infinity, maxHeight: .infinity) }
+        .environment(\.layoutDirection, rtl ? .rightToLeft : .leftToRight)
+    }
 }
 @MainActor @Observable private final class LoadingControlModel {
     var loading = true

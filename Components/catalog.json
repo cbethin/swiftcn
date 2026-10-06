@@ -373,7 +373,7 @@
     "symbol": "CNResizable",
     "source": "Resizable.swift",
     "example": "ResizableExample.swift",
-    "notes": "Only the divider captures drag gestures. The split uses a normalized binding, minimum fractions, and accessible adjustment. Size the container with classes. Both platforms use this binding-aware divider; no native split position is silently ignored."
+    "notes": "Only the divider captures drag gestures. It tracks the pointer immediately in a stable coordinate space and preserves the grab offset. Horizontal, vertical, and right-to-left layouts support a normalized binding, minimum fractions, and accessible adjustment. Drag updates suppress inherited animations; release and cancellation clear the grab. Disabled splits ignore dragging and accessible adjustment. Size the container with classes."
   },
   {
     "name": "Scroll Area",
