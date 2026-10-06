@@ -106,8 +106,12 @@ struct NativeUtilityRenderingTests {
             for phase in [1, 2, 0] {
                 model.phase = phase
                 settle(host, seconds: NativeMotionProbe.duration + 0.3)
-                #expect(samples.times.contains { $0 > 0 && $0 < NativeMotionProbe.duration },
-                    "Bare phase \(phase), samples: \(samples.recentSamples)")
+                if identities.reduceMotion == true {
+                    #expect(samples.times.isEmpty)
+                } else {
+                    #expect(samples.times.contains { $0 > 0 && $0 < NativeMotionProbe.duration },
+                        "Bare phase \(phase), samples: \(samples.recentSamples)")
+                }
                 #expect(Set(identities.values).count == 1)
                 samples.clear()
             }

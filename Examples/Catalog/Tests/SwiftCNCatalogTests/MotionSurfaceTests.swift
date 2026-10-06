@@ -103,6 +103,9 @@ struct MotionSurfaceTests {
             bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
         presentation.scaleBy(x: scale, y: scale)
+        // Match AppKit's top-left layer coordinates in the exported image.
+        presentation.translateBy(x: 0, y: host.bounds.height)
+        presentation.scaleBy(x: 1, y: -1)
         (layer.presentation() ?? layer).render(in: presentation)
         let bitmap = NSBitmapImageRep(cgImage: try #require(presentation.makeImage()))
         if let path = ProcessInfo.processInfo.environment["SWIFTCN_MOTION_ARTIFACTS"] {
