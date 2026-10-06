@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Extract complete documentation examples; fail if a required example disappears."""
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -30,4 +31,13 @@ for page, required in expected.items():
             raise SystemExit(f"Duplicate or invalid documentation example filename: {name}")
         seen.add(name)
         (output / name).write_text(code)
+for entry in json.loads((repo / "Components/catalog.json").read_text()):
+    source = repo / "website/content/docs/component-library" / f"{entry['slug']}.mdx"
+    examples = [(name, code) for name, code in pattern.findall(source.read_text()) if name == entry['example']]
+    if len(examples) != 1:
+        raise SystemExit(f"{source}: requires one complete example named {entry['example']}")
+    name, code = examples[0]
+    if name in seen: raise SystemExit(f"Duplicate example: {name}")
+    seen.add(name)
+    (output / name).write_text(code)
 print(f"Extracted {len(seen)} complete Swift examples from the documentation.")

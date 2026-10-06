@@ -1,0 +1,142 @@
+import SwiftUI
+
+public struct CNSwitch<Label: View>: View {
+    @Binding private var isOn: Bool
+    private let classes: TWClasses
+    private let label: Label
+    public init(isOn: Binding<Bool>, classes: TWClasses = "", @ViewBuilder label: () -> Label) {
+        _isOn = isOn; self.classes = classes; self.label = label()
+    }
+    public init(_ title: LocalizedStringKey, isOn: Binding<Bool>, classes: TWClasses = "") where Label == Text {
+        self.init(isOn: isOn, classes: classes) { Text(title) }
+    }
+    public var body: some View {
+        Toggle(isOn: $isOn) { label }.toggleStyle(.switch).tw(cn("switch", classes)).cnControlUtilities()
+    }
+}
+public struct CNCheckbox<Label: View>: View {
+    @Binding private var isOn: Bool
+    private let classes: TWClasses
+    private let label: Label
+    public init(isOn: Binding<Bool>, classes: TWClasses = "", @ViewBuilder label: () -> Label) {
+        _isOn = isOn; self.classes = classes; self.label = label()
+    }
+    public init(_ title: LocalizedStringKey, isOn: Binding<Bool>, classes: TWClasses = "") where Label == Text {
+        self.init(isOn: isOn, classes: classes) { Text(title) }
+    }
+    public var body: some View {
+        #if os(macOS)
+        Toggle(isOn: $isOn) { label }.toggleStyle(.checkbox).tw(cn("checkbox", classes)).cnControlUtilities()
+        #else
+        Toggle(isOn: $isOn) { label }.toggleStyle(CNCheckboxStyle()).tw(cn("checkbox", classes)).cnControlUtilities()
+        #endif
+    }
+}
+/// The iOS adaptation uses a native Toggle configuration and accessible Button activation.
+public struct CNCheckboxStyle: ToggleStyle {
+    public init() {}
+    public func makeBody(configuration: Configuration) -> some View {
+        Button { configuration.isOn.toggle() } label: {
+            HStack(spacing: 8) {
+                Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square").accessibilityHidden(true)
+                configuration.label
+            }
+        }.buttonStyle(.tw("button-ghost min-h-[44] px-0"))
+            .accessibilityValue(configuration.isOn ? Text("Checked") : Text("Unchecked"))
+            .accessibilityAddTraits(configuration.isOn ? .isSelected : [])
+    }
+}
+public struct CNToggle<Label: View>: View {
+    @Binding private var isOn: Bool
+    private let classes: TWClasses
+    private let label: Label
+    public init(isOn: Binding<Bool>, classes: TWClasses = "", @ViewBuilder label: () -> Label) {
+        _isOn = isOn; self.classes = classes; self.label = label()
+    }
+    public init(_ title: LocalizedStringKey, isOn: Binding<Bool>, classes: TWClasses = "") where Label == Text {
+        self.init(isOn: isOn, classes: classes) { Text(title) }
+    }
+    public var body: some View {
+        Toggle(isOn: $isOn) { label }.toggleStyle(.button)
+            .tw(cn("toggle cn-tint-[primary]", classes)).cnControlUtilities()
+    }
+}
+
+/// A stable option value is shared by selectors, commands, and questionnaire choices.
+public struct CNOption<ID: Hashable & Sendable>: Identifiable, Hashable, Sendable {
+    public let id: ID
+    public var title: String
+    public var detail: String?
+    public var systemImage: String?
+    public var isDisabled: Bool
+    public init(_ id: ID, title: String, detail: String? = nil, systemImage: String? = nil, isDisabled: Bool = false) {
+        self.id = id; self.title = title; self.detail = detail; self.systemImage = systemImage; self.isDisabled = isDisabled
+    }
+}
+
+public struct CNToggleGroup<ID: Hashable & Sendable>: View {
+    private let options: [CNOption<ID>]
+    @Binding private var selection: Set<ID>
+    private let classes: TWClasses
+    public init(_ options: [CNOption<ID>], selection: Binding<Set<ID>>, classes: TWClasses = "") {
+        self.options = options; _selection = selection; self.classes = classes
+    }
+    public var body: some View {
+        CNButtonGroup(classes: classes) {
+            ForEach(options) { option in
+                CNToggle(isOn: Binding(get: { selection.contains(option.id) }, set: { on in
+                    if on { selection.insert(option.id) } else { selection.remove(option.id) }
+                })) { Text(option.title) }.disabled(option.isDisabled)
+            }
+        }
+    }
+}
+
+public struct CNSelect<ID: Hashable & Sendable>: View {
+    private let title: LocalizedStringKey
+    private let options: [CNOption<ID>]
+    @Binding private var selection: ID
+    private let classes: TWClasses
+    public init(_ title: LocalizedStringKey, options: [CNOption<ID>], selection: Binding<ID>, classes: TWClasses = "") {
+        self.title = title; self.options = options; _selection = selection; self.classes = classes
+    }
+    public var body: some View {
+        Picker(title, selection: $selection) {
+            ForEach(options) { option in Text(option.title).tag(option.id).disabled(option.isDisabled) }
+        }.pickerStyle(.menu).tw(cn("select", classes)).cnControlUtilities()
+    }
+}
+/// Uses automatic native picker presentation, including platform-specific keyboard behavior.
+public struct CNNativeSelect<ID: Hashable & Sendable>: View {
+    private let title: LocalizedStringKey
+    private let options: [CNOption<ID>]
+    @Binding private var selection: ID
+    private let classes: TWClasses
+    public init(_ title: LocalizedStringKey, options: [CNOption<ID>], selection: Binding<ID>, classes: TWClasses = "") {
+        self.title = title; self.options = options; _selection = selection; self.classes = classes
+    }
+    public var body: some View {
+        Picker(title, selection: $selection) {
+            ForEach(options) { option in Text(option.title).tag(option.id).disabled(option.isDisabled) }
+        }.tw(cn("select", classes)).cnControlUtilities()
+    }
+}
+public struct CNRadioGroup<ID: Hashable & Sendable>: View {
+    private let title: LocalizedStringKey
+    private let options: [CNOption<ID>]
+    @Binding private var selection: ID
+    private let classes: TWClasses
+    public init(_ title: LocalizedStringKey, options: [CNOption<ID>], selection: Binding<ID>, classes: TWClasses = "") {
+        self.title = title; self.options = options; _selection = selection; self.classes = classes
+    }
+    public var body: some View {
+        let picker = Picker(title, selection: $selection) {
+            ForEach(options) { option in Text(option.title).tag(option.id).disabled(option.isDisabled) }
+        }.tw(cn("radio-group", classes)).cnControlUtilities()
+        #if os(macOS)
+        picker.pickerStyle(.radioGroup)
+        #else
+        picker.pickerStyle(.inline)
+        #endif
+    }
+}

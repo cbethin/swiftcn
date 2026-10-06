@@ -13,7 +13,8 @@ cp "$scratch_dir/examples/Package.swift" "$scratch_dir/manifest/Package.swift"
 printf 'public struct Placeholder {}\n' > "$scratch_dir/manifest/Sources/ProjectUI/Placeholder.swift"
 /usr/bin/xcrun swift package --package-path "$scratch_dir/manifest" dump-package > "$scratch_dir/manifest.json"
 
-mkdir -p "$scratch_dir/owned/Sources" "$scratch_dir/consumer"
+mkdir -p "$scratch_dir/owned/Sources" "$scratch_dir/consumer" "$scratch_dir/core" "$scratch_dir/component-copy"
+cp "$repo_dir"/Sources/SwiftCN/*.swift "$scratch_dir/core/"
 cp "$repo_dir"/Sources/SwiftCN/*.swift "$scratch_dir/owned/Sources/"
 cp "$repo_dir/LICENSE" "$scratch_dir/owned/LICENSE"
 python3 - "$scratch_dir" <<'PY'
@@ -35,6 +36,17 @@ for example in (scratch / 'examples').glob('*.swift'):
         code.replace('import SwiftCN\n', '')
     )
 PY
+python3 - "$repo_dir" "$scratch_dir" <<'PYTHON'
+from pathlib import Path
+import json, sys
+repo, scratch = map(Path, sys.argv[1:])
+catalog = json.loads((repo/'Components/catalog.json').read_text())
+for filename in {entry['source'] for entry in catalog}:
+    source = repo/'website/public/registry'/filename
+    (scratch/'component-copy'/filename).write_bytes(source.read_bytes())
+for entry in catalog:
+    (scratch/'component-copy'/entry['example']).write_bytes((scratch/'consumer'/entry['example']).read_bytes())
+PYTHON
 cmp "$repo_dir/LICENSE" "$scratch_dir/owned/LICENSE"
 
 for sdk in macosx iphonesimulator; do
@@ -49,7 +61,7 @@ for sdk in macosx iphonesimulator; do
     "$compiler_path" -sdk "$sdk_dir" -target "$target" \
         -swift-version 6 -warnings-as-errors -parse-as-library \
         -module-name SwiftCN -emit-module -emit-module-path "$output_dir/SwiftCN.swiftmodule" \
-        "$repo_dir"/Sources/SwiftCN/*.swift
+        "$scratch_dir"/core/*.swift
     "$compiler_path" -sdk "$sdk_dir" -target "$target" \
         -swift-version 6 -warnings-as-errors -parse-as-library -I "$output_dir" \
         -module-name DocumentationConsumer -emit-module \
@@ -60,6 +72,11 @@ for sdk in macosx iphonesimulator; do
         -module-name OwnedDocumentation -emit-module \
         -emit-module-path "$output_dir/OwnedDocumentation.swiftmodule" \
         "$scratch_dir"/owned/Sources/*.swift
+    "$compiler_path" -sdk "$sdk_dir" -target "$target" \
+        -swift-version 6 -warnings-as-errors -parse-as-library -I "$output_dir" \
+        -module-name CopiedComponentDocumentation -emit-module \
+        -emit-module-path "$output_dir/CopiedComponentDocumentation.swiftmodule" \
+        "$scratch_dir"/component-copy/*.swift
     echo "Documentation examples compile for $target with imports and copied source."
 done
 

@@ -7,6 +7,7 @@ from pathlib import Path
 import plistlib
 import shutil
 import subprocess
+import tempfile
 import time
 import uuid
 
@@ -53,12 +54,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=["record", "verify"], nargs="?", default="verify")
     parser.add_argument("profile", choices=["local", "ci"], nargs="?", default="local")
+    parser.add_argument("--components", action="store_true", help="Capture all 64 component examples")
     args = parser.parse_args()
     if args.profile == "ci":
         sdk_version = run(XCRUN, "--sdk", "iphonesimulator", "--show-sdk-version", capture=True)
         if sdk_version != "18.5" or "Xcode 16.4" not in run("/usr/bin/xcodebuild", "-version", capture=True):
             raise RuntimeError("The ci profile requires Xcode 16.4 with iOS 18.5. Use the local profile.")
-    artifacts = REPO / "artifacts" / "ios-visual"
+    artifacts = REPO / "artifacts" / ("ios-components" if args.components else "ios-visual")
     artifacts.mkdir(parents=True, exist_ok=True)
     app = artifacts / "SwiftCNVisualHost.app"
     app.mkdir(exist_ok=True)
@@ -71,11 +73,18 @@ def main():
                       "UISupportedInterfaceOrientations": ["UIInterfaceOrientationPortrait"]}, handle)
     sdk = run(XCRUN, "--sdk", "iphonesimulator", "--show-sdk-path", capture=True)
     architecture = run("uname", "-m", capture=True)
-    run(XCRUN, "swiftc", "-sdk", sdk, "-target", f"{architecture}-apple-ios17.0-simulator",
-        "-swift-version", "6", "-warnings-as-errors", "-parse-as-library", "-module-name", "SwiftCNVisualHost",
-        *map(str, sorted((REPO / "Sources/SwiftCN").glob("*.swift"))),
-        str(REPO / "Examples/iOSVisualHost/VisualHost.swift"), "-o", str(app / "SwiftCNVisualHost"),
-        env=dict(os.environ, SDKROOT=sdk))
+    # Freeze inputs. Components use public package APIs; the visual host owns a source copy.
+    with tempfile.TemporaryDirectory(prefix="swiftcn-ios-capture-") as temporary:
+        frozen = Path(temporary)
+        sources = list((REPO / "Sources/SwiftCN").glob("*.swift"))
+        sources += list((REPO / "Examples/Components/Sources").glob("*Example.swift"))
+        sources += [REPO / "Examples/Components/Sources/ComponentGallery.swift", REPO / "Examples/iOSVisualHost/VisualHost.swift"]
+        for source in sources:
+            (frozen/source.name).write_text(source.read_text().replace("import SwiftCN\n", ""))
+        run(XCRUN, "swiftc", "-sdk", sdk, "-target", f"{architecture}-apple-ios17.0-simulator",
+            "-swift-version", "6", "-warnings-as-errors", "-parse-as-library", "-module-name", "SwiftCNVisualHost",
+            *map(str, sorted(frozen.glob("*.swift"))), "-o", str(app / "SwiftCNVisualHost"),
+            env=dict(os.environ, SDKROOT=sdk))
     run("/usr/bin/codesign", "--force", "--sign", "-", str(app))
     runtimes = json.loads(run(XCRUN, "simctl", "list", "runtimes", "-j", capture=True))["runtimes"]
     sdk_version = run(XCRUN, "--sdk", "iphonesimulator", "--show-sdk-version", capture=True)
@@ -98,26 +107,38 @@ def main():
         run(XCRUN, "simctl", "install", device, str(app))
         container = Path(run(XCRUN, "simctl", "get_app_container", device, bundle_id, "data", capture=True))
         ready = container / "Documents/visual-ready"
-        for scene in ["controls", "rules"]:
-            for dark, large in [(False, False), (True, False), (False, True), (True, True)]:
-                ready.unlink(missing_ok=True)
-                flags = (["--rules"] if scene == "rules" else []) + (["--dark"] if dark else []) + (["--large-text"] if large else [])
-                name = f"{scene}-{'dark' if dark else 'light'}-{'large-text' if large else 'standard'}"
-                launch_capture(device, bundle_id, flags, ready, artifacts, name)
-                shutil.copyfile(container / "Documents/visual-snapshot.png", artifacts / f"{name}.png")
-                print(f"Captured {name}", flush=True)
+        captures = []
+        if args.components:
+            catalog = json.loads((REPO / "Components/catalog.json").read_text())
+            narrow = {"field", "input-group", "message", "questionnaire", "empty", "card", "radio-group", "typography"}
+            for entry in catalog:
+                for dark, large in [(False, False), (True, False)] + ([(False, True)] if entry['slug'] in narrow else []):
+                    flags = ["--component", entry['slug'].replace('-', '_')] + (["--dark"] if dark else []) + (["--large-text"] if large else [])
+                    name = f"component-{entry['slug']}-{'dark' if dark else 'light'}-{'large-text' if large else 'standard'}"
+                    captures.append((flags, name))
+        else:
+            for scene in ["controls", "rules"]:
+                for dark, large in [(False, False), (True, False), (False, True), (True, True)]:
+                    flags = (["--rules"] if scene == "rules" else []) + (["--dark"] if dark else []) + (["--large-text"] if large else [])
+                    captures.append((flags, f"{scene}-{'dark' if dark else 'light'}-{'large-text' if large else 'standard'}"))
+        for flags, name in captures:
+            ready.unlink(missing_ok=True)
+            launch_capture(device, bundle_id, flags, ready, artifacts, name)
+            shutil.copyfile(container / "Documents/visual-snapshot.png", artifacts / f"{name}.png")
+            print(f"Captured {name}", flush=True)
     finally:
         # Delete only the simulator created by this run.
         subprocess.run([XCRUN, "simctl", "shutdown", device], check=False)
         run(XCRUN, "simctl", "delete", device)
-    references = (REPO / "Tests/SwiftCNVisualTests/__Snapshots__/ios-18.5-iphone-16"
-                  if args.profile == "ci" else REPO / "artifacts/ios-local-baselines")
+    references = (REPO / ("Tests/SwiftCNVisualTests/__Snapshots__/components-ios-18.5-iphone-16" if args.components else "Tests/SwiftCNVisualTests/__Snapshots__/ios-18.5-iphone-16")
+                  if args.profile == "ci" else REPO / ("artifacts/ios-component-baselines" if args.components else "artifacts/ios-local-baselines"))
     references.mkdir(parents=True, exist_ok=True)
     environment = dict(os.environ, SWIFTCN_IOS_SCREENSHOTS=str(artifacts),
                        SWIFTCN_VISUAL_MODE=args.mode, SWIFTCN_SNAPSHOT_DIRECTORY=str(references),
                        SNAPSHOT_ARTIFACTS=str(REPO / "artifacts/visual-diffs"),
                        SDKROOT=run(XCRUN, "--sdk", "macosx", "--show-sdk-path", capture=True))
-    run(XCRUN, "swift", "test", "--sdk", environment["SDKROOT"], "--filter", "IOSVisualTests", cwd=REPO, env=environment)
+    if args.components: environment["SWIFTCN_IOS_COMPONENT_SCREENSHOTS"] = str(artifacts)
+    run(XCRUN, "swift", "test", "--sdk", environment["SDKROOT"], "--filter", "IOSComponentVisualTests" if args.components else "IOSVisualTests", cwd=REPO, env=environment)
 
 
 if __name__ == "__main__":

@@ -1,16 +1,5 @@
 import SwiftUI
 
-private struct TWFieldInvalidKey: EnvironmentKey {
-    static let defaultValue = false
-}
-
-extension EnvironmentValues {
-    var twFieldInvalid: Bool {
-        get { self[TWFieldInvalidKey.self] }
-        set { self[TWFieldInvalidKey.self] = newValue }
-    }
-}
-
 /// Group native controls and their descriptions without replacing their accessibility elements.
 public struct CNField<Content: View>: View {
     private let isInvalid: Bool
@@ -71,16 +60,6 @@ public struct CNFieldControl<Content: View>: View {
     }
 
     public var body: some View { content.modifier(TWFieldControlModifier(style: style, state: state)) }
-}
-
-struct TWFieldControlModifier: ViewModifier {
-    let style: TWStyle
-    let state: TWState
-    @Environment(\.twFieldInvalid) private var isInvalid
-
-    func body(content: Content) -> some View {
-        content.modifier(TWModifier(style: TWStyle(style, isInvalid ? .classes("field-invalid") : TWStyle()), state: state))
-    }
 }
 
 /// A field part that accepts either localized text or custom native content.

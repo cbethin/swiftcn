@@ -703,3 +703,53 @@ cd website
 npm ci
 npm run dev
 ```
+
+
+### Native component library
+
+SwiftCN includes 64 native component catalog entries, from buttons and composable card parts to searchable commands, data tables, charts, and questionnaires. Each uses `.tw` class recipes and caller-owned bindings.
+
+```swift
+import SwiftUI
+import SwiftCN
+
+struct WorkspaceForm: View {
+    @State private var name = ""
+    @State private var notifications = true
+
+    var body: some View {
+        CNCard {
+            CNCardHeader { CNCardTitle("Workspace"); CNCardDescription("Keep native controls and own the source.") }
+            CNCardContent {
+                CNField(isInvalid: name.isEmpty) {
+                    CNFieldLabel("Name")
+                    CNInput("Workspace name", text: $name)
+                    if name.isEmpty { CNFieldError("Enter a name.") }
+                }
+                CNSwitch("Notifications", isOn: $notifications)
+            }
+            CNCardFooter { CNButton("Save", classes: "rounded-full", action: {}) }
+        }
+    }
+}
+```
+
+Run all complete documentation examples in the searchable native gallery:
+
+```bash
+swift run SwiftCNComponentGallery
+```
+
+The [component documentation](https://cbethin.github.io/swiftcn/docs/component-library/) provides actual Swift source, runnable examples, platform notes, and a licensed source bundle. Imported and locally copied components can coexist. To own the engine too, add the full source bundle to your app target.
+
+Generate docs and downloads after editing component source:
+
+```bash
+python3 Scripts/generate-components.py
+python3 Scripts/generate-components.py --check
+bash Scripts/check-doc-examples.sh
+bash Scripts/component-visual-test.sh record local
+bash Scripts/component-visual-test.sh verify local
+```
+
+Native system alerts, menus, pickers, tabs, and sheets retain their platform presentation. Classes style component surfaces and control tint; native layout, roles, bindings, accessibility, presentation APIs, and Swift Charts marks stay native.

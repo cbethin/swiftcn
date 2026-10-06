@@ -1,0 +1,514 @@
+[
+  {
+    "name": "Accordion",
+    "slug": "accordion",
+    "symbol": "CNAccordion",
+    "source": "Disclosure.swift",
+    "example": "AccordionExample.swift",
+    "notes": "Stable caller-owned IDs preserve expansion through reorder. Choose single or multiple expansion. The native DisclosureGroup owns activation and accessibility."
+  },
+  {
+    "name": "Alert",
+    "slug": "alert",
+    "symbol": "CNAlert",
+    "source": "ComponentContainers.swift",
+    "example": "AlertExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Alert Dialog",
+    "slug": "alert-dialog",
+    "symbol": "CNAlertDialog",
+    "source": "Presentation.swift",
+    "example": "AlertDialogExample.swift",
+    "notes": "The system owns the alert surface and button placement. Supply native Button roles. Classes style the trigger; they do not override system alert internals."
+  },
+  {
+    "name": "Aspect Ratio",
+    "slug": "aspect-ratio",
+    "symbol": "CNAspectRatio",
+    "source": "Display.swift",
+    "example": "AspectRatioExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Attachment",
+    "slug": "attachment",
+    "symbol": "CNAttachment",
+    "source": "Attachment.swift",
+    "example": "AttachmentExample.swift",
+    "notes": "Uses native Link for explicit opening. The component does not read file contents. The host owns security-scoped access, file import, upload transport, and removal."
+  },
+  {
+    "name": "Avatar",
+    "slug": "avatar",
+    "symbol": "CNAvatar",
+    "source": "Display.swift",
+    "example": "AvatarExample.swift",
+    "notes": "Native AsyncImage displays a URL or fallback on loading and error. Cropping and sizing use registered classes. Provide a meaningful accessible name."
+  },
+  {
+    "name": "Badge",
+    "slug": "badge",
+    "symbol": "CNBadge",
+    "source": "ComponentParts.swift",
+    "example": "BadgeExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Breadcrumb",
+    "slug": "breadcrumb",
+    "symbol": "CNBreadcrumb",
+    "source": "Navigation.swift",
+    "example": "BreadcrumbExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Bubble",
+    "slug": "bubble",
+    "symbol": "CNBubble",
+    "source": "ComponentContainers.swift",
+    "example": "BubbleExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Button",
+    "slug": "button",
+    "symbol": "CNButton",
+    "source": "Button.swift",
+    "example": "ButtonExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Button Group",
+    "slug": "button-group",
+    "symbol": "CNButtonGroup",
+    "source": "Button.swift",
+    "example": "ButtonGroupExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Calendar",
+    "slug": "calendar",
+    "symbol": "CNCalendar",
+    "source": "ValueControls.swift",
+    "example": "CalendarExample.swift",
+    "notes": "Uses the native graphical DatePicker. Locale, calendar, time zone, allowed range, and accessibility remain native environment values."
+  },
+  {
+    "name": "Card",
+    "slug": "card",
+    "symbol": "CNCard",
+    "source": "Card.swift",
+    "example": "CardExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Carousel",
+    "slug": "carousel",
+    "symbol": "CNCarousel",
+    "source": "Scrolling.swift",
+    "example": "CarouselExample.swift",
+    "notes": "Uses native horizontal scroll paging and stable IDs. Deleting a selected item moves selection to the first remaining page. VoiceOver provides next and previous page actions. Size the viewport with classes."
+  },
+  {
+    "name": "Chart",
+    "slug": "chart",
+    "symbol": "CNChart",
+    "source": "Chart.swift",
+    "example": "ChartExample.swift",
+    "notes": "Requires Apple Swift Charts, included in the SDK. Supply native chart marks. Classes style the surface and control tint; mark, axis, and scale APIs remain native Swift Charts APIs."
+  },
+  {
+    "name": "Checkbox",
+    "slug": "checkbox",
+    "symbol": "CNCheckbox",
+    "source": "SelectionControls.swift",
+    "example": "CheckboxExample.swift",
+    "notes": "Uses a native checkbox Toggle on macOS. The iOS adaptation uses a native Toggle configuration and Button with checked state and a 44-point minimum height."
+  },
+  {
+    "name": "Collapsible",
+    "slug": "collapsible",
+    "symbol": "CNCollapsible",
+    "source": "Disclosure.swift",
+    "example": "CollapsibleExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Combobox",
+    "slug": "combobox",
+    "symbol": "CNCombobox",
+    "source": "Command.swift",
+    "example": "ComboboxExample.swift",
+    "notes": "A searchable native popover selects stable option IDs. Empty results and disabled options are handled. The selected value remains in the caller binding."
+  },
+  {
+    "name": "Command",
+    "slug": "command",
+    "symbol": "CNCommand",
+    "source": "Command.swift",
+    "example": "CommandExample.swift",
+    "notes": "Search filters titles and details. Disabled options cannot activate. Native list selection, Return, and macOS arrow commands support keyboard use. The host owns command effects."
+  },
+  {
+    "name": "Context Menu",
+    "slug": "context-menu",
+    "symbol": "CNContextMenu",
+    "source": "Menus.swift",
+    "example": "ContextMenuExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Data Table",
+    "slug": "data-table",
+    "symbol": "CNDataTable",
+    "source": "Table.swift",
+    "example": "DataTableExample.swift",
+    "notes": "Supply native TableColumn builders and key paths, a selection binding, and sort order. The table sorts a copy of the records. Native compact-width tables show their first column; provide a rich first cell for compact layouts."
+  },
+  {
+    "name": "Date Picker",
+    "slug": "date-picker",
+    "symbol": "CNDatePicker",
+    "source": "ValueControls.swift",
+    "example": "DatePickerExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Dialog",
+    "slug": "dialog",
+    "symbol": "CNDialog",
+    "source": "Presentation.swift",
+    "example": "DialogExample.swift",
+    "notes": "Uses a native sheet rather than a web overlay. Compose headers, fields, footer actions, and CNDialogClose. The close button uses the native cancel shortcut."
+  },
+  {
+    "name": "Direction",
+    "slug": "direction",
+    "symbol": "CNDirection",
+    "source": "Display.swift",
+    "example": "DirectionExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Drawer",
+    "slug": "drawer",
+    "symbol": "CNDrawer",
+    "source": "Presentation.swift",
+    "example": "DrawerExample.swift",
+    "notes": "Uses a native sheet. iOS supports medium and large detents and a drag indicator. macOS retains its native sheet presentation."
+  },
+  {
+    "name": "Dropdown Menu",
+    "slug": "dropdown-menu",
+    "symbol": "CNDropdownMenu",
+    "source": "Menus.swift",
+    "example": "DropdownMenuExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Empty",
+    "slug": "empty",
+    "symbol": "CNEmpty",
+    "source": "ComponentContainers.swift",
+    "example": "EmptyExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Field",
+    "slug": "field",
+    "symbol": "CNField",
+    "source": "Field.swift",
+    "example": "FieldExample.swift",
+    "notes": "Imported and copied parts share the public validation environment. Native controls retain their labels, bindings, focus, and accessibility. Use native labels or accessibilityLabel to associate field meaning."
+  },
+  {
+    "name": "Hover Card",
+    "slug": "hover-card",
+    "symbol": "CNHoverCard",
+    "source": "Presentation.swift",
+    "example": "HoverCardExample.swift",
+    "notes": "A native popover supports pointer hover and explicit button activation. Clicking and outside dismissal remain available. Supply noninteractive trigger content."
+  },
+  {
+    "name": "Input",
+    "slug": "input",
+    "symbol": "CNInput",
+    "source": "Input.swift",
+    "example": "InputExample.swift",
+    "notes": "A native TextField or SecureField preserves selection, input methods, password managers, submit, and accessibility. Pass a FocusState binding with focus: when the host controls focus."
+  },
+  {
+    "name": "Input Group",
+    "slug": "input-group",
+    "symbol": "CNInputGroup",
+    "source": "Input.swift",
+    "example": "InputGroupExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Input OTP",
+    "slug": "input-otp",
+    "symbol": "CNInputOTP",
+    "source": "Input.swift",
+    "example": "InputOTPExample.swift",
+    "notes": "Uses one native text field. ASCII digits are normalized and truncated on edit and paste. iOS adds one-time-code autofill and a numeric keyboard. Submit remains a native onSubmit action."
+  },
+  {
+    "name": "Item",
+    "slug": "item",
+    "symbol": "CNItem",
+    "source": "ComponentContainers.swift",
+    "example": "ItemExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Kbd",
+    "slug": "kbd",
+    "symbol": "CNKbd",
+    "source": "ComponentParts.swift",
+    "example": "KbdExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Label",
+    "slug": "label",
+    "symbol": "CNLabel",
+    "source": "ComponentParts.swift",
+    "example": "LabelExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Marker",
+    "slug": "marker",
+    "symbol": "CNMarker",
+    "source": "Marker.swift",
+    "example": "MarkerExample.swift",
+    "notes": "Conversation status rows support inline, bordered, and labeled separator variants. Icons can be decorative. Wrap the content in a native Button or Link for interactive markers."
+  },
+  {
+    "name": "Menubar",
+    "slug": "menubar",
+    "symbol": "CNMenubar",
+    "source": "Menus.swift",
+    "example": "MenubarExample.swift",
+    "notes": "An in-window strip of native Menu controls. For the macOS application menu bar, use Scene.commands. This component does not install global commands."
+  },
+  {
+    "name": "Message",
+    "slug": "message",
+    "symbol": "CNMessage",
+    "source": "ComponentContainers.swift",
+    "example": "MessageExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Message Scroller",
+    "slug": "message-scroller",
+    "symbol": "CNMessageScroller",
+    "source": "Scrolling.swift",
+    "example": "MessageScrollerExample.swift",
+    "notes": "Preserves reading position by default. Opt into followNewMessages only while the user follows the conversation. The host owns that decision. Following uses native scroll positioning and respects Reduce Motion."
+  },
+  {
+    "name": "Native Select",
+    "slug": "native-select",
+    "symbol": "CNNativeSelect",
+    "source": "SelectionControls.swift",
+    "example": "NativeSelectExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Navigation Menu",
+    "slug": "navigation-menu",
+    "symbol": "CNNavigationMenu",
+    "source": "Menus.swift",
+    "example": "NavigationMenuExample.swift",
+    "notes": "Compose native Link, NavigationLink, and dropdown menu controls. Your NavigationStack owns routes and path state."
+  },
+  {
+    "name": "Pagination",
+    "slug": "pagination",
+    "symbol": "CNPagination",
+    "source": "Navigation.swift",
+    "example": "PaginationExample.swift",
+    "notes": "Page numbers are one-based. The visible window stays bounded for large page counts. A page count of zero disables navigation and normalizes the binding to zero."
+  },
+  {
+    "name": "Popover",
+    "slug": "popover",
+    "symbol": "CNPopover",
+    "source": "Presentation.swift",
+    "example": "PopoverExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Progress",
+    "slug": "progress",
+    "symbol": "CNProgress",
+    "source": "ValueControls.swift",
+    "example": "ProgressExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Questionnaire",
+    "slug": "questionnaire",
+    "symbol": "CNQuestionnaire",
+    "source": "Questionnaire.swift",
+    "example": "QuestionnaireExample.swift",
+    "notes": "The host owns ordered questions, answers, active index, cancellation, and submission. Required, type, single-choice, and available-option validation runs before submission. IDs must be unique. Branching, transport, and persistence belong to the host."
+  },
+  {
+    "name": "Radio Group",
+    "slug": "radio-group",
+    "symbol": "CNRadioGroup",
+    "source": "SelectionControls.swift",
+    "example": "RadioGroupExample.swift",
+    "notes": "Uses a native radio-group Picker on macOS and an inline native Picker on iOS. It supports long option lists without forcing a segmented control."
+  },
+  {
+    "name": "Resizable",
+    "slug": "resizable",
+    "symbol": "CNResizable",
+    "source": "Resizable.swift",
+    "example": "ResizableExample.swift",
+    "notes": "Only the divider captures drag gestures. The split uses a normalized binding, minimum fractions, and accessible adjustment. Size the container with classes. Both platforms use this binding-aware divider; no native split position is silently ignored."
+  },
+  {
+    "name": "Scroll Area",
+    "slug": "scroll-area",
+    "symbol": "CNScrollArea",
+    "source": "Scrolling.swift",
+    "example": "ScrollAreaExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Select",
+    "slug": "select",
+    "symbol": "CNSelect",
+    "source": "SelectionControls.swift",
+    "example": "SelectExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Separator",
+    "slug": "separator",
+    "symbol": "CNSeparator",
+    "source": "Display.swift",
+    "example": "SeparatorExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Sheet",
+    "slug": "sheet",
+    "symbol": "CNSheet",
+    "source": "Presentation.swift",
+    "example": "SheetExample.swift",
+    "notes": "Uses native sheet presentation and dismissal. Presentations keep keyboard, focus, modality, accessibility, and environment behavior in SwiftUI."
+  },
+  {
+    "name": "Sidebar",
+    "slug": "sidebar",
+    "symbol": "CNSidebar",
+    "source": "Navigation.swift",
+    "example": "SidebarExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Skeleton",
+    "slug": "skeleton",
+    "symbol": "CNSkeleton",
+    "source": "Display.swift",
+    "example": "SkeletonExample.swift",
+    "notes": "Native redaction keeps the real content in the tree. Loading content is disabled and hidden from accessibility. No repeating timer or motion runs while the placeholder is idle."
+  },
+  {
+    "name": "Slider",
+    "slug": "slider",
+    "symbol": "CNSlider",
+    "source": "ValueControls.swift",
+    "example": "SliderExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Spinner",
+    "slug": "spinner",
+    "symbol": "CNSpinner",
+    "source": "ValueControls.swift",
+    "example": "SpinnerExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Switch",
+    "slug": "switch",
+    "symbol": "CNSwitch",
+    "source": "SelectionControls.swift",
+    "example": "SwitchExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Table",
+    "slug": "table",
+    "symbol": "CNTable",
+    "source": "Table.swift",
+    "example": "TableExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Tabs",
+    "slug": "tabs",
+    "symbol": "CNTabs",
+    "source": "Navigation.swift",
+    "example": "TabsExample.swift",
+    "notes": "Uses native TabView with caller-supplied tagged views. Each tab can contain arbitrary SwiftUI content. Use native tabItem and tag modifiers."
+  },
+  {
+    "name": "Textarea",
+    "slug": "textarea",
+    "symbol": "CNTextarea",
+    "source": "Input.swift",
+    "example": "TextareaExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Toast",
+    "slug": "toast",
+    "symbol": "CNToastHost",
+    "source": "Toast.swift",
+    "example": "ToastExample.swift",
+    "notes": "The host owns one optional toast per window. Replacement cancels the old timeout; identity checks prevent an older task from dismissing a newer toast. Nil duration requires explicit dismissal."
+  },
+  {
+    "name": "Toggle",
+    "slug": "toggle",
+    "symbol": "CNToggle",
+    "source": "SelectionControls.swift",
+    "example": "ToggleExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Toggle Group",
+    "slug": "toggle-group",
+    "symbol": "CNToggleGroup",
+    "source": "SelectionControls.swift",
+    "example": "ToggleGroupExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  },
+  {
+    "name": "Tooltip",
+    "slug": "tooltip",
+    "symbol": "CNTooltip",
+    "source": "Presentation.swift",
+    "example": "TooltipExample.swift",
+    "notes": "Uses native help on macOS. On iOS, the label becomes a native button that opens a descriptive popover. Supply noninteractive label content."
+  },
+  {
+    "name": "Typography",
+    "slug": "typography",
+    "symbol": "CNTypography",
+    "source": "Display.swift",
+    "example": "TypographyExample.swift",
+    "notes": "Compose native content in the builder. Pass classes: to replace or extend the default recipe. Bindings and application actions remain caller-owned. Layout, semantics, and system control behavior remain native."
+  }
+]

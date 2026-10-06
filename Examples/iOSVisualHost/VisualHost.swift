@@ -8,6 +8,10 @@ struct SwiftCNVisualHost: App {
     private var dark: Bool { arguments.contains("--dark") }
     private var large: Bool { arguments.contains("--large-text") }
     private var rulesScene: Bool { arguments.contains("--rules") }
+    private var component: CNComponentGallery? {
+        guard let index = arguments.firstIndex(of: "--component"), arguments.indices.contains(index + 1) else { return nil }
+        return CNComponentGallery(rawValue: arguments[index + 1])
+    }
     private var captureID: String {
         guard let index = arguments.firstIndex(of: "--capture-id"), arguments.indices.contains(index + 1) else { return "manual" }
         return arguments[index + 1]
@@ -15,10 +19,21 @@ struct SwiftCNVisualHost: App {
 
     var body: some Scene {
         WindowGroup {
-            IOSFixture(rulesScene: rulesScene)
+            Group {
+                if let component {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text(component.title).tw("text-xl font-semibold")
+                            component.example
+                        }.tw("p-5 w-full")
+                    }.tw("bg-background")
+                } else { IOSFixture(rulesScene: rulesScene) }
+            }
                 .preferredColorScheme(dark ? .dark : .light)
                 .environment(\.dynamicTypeSize, large ? .accessibility3 : .large)
                 .environment(\.locale, Locale(identifier: "en_US_POSIX"))
+                .environment(\.calendar, Calendar(identifier: .gregorian))
+                .environment(\.timeZone, TimeZone(secondsFromGMT: 0)!)
                 .transaction { $0.animation = nil }
                 .task {
                     // Signal only after the native controls settle. The capture script polls this file.
@@ -27,6 +42,7 @@ struct SwiftCNVisualHost: App {
                     guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first,
                           let window = scene.windows.first(where: \.isKeyWindow),
                           let view = window.rootViewController?.view else { return }
+                    if component != nil { stopIndicators(view) }
                     let format = UIGraphicsImageRendererFormat()
                     format.scale = view.traitCollection.displayScale
                     format.preferredRange = .standard
@@ -40,6 +56,11 @@ struct SwiftCNVisualHost: App {
                 }
         }
     }
+}
+
+@MainActor private func stopIndicators(_ view: UIView) {
+    if let indicator = view as? UIActivityIndicatorView { indicator.hidesWhenStopped = false; indicator.stopAnimating() }
+    for child in view.subviews { stopIndicators(child) }
 }
 
 private struct IOSFixture: View {
