@@ -187,7 +187,9 @@ struct NativeUtilityRenderingTests {
 
     private func withHost<V: View>(_ view: V, run: (NSHostingView<V>) -> Void) {
         let host = NSHostingView(rootView: view)
-        host.frame = CGRect(x: 0, y: 0, width: 220, height: 100)
+        // Keep the decorated content visible through the largest tested offset.
+        // macOS 15 can stop sampling a custom animation when its layer is clipped.
+        host.frame = CGRect(x: 0, y: 0, width: 500, height: 100)
         let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = host
         window.orderFront(nil)
