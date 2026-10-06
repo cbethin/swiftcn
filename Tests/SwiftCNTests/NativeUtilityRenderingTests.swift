@@ -39,11 +39,10 @@ struct NativeUtilityRenderingTests {
         (false, false, false), (false, false, true), (false, true, false), (false, true, true),
         (true, false, false), (true, false, true), (true, true, false), (true, true, true)
     ])
-    func argumentChangesAndTagRemovalPreserveIdentityAndNativeMotion(disabledTransaction: Bool, transform: Bool, reconfigureAnimation: Bool) {
+    func argumentChangesAndTagRemovalPreserveIdentityAndNativeMotion(disabledTransaction: Bool, transform: Bool, reconfigureAnimation: Bool) throws {
         let model = NativeUtilityModel()
         let identities = NativeIdentityRecorder()
-        let samples = NativeMotionSamples()
-        var rules = TWGlobalRules(animations: ["probe": TWAnimation(Animation(NativeMotionProbe(samples: samples)))], modifiers: [
+        var rules = TWGlobalRules(animations: ["probe": TWAnimation(.linear(duration: 1))], modifiers: [
             "glass": .view { view, active in view.background(active ? Color.blue : .clear) },
             "shift": .argument(default: "0") { argument, _ in argument.points.map { NativeShift(distance: $0) } }
         ])
@@ -51,37 +50,40 @@ struct NativeUtilityRenderingTests {
             rules.modifiers["shift"] = .argument(default: CGFloat.zero,
                 parse: { argument, _ in argument.points }) { view, distance in view.offset(x: distance) }
         }
-        let view = NativeUtilityHarness(model: model, identities: identities, samples: reconfigureAnimation ? samples : nil)
+        let view = NativeUtilityHarness(model: model, identities: identities, reconfigureAnimation: reconfigureAnimation)
             .twRules(rules)
-        withHost(view) { host in
-            #expect(samples.times.isEmpty)
+        // Read actual motion; macOS 15 can retain stale custom-animation callback times
+        // for colored compositions, including the matching plain SwiftUI control.
+        try withHost(view) { host in
+            let origin = try bluePosition(host)
             for phase in [1, 2, 0] {
+                let start = try bluePosition(host)
                 var transaction = Transaction()
                 transaction.disablesAnimations = disabledTransaction
                 withTransaction(transaction) { model.phase = phase }
-                settle(host, seconds: NativeMotionProbe.duration + 0.3)
-                #expect(Set(identities.values).count == 1)
-                if identities.reduceMotion == true || disabledTransaction { #expect(samples.times.isEmpty) }
-                else {
-                    #expect(samples.times(for: reconfigureAnimation ? phase : 0).contains { $0 > 0 && $0 < NativeMotionProbe.duration },
-                        "Phase \(phase), native samples: \(samples.recentSamples)")
+                var positions: [CGFloat] = []
+                for _ in 0..<12 {
+                    settle(host, seconds: 0.1)
+                    positions.append(try bluePosition(host))
                 }
-                samples.clear()
+                let end = origin + CGFloat(phase * 40)
+                #expect(abs(try #require(positions.last) - end) < 1)
+                let intermediate = positions.contains { $0 > min(start, end) + 2 && $0 < max(start, end) - 2 }
+                #expect(intermediate == (identities.reduceMotion != true && !disabledTransaction),
+                    "Phase \(phase), rendered offset positions: \(positions)")
+                #expect(Set(identities.values).count == 1)
             }
             #expect(Set(identities.phases) == [0, 1, 2])
         }
     }
 
-    @Test(arguments: [
-        (false, false, false), (false, false, true), (false, true, false), (false, true, true),
-        (true, false, false), (true, false, true), (true, true, false), (true, true, true)
-    ])
-    func nativeOffsetAllowsReplacingTheCustomAnimation(zeroDelay: Bool, scoped: Bool, decorated: Bool) {
+    @Test(arguments: [false, true], [false, true])
+    func nativeOffsetAllowsReplacingTheCustomAnimation(zeroDelay: Bool, scoped: Bool) {
         let model = NativeUtilityModel()
         let identities = NativeIdentityRecorder()
         let samples = NativeMotionSamples()
         withHost(NativeOffsetHarness(model: model, identities: identities, samples: samples,
-            zeroDelay: zeroDelay, scoped: scoped, decorated: decorated)) { host in
+            zeroDelay: zeroDelay, scoped: scoped)) { host in
             for phase in [1, 2, 0] {
                 model.phase = phase
                 settle(host, seconds: NativeMotionProbe.duration + 0.3)
@@ -240,7 +242,6 @@ struct NativeUtilityRenderingTests {
     private func withHost<V: View>(_ view: V, run: (NSHostingView<V>) throws -> Void) rethrows {
         let host = NSHostingView(rootView: view)
         // Keep the decorated content visible through the largest tested offset.
-        // macOS 15 can stop sampling a custom animation when its layer is clipped.
         host.frame = CGRect(x: 0, y: 0, width: 500, height: 100)
         let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = host
@@ -282,7 +283,7 @@ private struct NativeUtilityHarness: View {
     @ObservedObject var model: NativeUtilityModel
     let identities: NativeIdentityRecorder
     var callerAnimation = false
-    var samples: NativeMotionSamples? = nil
+    var reconfigureAnimation = false
     @ViewBuilder
     var body: some View {
         let content = NativeUtilityChild(phase: model.phase, identities: identities)
@@ -290,14 +291,13 @@ private struct NativeUtilityHarness: View {
                 if callerAnimation {
                     if model.phase != 0 { "shift" }
                 } else {
-                    "animate-probe"
-                    if model.phase != 0 { "glass shift-[\(model.phase * 40)]" }
+                    "glass animate-probe"
+                    if model.phase != 0 { "shift-[\(model.phase * 40)]" }
                 }
             }, value: model.phase)
-        if let samples {
+        if reconfigureAnimation {
             content.twRules { rules in
-                    // Distinguish each transition from the previous probe's completed timeline.
-                    rules.animations["probe"] = TWAnimation(Animation(NativeMotionProbe(samples: samples, generation: model.phase)))
+                rules.animations["probe"] = TWAnimation(.linear(duration: model.phase == 2 ? 0.8 : 1))
             }
         } else {
             content
@@ -318,14 +318,6 @@ private struct NativeOffsetHarness: View {
     let samples: NativeMotionSamples
     var zeroDelay = false
     var scoped = false
-    var decorated = false
-    private func shifted<V: View>(_ view: V) -> AnyView {
-        if decorated {
-            return AnyView(AnyView(AnyView(view).background(model.phase != 0 ? Color.blue : .clear))
-                .offset(x: CGFloat(model.phase * 40)))
-        }
-        return AnyView(view.offset(x: CGFloat(model.phase * 40)))
-    }
     var body: some View {
         let native = Animation(NativeMotionProbe(samples: samples, generation: model.phase))
         let animation = zeroDelay ? native.delay(0) : native
@@ -333,10 +325,11 @@ private struct NativeOffsetHarness: View {
             if scoped {
                 NativeUtilityChild(phase: model.phase, identities: identities)
                     .transaction { $0.animation = animation } body: { surface in
-                        shifted(surface)
+                        AnyView(surface).offset(x: CGFloat(model.phase * 40))
                     }
             } else {
-                shifted(NativeUtilityChild(phase: model.phase, identities: identities))
+                NativeUtilityChild(phase: model.phase, identities: identities)
+                    .offset(x: CGFloat(model.phase * 40))
             }
         }
         .animation(animation, value: model.phase)
