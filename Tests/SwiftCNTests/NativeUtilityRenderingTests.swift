@@ -133,7 +133,8 @@ struct NativeUtilityRenderingTests {
                 }
                 let end = start + (phase == 2 ? 40 : -40)
                 #expect(abs(try #require(positions.last) - end) < 1)
-                #expect(positions.contains { $0 > min(start, end) + 2 && $0 < max(start, end) - 2 },
+                let intermediate = positions.contains { $0 > min(start, end) + 2 && $0 < max(start, end) - 2 }
+                #expect(intermediate == (!registered || identities.reduceMotion != true),
                     "Rendered offset positions: \(positions)")
                 #expect(Set(identities.values).count == 1)
             }
