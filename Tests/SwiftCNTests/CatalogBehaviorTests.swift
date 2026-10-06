@@ -59,7 +59,8 @@ struct CatalogBehaviorTests {
     }
     @Test @MainActor func recipesHaveNoUnknownUtilitiesAndLocalOverridesWin() throws {
         let rules = TWGlobalRules(modifiers: ["cn-tint": CNUtilities.tint, "cn-mono": CNUtilities.monospaced,
-                                              "cn-avatar-crop": CNUtilities.avatarCrop, "cn-avatar-image": CNUtilities.avatarImage])
+                                              "cn-avatar-crop": CNUtilities.avatarCrop, "cn-avatar-image": CNUtilities.avatarImage,
+                                              "cn-shimmer": CNLoadingUtilities.shimmer, "cn-spin": CNLoadingUtilities.spin])
         for (name, _) in TWStyle.defaultClasses {
             _ = try TWStyle.parse(TWClasses(name), rules: rules)
         }
