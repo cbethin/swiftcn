@@ -149,7 +149,7 @@ The command screenshot ends editing before capture. This excludes the blinking c
 
 The macOS carousel capture pins native scroller geometry before page layout. This prevents a late scrollbar-style change from shifting the centered content. The running gallery follows system scroll preferences.
 
-Static iOS captures stop native indeterminate indicators and freeze their layer clocks before rendering. This keeps the same indicator frame across runs. The interactive gallery retains native spinner animation.
+Static iOS captures stop native indeterminate indicators and select the first native keyframe for animated image layers. This keeps the same indicator frame across runs. The interactive gallery retains native spinner animation.
 
 ```bash
 bash Scripts/component-visual-test.sh verify ci
