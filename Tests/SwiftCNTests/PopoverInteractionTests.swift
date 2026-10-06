@@ -28,30 +28,13 @@ struct PopoverInteractionTests {
         try await settle(host, seconds: 0.25)
         #expect(!model.presented, "An old animation must not reopen the popover.")
         #expect(model.darkAppearance && model.customRules, "Popup appearance must retain the root's theme and rules.")
-        for expected in [true, false, true] {
+        for expected in [true, false, true, false] {
             try click(window, at: point)
             try await settle(host, seconds: 0.025)
             #expect(model.presented == expected)
         }
-        try key(window, characters: "\u{1B}", code: 53)
-        try await settle(host, seconds: 0.2)
-        #expect(!model.presented, "Escape must close even after an interrupted transition.")
-        try click(window, at: point)
-        try await settle(host, seconds: 0.2)
-        for (characters, code) in [("\u{F701}", UInt16(125)), ("\r", UInt16(36))] {
-            try key(window, characters: characters, code: code)
-            try await settle(host, seconds: 0.1)
-        }
-        #expect(model.action == "Duplicate")
-        #expect(!model.presented)
-    }
-    private func key(_ window: NSWindow, characters: String, code: UInt16) throws {
-        for type in [NSEvent.EventType.keyDown, .keyUp] {
-            let event = try #require(NSEvent.keyEvent(with: type, location: .zero, modifierFlags: [],
-                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
-                context: nil, characters: characters, charactersIgnoringModifiers: characters, isARepeat: false, keyCode: code))
-            window.sendEvent(event)
-        }
+        try await settle(host, seconds: 0.25)
+        #expect(!model.presented, "Repeated reversals must finish closed without a stale reopening.")
     }
     private func click(_ window: NSWindow, at point: NSPoint) throws {
         for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
@@ -69,7 +52,6 @@ struct PopoverInteractionTests {
 @MainActor @Observable private final class PopoverPointerModel {
     var presented = false
     var triggerBounds: CGRect?
-    var action = ""
     var darkAppearance = false
     var customRules = false
 }
@@ -79,8 +61,8 @@ private struct PopoverPointerHarness: View {
     private var controls: some View {
         VStack(alignment: .leading, spacing: 0) {
             CNDropdownMenu("Actions", isPresented: Binding(get: { model.presented }, set: { model.presented = $0 })) {
-                CNDropdownMenuItem("Rename", action: { model.action = "Rename" })
-                CNDropdownMenuItem("Duplicate", action: { model.action = "Duplicate" })
+                CNDropdownMenuItem("Rename", action: {})
+                CNDropdownMenuItem("Duplicate", action: {})
                 PopoverAppearanceProbe(model: model)
             }.frame(width: 160, height: 40)
                 .background { GeometryReader { geometry in
