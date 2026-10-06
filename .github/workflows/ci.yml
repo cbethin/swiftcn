@@ -24,6 +24,7 @@ jobs:
       - name: Toolchain
         run: swift --version
       - name: Native tests
+        timeout-minutes: 15
         env:
           SWIFTCN_EXPECT_MOTION: "1"
           SWIFTCN_SHARED_ARTIFACTS: artifacts/shared-elements

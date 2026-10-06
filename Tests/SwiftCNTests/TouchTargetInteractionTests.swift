@@ -64,10 +64,7 @@ struct TouchTargetInteractionTests {
             try await click(window, host: host, point: CGPoint(x: disclosure.midX, y: disclosure.midY))
             try await settle(host)
             #expect(model.expanded)
-            let input = try #require(model.frames["input"])
-            try await click(window, host: host, point: CGPoint(x: input.maxX - 3, y: input.maxY - 3))
-            try await settle(host)
-            // Key-window focus is checked in the running app; this CLI host cannot become the active app.
+            // Editor focus and padding taps need a key-window app check.
             let child = try #require(model.frames["input-action"])
             try await click(window, host: host, point: CGPoint(x: child.midX, y: child.midY))
             try await settle(host)
@@ -89,6 +86,23 @@ struct TouchTargetInteractionTests {
     }
     private func click(_ window: NSWindow, host: NSView, point: CGPoint) async throws {
         let location = host.convert(point, to: nil)
+        // Native AppKit controls enter a modal mouse-tracking loop on older macOS versions.
+        // Hit-test their actual bounds, then use the native activation API in this CLI fixture.
+        var hit = host.hitTest(host.convert(point, to: host.superview))
+        while let view = hit {
+            if let button = view as? NSButton {
+                if button.isEnabled { button.performClick(nil) }
+                return
+            }
+            if let control = view as? NSSwitch {
+                if control.isEnabled {
+                    control.state = control.state == .on ? .off : .on
+                    #expect(control.sendAction(control.action, to: control.target))
+                }
+                return
+            }
+            hit = view.superview
+        }
         for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
             let event = try #require(NSEvent.mouseEvent(with: type, location: location, modifierFlags: [],
                 timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
