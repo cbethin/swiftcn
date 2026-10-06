@@ -1,0 +1,70 @@
+---
+title: "Themes"
+description: "Adaptive colors and native typography through the SwiftUI environment."
+---
+
+```swift
+var theme = TWTheme(spacingUnit: 5)
+theme.colors[.primary] = TWAdaptiveColor(light: .indigo, dark: .mint)
+theme.colors[.onPrimary] = TWAdaptiveColor(light: .white, dark: .black)
+theme.radii[.lg] = 16
+
+ContentView()
+    .twTheme(theme)
+```
+
+Semantic colors resolve through the current color scheme.
+The theme inherits through the SwiftUI environment and supports local overrides.
+Partial theme initializers preserve unspecified defaults.
+
+## Native layout tokens
+
+Read theme values for native layouts:
+
+```swift
+@Environment(\.twTheme) private var theme
+
+VStack(spacing: theme.space(4)) {
+    Text("First")
+    Text("Second")
+}
+```
+
+## Custom colors
+
+Add custom semantic colors through ordinary Swift extensions:
+
+```swift
+extension TWColor {
+    static let brand = TWColor("brand")
+}
+
+let theme = TWTheme(colors: [
+    .brand: TWAdaptiveColor(light: .purple, dark: .pink)
+])
+
+Text("Brand").tw(.fg(.brand)).twTheme(theme)
+```
+
+Register custom colors in the theme before using them.
+Typed color utilities fall back to SwiftUI's semantic primary foreground for an unregistered token.
+String color classes require registration; an unknown token rejects the complete style for that surface.
+See [color troubleshooting](/docs/troubleshooting#a-custom-color-works-in-typed-styles-but-fails-in-strings).
+
+## Scale and typography
+
+The standard spacing unit is four native points. `p-4` selects 16 points. Bracket lengths such as `p-[16]` ignore the theme spacing scale.
+
+| Class | Native font role |
+| --- | --- |
+| `text-xs` | caption |
+| `text-sm` | subheadline |
+| `text-base` | body |
+| `text-lg` | title3 |
+| `text-xl` | title2 |
+| `text-2xl` | title |
+| `text-3xl` | largeTitle |
+
+These typography tokens use scalable native font roles. Explicit `text-[18]` uses a fixed system font size.
+
+[Global rules](/docs/global-rules) let you share recipes, utility factories, and animation presets.

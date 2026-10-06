@@ -1,0 +1,24 @@
+{
+  "pages": [
+    "index",
+    "installation",
+    "quick-start",
+    "---Styling---",
+    "styling",
+    "utilities",
+    "arguments",
+    "interpolation",
+    "native-modifiers",
+    "---Design system---",
+    "theme",
+    "global-rules",
+    "native-controls",
+    "components",
+    "---Motion---",
+    "animations",
+    "shared-elements",
+    "---Development---",
+    "visual-testing",
+    "troubleshooting"
+  ]
+}

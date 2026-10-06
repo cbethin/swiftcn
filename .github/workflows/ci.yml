@@ -1,0 +1,82 @@
+name: Swift package
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swiftcn-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v7
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+      - name: Toolchain
+        run: swift --version
+      - name: Native tests
+        env:
+          SWIFTCN_EXPECT_MOTION: "1"
+          SWIFTCN_SHARED_ARTIFACTS: artifacts/shared-elements
+          SWIFTCN_ARGUMENT_ARTIFACTS: artifacts/arguments
+          SWIFTCN_NATIVE_ARTIFACTS: artifacts/native-modifiers
+          SWIFTCN_COMPOSITION_ARTIFACTS: artifacts/composition
+        run: |
+          # Hosted macOS images enable Reduce Motion. Restore it before image comparisons.
+          swiftcn_motion_setting=false
+          if [[ "$(defaults read com.apple.universalaccess reduceMotion 2>/dev/null || echo 0)" == "1" ]]; then
+            swiftcn_motion_setting=true
+          fi
+          trap 'defaults write com.apple.universalaccess reduceMotion -bool "$swiftcn_motion_setting"' EXIT
+          defaults write com.apple.universalaccess reduceMotion -bool false
+          # Keep these hosted probes separate from other suites that pump the main run loop.
+          swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests|ComponentRenderingTests|CompositionRenderingTests'
+          swift test --filter CompositionRenderingTests
+          swift test --filter ComponentRenderingTests
+          SWIFTCN_MOTION_ARTIFACTS="$PWD/artifacts/motion-size" \
+            swift test --package-path Examples/Catalog --filter MotionSurfaceTests
+          swift test --filter NativeUtilityRenderingTests
+      - name: Verify visual baselines
+        run: bash Scripts/visual-test.sh verify ci
+      - name: Verify iOS visual baselines
+        run: python3 Scripts/ios-visual-test.py verify ci
+      - name: Release build
+        run: swift build -c release
+      - name: Source ownership
+        run: bash Scripts/check-source-copy.sh
+      - name: Compile documentation examples
+        run: bash Scripts/check-doc-examples.sh
+      - name: iOS simulator compilation
+        run: bash Scripts/check-ios.sh
+      - name: Render catalog
+        run: swift run --package-path Examples/Catalog SwiftCNCatalog --render artifacts
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: swiftcn-visual-evidence
+          path: |
+            artifacts/catalog-*.png
+            artifacts/shared-*.png
+            artifacts/shared-elements/
+            artifacts/arguments-*.png
+            artifacts/arguments/
+            artifacts/native-modifiers/
+            artifacts/components/
+            artifacts/composition/
+            artifacts/components-*.png
+            artifacts/motion-size/
+            artifacts/visual-diffs/
+            artifacts/ios-visual/*.png
+            artifacts/ios-visual/*-launch.log
+            Tests/SwiftCNVisualTests/__Snapshots__/macos-15-xcode-16.4/
+            Tests/SwiftCNVisualTests/__Snapshots__/ios-18.5-iphone-16/

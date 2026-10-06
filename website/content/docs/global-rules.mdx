@@ -1,0 +1,106 @@
+---
+title: "Global rules"
+description: "Set app defaults, editable recipes, custom utilities, and motion presets."
+---
+
+## Set app defaults
+
+Global rules inherit through the SwiftUI environment. They decorate views that use `.tw` and buttons that use its button style.
+
+```swift
+let rules = TWGlobalRules(
+    view: "animate-smooth duration-200",
+    button: "animate-spring duration-150",
+    named: [
+        "project-card": "card p-6 rounded-xl",
+        "button-primary": "px-4 py-2 bg-primary text-primary-foreground rounded-lg"
+    ]
+)
+
+ContentView().twRules(rules)
+```
+
+Use the recipe anywhere in that subtree:
+
+```swift
+VStack(alignment: .leading) {
+    Text("Workspace").tw("text-lg font-semibold")
+    Text("Three active projects").tw("text-sm text-muted-foreground")
+}
+.tw("project-card")
+```
+
+Local utilities override defaults by property. Rules do not decorate unstyled native views.
+
+## Override one subtree
+
+```swift
+SettingsView()
+    .twRules { rules in
+        rules.named["project-card"] = "card p-4 rounded-md"
+    }
+```
+
+The closure updates inherited rules and keeps the remaining configuration. `.twRules(rules)` replaces the complete rules value for its subtree.
+
+## Custom argument utilities
+
+Register a prefix in global rules. Its factory receives a `TWArgument` and the current theme.
+The factory returns composable `TWStyle` values. Return `nil` to reject an argument.
+
+```swift
+let rules = TWGlobalRules(utilities: [
+    "tilt": TWUtility { argument, _ in
+        guard let degrees = argument.degrees else { return nil }
+        return .rotate(degrees)
+    },
+    "inset": TWUtility { argument, theme in
+        guard let units = argument.number, units >= 0,
+              theme.space(CGFloat(units)).isFinite else { return nil }
+        return .paddingPoints(theme.space(CGFloat(units)))
+    }
+])
+
+Text("Hello")
+    .tw("inset-[3] hover:tilt-[3deg] animate-smooth duration-[220ms]")
+    .twRules(rules)
+```
+
+Argument helpers include `number`, `points`, `seconds`, `degrees`, `components`, and `hexColor`.
+Use `rawValue` for custom strings or argument grammars.
+Factories resolve against the nearest rules and theme when the view renders.
+Subtree overrides retain other inherited utility factories.
+
+Exact named classes take precedence over factories. A registered prefix overrides the built-in bracket utility for that prefix.
+Factory output can contain named classes and state variants. Recursive output fails validation.
+These factories generate the styling properties that `TWStyle` supports.
+Register [native modifier plugins](/docs/native-modifiers) through `rules.modifiers` for other SwiftUI modifiers.
+
+## Shared motion presets
+
+```swift
+let rules = TWGlobalRules(animations: [
+    "settle": TWAnimation { duration in
+        .spring(duration: duration, bounce: 0.15)
+    }
+])
+
+Text("Details")
+    .tw("card animate-settle duration-250")
+    .twRules(rules)
+```
+
+Preset factories receive seconds. Class duration arguments use milliseconds unless they include an explicit unit. See [animations](/docs/animations).
+
+
+## Extend a built-in recipe
+
+Read the built-in definition when you replace that same recipe:
+
+```swift
+var rules = TWGlobalRules()
+let base = TWStyle.defaultStyle(for: "button-primary")!
+rules.named["button-primary"] = TWStyle(base, .rounded(.full), .minH(48))
+```
+
+Referencing `.primaryButton` inside its own replacement creates a cycle. The built-in definition preserves its existing sizing and state appearances.

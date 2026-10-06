@@ -1,0 +1,119 @@
+---
+title: "Quick start"
+description: "Build a native SwiftUI screen with state, shared recipes, and gentle motion."
+---
+
+[Install SwiftCN](/docs/installation), then create a SwiftUI app in Xcode.
+Replace its generated content view and app entry point with these two files.
+The same example runs on iOS 17 and macOS 14 or later.
+
+## Create your screen
+
+```swift title="ContentView.swift"
+import SwiftUI
+import SwiftCN
+
+struct ContentView: View {
+    @State private var saved = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("A space for your ideas")
+                .tw("text-2xl font-semibold")
+
+            Text(saved ? "Your idea is saved." : "Keep something worth remembering.")
+                .tw("text-base text-muted-foreground")
+
+            Button(saved ? "Saved" : "Save idea") {
+                saved.toggle()
+            }
+            .buttonStyle(.tw("button-primary"))
+            .accessibilityLabel(saved ? "Undo save" : "Save idea")
+        }
+        .tw("idea-card")
+        .padding(24)
+    }
+}
+```
+
+SwiftUI owns the state and button action.
+The button style receives native press and hover state.
+Typography uses native font roles that follow Dynamic Type.
+
+## Set shared rules at the app root
+
+```swift title="SwiftCNDemoApp.swift"
+import SwiftUI
+import SwiftCN
+
+@main
+struct SwiftCNDemoApp: App {
+    private let rules = TWGlobalRules(
+        button: "animate-spring duration-150",
+        named: ["idea-card": "card p-6 rounded-xl"]
+    )
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .twRules(rules)
+        }
+    }
+}
+```
+
+Keep exactly one `@main` app type in your app target.
+If you copy the library source into your app, remove both `import SwiftCN` lines.
+
+The recipe inherits through the SwiftUI environment.
+Each button uses the shared motion setting and retains its native activation behavior.
+Animation classes respect Reduce Motion.
+
+## Make the recipe yours
+
+Change `idea-card` at the root to update every styled card in that subtree.
+Add a local utility to override one property:
+
+```swift
+VStack {
+    Text("Compact idea")
+}
+.tw("idea-card p-3")
+```
+
+`p-3` replaces the recipe's padding within this surface.
+Use a single `.tw` call when you want property overrides.
+Separate `.tw` calls create separate surfaces and add their padding.
+
+## Add layout animation when you need it
+
+Button press motion only animates the style's native values.
+Use `value:` when state changes also affect layout or child content:
+
+```swift
+VStack {
+    if expanded {
+        Text("More room for your ideas").transition(.opacity)
+    }
+    Button("Details") { expanded.toggle() }
+        .buttonStyle(.tw("button-primary"))
+}
+.tw("card animate-smooth duration-250", value: expanded)
+```
+
+Declare `@State private var expanded = false` in the containing view.
+SwiftUI supplies the layout and insertion transition.
+
+Continue with [global rules](/docs/global-rules), [animations](/docs/animations), or [troubleshooting](/docs/troubleshooting).
+
+## Verify these examples
+
+The repository compiles the two complete files above as separate-module and copied-source consumers.
+Run the check from the repository root:
+
+```bash
+bash Scripts/check-doc-examples.sh
+```
+
+It checks Swift 6 against the minimum macOS and iOS simulator targets.
+It uses the actual documentation code blocks, so copied examples and compiler checks stay together.

@@ -1,0 +1,157 @@
+---
+title: "Troubleshooting"
+description: "Find invalid classes, fix state handling, and keep theme rules in scope."
+---
+
+## A styled view has no decoration
+
+One invalid class rejects the complete style for that surface, including its global defaults.
+The view keeps its native content and rendering.
+The system logger reports errors under subsystem `swiftcn`, category `classes`.
+
+Use strict parsing to show a diagnostic before rendering generated strings:
+
+```swift title="StyleValidation.swift"
+import SwiftUI
+import SwiftCN
+
+func styleDiagnostic(
+    for classes: String,
+    rules: TWGlobalRules = TWGlobalRules(),
+    theme: TWTheme = .standard
+) -> String? {
+    do {
+        _ = try TWStyle.parse(classes, rules: rules, theme: theme)
+        return nil
+    } catch {
+        return String(describing: error)
+    }
+}
+```
+
+Call `styleDiagnostic(for: "p-4 w-[50%]")` to get `Unknown swiftcn class: w-[50%]`.
+Invalid argument values currently use the same error case as unknown classes.
+Parse with the same rules and theme that your view inherits.
+Strict parsing validates classes; it does not check their placement in a view hierarchy.
+
+| Diagnostic | Check |
+| --- | --- |
+| `Unknown swiftcn class: ...` | Check the utility reference, argument units, custom prefixes, and registered color tokens. |
+| `Unknown swiftcn variant: ...` | Use supported state variants. `dark:` and breakpoint variants are not supported. |
+| `Recursive swiftcn class: ...` | Remove a recipe or utility that expands back into itself. |
+| `swiftcn class expansion exceeds 32 levels` | Reduce nested named recipes and utility expansions. |
+
+Use [adaptive theme colors](/docs/theme) for light and dark appearances.
+Use native SwiftUI layout for responsive screens.
+
+## A custom color works in typed styles but fails in strings
+
+Register the color before parsing or rendering a string such as `bg-brand`:
+
+```swift
+let brand = TWColor("brand")
+let theme = TWTheme(colors: [
+    brand: TWAdaptiveColor(light: .indigo, dark: .mint)
+])
+
+Text("Brand")
+    .tw("bg-brand text-primary-foreground p-4 rounded-lg")
+    .twTheme(theme)
+```
+
+String color classes require a registered theme token.
+An unknown token fails the complete style.
+Typed colors such as `.fg(TWColor("missing"))` instead use the theme's semantic fallback.
+Register your tokens for predictable behavior in either API.
+
+## A recipe or utility override does not update
+
+Use strings or `.classes(...)` for styles that should read current inherited rules:
+
+```swift
+let inheritedStyle = TWStyle.classes("project-card")
+Text("Project").tw(inheritedStyle)
+```
+
+`TWStyle.parse(...)` expands named recipes and custom utilities immediately.
+Its result retains that expansion if those definitions later change.
+Theme-backed properties that remain tokens still resolve through the current theme.
+
+Validate with `parse`, then render the original classes when you need live inherited overrides.
+Apply `.twRules(...)` and `.twTheme(...)` to the parent that contains the styled views.
+The closure form `.twRules { ... }` updates inherited rules; the value form replaces the rules value.
+
+## Replacing a built-in recipe creates a cycle
+
+Use the built-in definition as your starting value:
+
+```swift
+var rules = TWGlobalRules()
+if let base = TWStyle.defaultStyle(for: "button-primary") {
+    rules.named["button-primary"] = TWStyle(base, .rounded(.full))
+}
+```
+
+Referencing `button-primary` or `.primaryButton` inside its own replacement creates a recursive class.
+
+## A button does not show its pressed appearance
+
+Apply the native button style:
+
+```swift
+Button("Save") { save() }
+    .buttonStyle(.tw("button-primary active:scale-[0.98] animate-spring duration-150"))
+```
+
+A general `.tw(...)` modifier does not install a press gesture.
+Use native `.disabled(...)` to disable a control.
+A `disabled:` class changes its appearance only.
+
+## Focus styling does not follow a text field
+
+Connect native `@FocusState` to `TWState`.
+See the complete [focus example](/docs/native-controls#focus) for the state declarations and view.
+A `focus:` class does not assign or detect keyboard focus by itself.
+
+## Tracking does not change the text
+
+Apply tracking directly to `Text`, before a modifier wraps it:
+
+```swift
+Text("Good spacing")
+    .tw("tracking-[0.5]")
+    .padding(12)
+```
+
+`.padding(12).tw("tracking-[0.5]")` targets a wrapped view and logs an unsupported target diagnostic.
+Other supported styling properties still apply.
+
+## Animation classes do not animate child layout
+
+Use `.tw(..., value: changedState)` or `.twAnimation(..., value: changedState)` for layout and child content.
+Without a watched value, `.tw` limits animation to the style's own properties.
+Duration and delay alone do not enable animation.
+Keep a base animation preset when state entry and exit both need motion.
+
+Reduce Motion and `Transaction.disablesAnimations` suppress explicit animations.
+Check those settings when an animation correctly reaches its final value without motion.
+
+## Shared elements do not connect
+
+Put both endpoints under one persistent `group` or named `group/hero`.
+Keep the same `shared-[id]` class at both endpoints.
+Use `value:` on the parent when state changes should animate their geometry.
+
+Named sibling groups own different namespaces, even when their names match.
+If both endpoints remain visible, use one source and mark the other `shared-follower`.
+Native matched geometry does not connect independent windows or presentation hosts.
+See [shared elements](/docs/shared-elements) for the complete example.
+
+## The compiler cannot find SwiftCN
+
+For package installation, add the `SwiftCN` product to the target that imports it.
+The repository name is `swiftcn`; the Swift module name is `SwiftCN`.
+
+For source ownership, copy every Swift file from `Sources/SwiftCN` into the app target.
+Keep the MIT license with the copied source and remove `import SwiftCN`.
+See [installation](/docs/installation) for both workflows.

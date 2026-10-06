@@ -1,0 +1,12 @@
+.build/
+.swiftpm/
+.DS_Store
+DerivedData/
+*.xcuserstate
+artifacts/
+__pycache__/
+website/node_modules/
+website/.next/
+website/.source/
+website/out/
+website/*.tsbuildinfo
