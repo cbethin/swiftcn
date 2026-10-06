@@ -173,7 +173,7 @@ private struct SurfaceHarness: View {
                     }
                     Text("Hello, SwiftUI").contentTransition(.identity)
                 }
-                .foregroundStyle(.black)
+                .foregroundStyle(removedSymbolEffects && model.expanded ? Color.white : Color.black)
                 .padding(model.expanded ? 32 : 12)
                 .background(RoundedRectangle(cornerRadius: model.expanded ? 16 : 8).fill(.blue))
                 .animation(.linear(duration: 1), value: model.expanded)
@@ -182,8 +182,7 @@ private struct SurfaceHarness: View {
                     Image(systemName: "sparkles").accessibilityHidden(true)
                     Text("Hello, SwiftUI").contentTransition(.identity)
                 }
-                .tw("\(model.expanded ? "p-8 rounded-xl" : "p-3 rounded-md") bg-primary text-foreground animate-linear duration-1000",
-                    value: model.expanded)
+                .tw(MotionSurface.classes(expanded: model.expanded, motion: "animate-linear duration-1000"), value: model.expanded)
             } else {
                 MotionSurface(expanded: model.expanded, motionClasses: "animate-\(preset) duration-1000 delay-0", animationScope: animationScope)
             }
