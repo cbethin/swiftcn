@@ -49,7 +49,11 @@ struct SwiftCNVisualHost: App {
                         try? await Task.sleep(for: .milliseconds(500))
                         view.layoutIfNeeded()
                     }
-                    if component != nil { stopIndicators(view) }
+                    if component != nil {
+                        stopIndicators(view)
+                        view.layoutIfNeeded()
+                        CATransaction.flush()
+                    }
                     let format = UIGraphicsImageRendererFormat()
                     format.scale = view.traitCollection.displayScale
                     format.preferredRange = .standard
@@ -66,8 +70,21 @@ struct SwiftCNVisualHost: App {
 }
 
 @MainActor private func stopIndicators(_ view: UIView) {
-    if let indicator = view as? UIActivityIndicatorView { indicator.hidesWhenStopped = false; indicator.stopAnimating() }
+    if let indicator = view as? UIActivityIndicatorView {
+        indicator.hidesWhenStopped = false
+        indicator.stopAnimating()
+        freezeIndicatorLayers(indicator.layer)
+    }
     for child in view.subviews { stopIndicators(child) }
+}
+
+@MainActor private func freezeIndicatorLayers(_ layer: CALayer) {
+    // UIKit can leave a presentation frame behind after stopAnimating().
+    // Read the native model layers at a fixed clock for static comparisons.
+    layer.removeAllAnimations()
+    layer.speed = 0
+    layer.timeOffset = 0
+    for child in layer.sublayers ?? [] { freezeIndicatorLayers(child) }
 }
 
 private struct IOSFixture: View {
