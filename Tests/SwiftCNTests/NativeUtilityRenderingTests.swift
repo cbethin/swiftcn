@@ -34,8 +34,11 @@ struct NativeUtilityRenderingTests {
         }
     }
 
-    @Test(arguments: [false, true], [false, true])
-    func argumentChangesAndTagRemovalPreserveIdentityAndNativeMotion(disabledTransaction: Bool, transform: Bool) {
+    @Test(arguments: [
+        (false, false, false), (false, false, true), (false, true, false), (false, true, true),
+        (true, false, false), (true, false, true), (true, true, false), (true, true, true)
+    ])
+    func argumentChangesAndTagRemovalPreserveIdentityAndNativeMotion(disabledTransaction: Bool, transform: Bool, reconfigureAnimation: Bool) {
         let model = NativeUtilityModel()
         let identities = NativeIdentityRecorder()
         let samples = NativeMotionSamples()
@@ -47,7 +50,7 @@ struct NativeUtilityRenderingTests {
             rules.modifiers["shift"] = .argument(default: CGFloat.zero,
                 parse: { argument, _ in argument.points }) { view, distance in view.offset(x: distance) }
         }
-        let view = NativeUtilityHarness(model: model, identities: identities, samples: samples)
+        let view = NativeUtilityHarness(model: model, identities: identities, samples: reconfigureAnimation ? samples : nil)
             .twRules(rules)
         withHost(view) { host in
             #expect(samples.times.isEmpty)
@@ -59,12 +62,28 @@ struct NativeUtilityRenderingTests {
                 #expect(Set(identities.values).count == 1)
                 if identities.reduceMotion == true || disabledTransaction { #expect(samples.times.isEmpty) }
                 else {
-                    #expect(samples.times(for: phase).contains { $0 > 0 && $0 < NativeMotionProbe.duration },
+                    #expect(samples.times(for: reconfigureAnimation ? phase : 0).contains { $0 > 0 && $0 < NativeMotionProbe.duration },
                         "Phase \(phase), native samples: \(samples.recentSamples)")
                 }
                 samples.clear()
             }
             #expect(Set(identities.phases) == [0, 1, 2])
+        }
+    }
+
+    @Test func nativeOffsetAllowsReplacingTheCustomAnimation() {
+        let model = NativeUtilityModel()
+        let identities = NativeIdentityRecorder()
+        let samples = NativeMotionSamples()
+        withHost(NativeOffsetHarness(model: model, identities: identities, samples: samples)) { host in
+            for phase in [1, 2, 0] {
+                model.phase = phase
+                settle(host, seconds: NativeMotionProbe.duration + 0.3)
+                #expect(samples.times(for: phase).contains { $0 > 0 && $0 < NativeMotionProbe.duration },
+                    "Native phase \(phase), samples: \(samples.recentSamples)")
+                #expect(Set(identities.values).count == 1)
+                samples.clear()
+            }
         }
     }
 
@@ -202,6 +221,16 @@ private struct NativeUtilityHarness: View {
                     rules.animations["probe"] = TWAnimation(Animation(NativeMotionProbe(samples: samples, generation: model.phase)))
                 }
             }
+    }
+}
+private struct NativeOffsetHarness: View {
+    @ObservedObject var model: NativeUtilityModel
+    let identities: NativeIdentityRecorder
+    let samples: NativeMotionSamples
+    var body: some View {
+        NativeUtilityChild(phase: model.phase, identities: identities)
+            .offset(x: CGFloat(model.phase * 40))
+            .animation(Animation(NativeMotionProbe(samples: samples, generation: model.phase)), value: model.phase)
     }
 }
 private struct TypedMotionHarness: View {
