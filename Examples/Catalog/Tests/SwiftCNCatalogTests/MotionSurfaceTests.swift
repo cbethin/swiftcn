@@ -20,16 +20,26 @@ struct MotionSurfaceTests {
         try check(preset: "linear", expectsMotion: true, native: true)
     }
 
+    @Test func plainUtilitiesInterpolateWithoutDemoEffects() throws {
+        try check(preset: "linear", expectsMotion: true, plainUtilities: true)
+    }
+
+    @Test func nativePaddingWithRemovedSymbolEffectsStillInterpolates() throws {
+        try check(preset: "linear", expectsMotion: true, native: true, removedSymbolEffects: true)
+    }
+
     @Test(arguments: [TWAnimationScope.surface, .layout])
     func scopedMotionKeepsTheLabelFixed(scope: TWAnimationScope) throws {
         try check(preset: "linear", expectsMotion: scope != .content, animationScope: scope)
     }
 
-    private func check(preset: String, expectsMotion: Bool, animationScope: TWAnimationScope = .all, native: Bool = false) throws {
+    private func check(preset: String, expectsMotion: Bool, animationScope: TWAnimationScope = .all,
+                       native: Bool = false, plainUtilities: Bool = false, removedSymbolEffects: Bool = false) throws {
         let model = SurfaceModel()
         let recorder = SurfaceEnvironment()
         let blue = TWAdaptiveColor(light: .blue, dark: .blue)
-        let host = NSHostingView(rootView: SurfaceHarness(model: model, recorder: recorder, preset: preset, animationScope: animationScope, native: native)
+        let host = NSHostingView(rootView: SurfaceHarness(model: model, recorder: recorder, preset: preset,
+            animationScope: animationScope, native: native, plainUtilities: plainUtilities, removedSymbolEffects: removedSymbolEffects)
             .twTheme(TWTheme(colors: [.primary: blue, .accent: blue,
                 .onPrimary: .init(light: .white, dark: .white), .foreground: .init(light: .black, dark: .black)]))
             .environment(\.colorScheme, .light)
@@ -42,7 +52,7 @@ struct MotionSurfaceTests {
         defer { window.orderOut(nil); window.contentView = nil }
         host.layoutSubtreeIfNeeded()
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
-        let label = "\(native ? "native" : "tw")-\(preset)-\(animationScope.rawValue)"
+        let label = "\(native ? "native" : "tw")\(plainUtilities ? "-plain" : "")\(removedSymbolEffects ? "-symbols" : "")-\(preset)-\(animationScope.rawValue)"
         var contentFrames: [CGRect] = []
         let compact = try bounds(host, name: "\(label)-compact", contentFrames: &contentFrames)
         var expansion: [CGRect] = []
@@ -145,19 +155,35 @@ private struct SurfaceHarness: View {
     let preset: String
     let animationScope: TWAnimationScope
     var native = false
+    var plainUtilities = false
+    var removedSymbolEffects = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         recorder.reduceMotion = reduceMotion
         return Group {
             if native {
                 HStack(spacing: 8) {
-                    Image(systemName: "sparkles").accessibilityHidden(true)
+                    if removedSymbolEffects {
+                        Image(systemName: "sparkles")
+                            .symbolEffect(.bounce, options: .speed(1.4), value: model.expanded)
+                            .symbolEffectsRemoved(true)
+                            .accessibilityHidden(true)
+                    } else {
+                        Image(systemName: "sparkles").accessibilityHidden(true)
+                    }
                     Text("Hello, SwiftUI").contentTransition(.identity)
                 }
                 .foregroundStyle(.black)
                 .padding(model.expanded ? 32 : 12)
                 .background(RoundedRectangle(cornerRadius: model.expanded ? 16 : 8).fill(.blue))
                 .animation(.linear(duration: 1), value: model.expanded)
+            } else if plainUtilities {
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles").accessibilityHidden(true)
+                    Text("Hello, SwiftUI").contentTransition(.identity)
+                }
+                .tw("\(model.expanded ? "p-8 rounded-xl" : "p-3 rounded-md") bg-primary text-foreground animate-linear duration-1000",
+                    value: model.expanded)
             } else {
                 MotionSurface(expanded: model.expanded, motionClasses: "animate-\(preset) duration-1000 delay-0", animationScope: animationScope)
             }
