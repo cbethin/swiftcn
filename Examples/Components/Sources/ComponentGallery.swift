@@ -67,6 +67,9 @@ enum CNComponentGallery: String, CaseIterable, Identifiable {
     case tooltip
     case typography
     var id: String { rawValue }
+    @MainActor var previewExample: AnyView {
+        self == .dropdown_menu ? AnyView(DropdownMenuExample(showsInlinePreview: true)) : example
+    }
     var title: String {
         switch self {
         case .accordion: "Accordion"
@@ -204,4 +207,3 @@ enum CNComponentGallery: String, CaseIterable, Identifiable {
         }
     }
 }
-

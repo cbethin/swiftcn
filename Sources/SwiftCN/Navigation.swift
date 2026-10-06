@@ -32,16 +32,15 @@ public struct CNPagination: View {
         return Array(Set([1, pageCount] + Array(max(1, current - 2)...(current + min(2, pageCount - current))))).sorted()
     }
     public var body: some View {
-        HStack(spacing: 4) {
-            CNButton("Previous", variant: .ghost, action: { page = max(1, page - 1) }).disabled(pageCount == 0 || page <= 1)
-            let pages = Self.visiblePages(page: page, pageCount: pageCount)
-            ForEach(Array(pages.enumerated()), id: \.element) { index, number in
-                if index > 0 && number - pages[index - 1] > 1 { Text("…").accessibilityHidden(true) }
-                CNButton(variant: number == page ? .primary : .ghost, size: .small, action: { page = number }) {
-                    Text(number, format: .number)
-                }.accessibilityLabel("Page \(number)").accessibilityAddTraits(number == page ? .isSelected : [])
-            }
-            CNButton("Next", variant: .ghost, action: { page = min(pageCount, page + 1) }).disabled(pageCount == 0 || page >= pageCount)
+        ViewThatFits(in: .horizontal) {
+            pageButtons(showsLabels: true)
+            pageButtons(showsLabels: false)
+            HStack(spacing: 8) {
+                previousButton(showsLabel: false)
+                Text("\(page) / \(pageCount)").monospacedDigit()
+                    .accessibilityLabel("Page \(page) of \(pageCount)")
+                nextButton(showsLabel: false)
+            }.fixedSize(horizontal: true, vertical: false)
         }.tw(cn("pagination", classes))
             .onChange(of: page) { _, value in
                 let normalized = pageCount == 0 ? 0 : min(pageCount, max(1, value))
@@ -51,6 +50,31 @@ public struct CNPagination: View {
                 let normalized = count == 0 ? 0 : min(count, max(1, page))
                 if page != normalized { page = normalized }
             }
+    }
+    private func pageButtons(showsLabels: Bool) -> some View {
+        HStack(spacing: 4) {
+            previousButton(showsLabel: showsLabels)
+            let pages = Self.visiblePages(page: page, pageCount: pageCount)
+            ForEach(Array(pages.enumerated()), id: \.element) { index, number in
+                if index > 0 && number - pages[index - 1] > 1 { Text("…").accessibilityHidden(true) }
+                CNButton(variant: number == page ? .primary : .ghost, size: .small, action: { page = number }) {
+                    Text(number, format: .number)
+                }.accessibilityLabel("Page \(number)").accessibilityAddTraits(number == page ? .isSelected : [])
+            }
+            nextButton(showsLabel: showsLabels)
+        }.fixedSize(horizontal: true, vertical: false)
+    }
+    private func previousButton(showsLabel: Bool) -> some View {
+        CNButton(variant: .ghost, size: showsLabel ? .regular : .icon, action: { page = max(1, page - 1) }) {
+            if showsLabel { Text("Previous") }
+            else { Image(systemName: "chevron.left") }
+        }.accessibilityLabel("Previous").disabled(pageCount == 0 || page <= 1)
+    }
+    private func nextButton(showsLabel: Bool) -> some View {
+        CNButton(variant: .ghost, size: showsLabel ? .regular : .icon, action: { page = min(pageCount, page + 1) }) {
+            if showsLabel { Text("Next") }
+            else { Image(systemName: "chevron.right") }
+        }.accessibilityLabel("Next").disabled(pageCount == 0 || page >= pageCount)
     }
 }
 /// Native TabView keeps native tab semantics and each child's tagged identity.

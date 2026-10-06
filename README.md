@@ -740,6 +740,14 @@ Run all complete documentation examples in the searchable native gallery:
 swift run SwiftCNComponentGallery
 ```
 
+Each gallery screen includes the complete example, `import SwiftCN`, and a copy button. Run the same interactive gallery on an iPhone simulator:
+
+```bash
+python3 Scripts/run-ios-component-gallery.py
+```
+
+The script creates a dedicated simulator. Open `swiftcn-component-gallery` in Xcode Device Hub or Simulator after launch.
+
 The [component documentation](https://cbethin.github.io/swiftcn/docs/component-library/) provides actual Swift source, runnable examples, platform notes, and a licensed source bundle. Imported and locally copied components can coexist. To own the engine too, add the full source bundle to your app target.
 
 Generate docs and downloads after editing component source:

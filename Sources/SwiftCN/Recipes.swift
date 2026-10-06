@@ -119,7 +119,7 @@ extension TWStyle {
             "resizable": "text-foreground",
             "resizable-handle": "text-border hover:text-primary control-motion",
             "tooltip": "text-xs",
-            "hover-card": "p-4 bg-surface rounded-lg",
+            "hover-card": "p-4 bg-surface text-foreground border shadow-md rounded-lg",
             "toggle-selected": "bg-primary text-onPrimary",
             "toggle-unselected": "bg-surface text-foreground border"
         ]

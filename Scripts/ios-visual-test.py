@@ -118,7 +118,7 @@ def main():
         captures = []
         if args.components:
             catalog = json.loads((REPO / "Components/catalog.json").read_text())
-            narrow = {"field", "input-group", "message", "questionnaire", "empty", "card", "radio-group", "typography"}
+            narrow = {"field", "input-group", "message", "questionnaire", "empty", "card", "radio-group", "typography", "pagination"}
             for entry in catalog:
                 if args.only and entry['slug'] not in args.only:
                     continue

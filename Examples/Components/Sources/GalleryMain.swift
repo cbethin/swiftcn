@@ -22,9 +22,15 @@ struct ComponentGalleryView: View {
         } detail: {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    HStack { CNTypography(LocalizedStringKey(selection?.title ?? "Components"), style: .title); Spacer(); CNSwitch("Dark appearance", isOn: $dark) }
-                    if let selection { selection.example.id(selection).tw("p-6 w-full") }
-                    Text("Edit the same source you import. Style it with .tw classes.").tw("text-sm text-mutedForeground")
+                    CNButtonGroup {
+                        CNTypography(LocalizedStringKey(selection?.title ?? "Components"), style: .title)
+                        Spacer()
+                        CNSwitch("Dark appearance", isOn: $dark)
+                    }
+                    if let selection {
+                        selection.example.id(selection).tw("p-6 w-full")
+                        GalleryCodePanel(source: selection.source).id(selection)
+                    }
                 }.tw("p-6 w-full")
             }.tw("bg-background")
         }.preferredColorScheme(dark ? .dark : .light).cnPopoverHost()

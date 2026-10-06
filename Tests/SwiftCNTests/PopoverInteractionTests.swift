@@ -7,6 +7,20 @@ import Testing
 @Suite("Popover pointer interaction", .serialized)
 @MainActor
 struct PopoverInteractionTests {
+    @Test func popoverBuilderChildrenHaveSeparateVerticalFrames() async throws {
+        let model = PopoverChildFrameModel()
+        let controller = NSHostingController(rootView: PopoverBuilderHarness(model: model))
+        let host = controller.view
+        host.frame = CGRect(x: 0, y: 0, width: 600, height: 400)
+        let window = NSWindow(contentRect: host.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        window.contentViewController = controller
+        window.makeKeyAndOrderFront(nil)
+        defer { window.orderOut(nil); window.contentViewController = nil }
+        try await settle(host, seconds: 0.2)
+        let first = try #require(model.frames["Title"])
+        let second = try #require(model.frames["Description"])
+        #expect(first.maxY < second.minY, "View-builder children must stack instead of overlapping.")
+    }
     @Test(arguments: [false, true])
     func repeatedTriggerClicksReverseAnUnfinishedTransition(nativeContainer: Bool) async throws {
         let model = PopoverPointerModel()
@@ -47,6 +61,31 @@ struct PopoverInteractionTests {
     private func settle(_ host: NSView, seconds: TimeInterval) async throws {
         host.layoutSubtreeIfNeeded()
         try await Task.sleep(for: .seconds(seconds))
+    }
+}
+@MainActor @Observable private final class PopoverChildFrameModel {
+    var frames: [String: CGRect] = [:]
+}
+private struct PopoverBuilderHarness: View {
+    let model: PopoverChildFrameModel
+    private func row(_ title: String) -> some View {
+        Text(title).frame(width: 160, height: 24)
+            .background { GeometryReader { geometry in
+                Color.clear.preference(key: PopoverChildFrames.self, value: [title: geometry.frame(in: .global)])
+            } }
+            .onPreferenceChange(PopoverChildFrames.self) { model.frames.merge($0) { _, new in new } }
+    }
+    var body: some View {
+        VStack {
+            CNPopover(isPresented: .constant(true)) { row("Title"); row("Description") } label: { Text("Details") }
+            Spacer()
+        }.frame(width: 600, height: 400).cnPopoverHost()
+    }
+}
+private struct PopoverChildFrames: PreferenceKey {
+    static let defaultValue: [String: CGRect] = [:]
+    static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
+        value.merge(nextValue()) { _, new in new }
     }
 }
 @MainActor @Observable private final class PopoverPointerModel {

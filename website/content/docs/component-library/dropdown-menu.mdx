@@ -18,6 +18,7 @@ import SwiftUI
 import SwiftCN
 
 struct DropdownMenuExample: View {
+    var showsInlinePreview = false
     @State private var notifications = true
     @State private var lastAction = "No action selected"
 
@@ -46,8 +47,10 @@ struct DropdownMenuExample: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             CNDropdownMenu("Workspace actions") { actions }
-            // The same composable surface stays visible in the documentation preview.
-            CNDropdownMenuContent("border max-w-[260]", autofocus: false) { actions }
+            if showsInlinePreview {
+                // Image captures show the parts without opening a second window.
+                CNDropdownMenuContent("border max-w-[260]", autofocus: false) { actions }
+            }
             Text(lastAction).tw("text-xs text-mutedForeground")
         }
     }

@@ -157,7 +157,9 @@ public struct CNPopover<Label: View, Content: View>: View {
     }
     public var body: some View {
         CNButton(variant: .outline, classes: classes, action: { isPresented.toggle() }) { label }
-            .cnPopover(isPresented: $isPresented, arrowEdge: edge) { content().tw("popover") }
+            .cnPopover(isPresented: $isPresented, arrowEdge: edge) {
+                VStack(alignment: .leading, spacing: 8) { content() }.tw("popover")
+            }
     }
 }
 /// Pointer entry opens after a short delay. Pointer exit allows travel into the popover.
@@ -177,7 +179,8 @@ public struct CNHoverCard<Label: View, Content: View>: View {
         CNButton(variant: .outline, classes: classes, action: { openedByHover = false; isPresented.toggle() }) { label }
             .onHover { triggerHovered = $0 }
             .cnPopover(isPresented: $isPresented) {
-                content().tw("hover-card").onHover { contentHovered = $0 }
+                VStack(alignment: .leading, spacing: 8) { content() }
+                    .tw("hover-card").onHover { contentHovered = $0 }
             }
             .onChange(of: isPresented) { _, presented in if !presented { openedByHover = false; contentHovered = false } }
             .task(id: triggerHovered || contentHovered) {

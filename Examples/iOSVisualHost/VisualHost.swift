@@ -24,7 +24,7 @@ struct SwiftCNVisualHost: App {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 20) {
                             Text(component.title).tw("text-xl font-semibold")
-                            component.example
+                            component.previewExample
                         }.tw("p-5 w-full")
                     }.tw("bg-background")
                 } else { IOSFixture(rulesScene: rulesScene) }

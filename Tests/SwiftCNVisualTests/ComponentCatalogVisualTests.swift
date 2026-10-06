@@ -21,7 +21,7 @@ struct ComponentCatalogVisualTests {
     func catalog(component: CNComponentGallery, dark: Bool) throws {
         try snapshot(component, dark: dark, width: 720, large: false)
     }
-    @Test(arguments: [CNComponentGallery.field, .input_group, .message, .questionnaire, .empty, .card, .radio_group, .typography]
+    @Test(arguments: [CNComponentGallery.field, .input_group, .message, .questionnaire, .empty, .card, .radio_group, .typography, .pagination]
         .filter { selectedComponents.contains($0) })
     func narrowAndLarge(component: CNComponentGallery) throws {
         try snapshot(component, dark: false, width: 320, large: true)
@@ -34,7 +34,7 @@ struct ComponentCatalogVisualTests {
         let theme = TWTheme.standard
         let view = VStack(alignment: .leading, spacing: 16) {
             Text(component.title).tw("text-lg font-semibold")
-            component.example
+            component.previewExample
         }.tw("p-6 w-full")
             .frame(width: CGFloat(width))
             .background(theme.color(.background, scheme: dark ? .dark : .light))
