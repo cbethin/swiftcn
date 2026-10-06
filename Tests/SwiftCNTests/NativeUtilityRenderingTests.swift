@@ -71,11 +71,13 @@ struct NativeUtilityRenderingTests {
         }
     }
 
-    @Test func nativeOffsetAllowsReplacingTheCustomAnimation() {
+    @Test(arguments: [false, true], [false, true])
+    func nativeOffsetAllowsReplacingTheCustomAnimation(zeroDelay: Bool, scoped: Bool) {
         let model = NativeUtilityModel()
         let identities = NativeIdentityRecorder()
         let samples = NativeMotionSamples()
-        withHost(NativeOffsetHarness(model: model, identities: identities, samples: samples)) { host in
+        withHost(NativeOffsetHarness(model: model, identities: identities, samples: samples,
+            zeroDelay: zeroDelay, scoped: scoped)) { host in
             for phase in [1, 2, 0] {
                 model.phase = phase
                 settle(host, seconds: NativeMotionProbe.duration + 0.3)
@@ -227,10 +229,23 @@ private struct NativeOffsetHarness: View {
     @ObservedObject var model: NativeUtilityModel
     let identities: NativeIdentityRecorder
     let samples: NativeMotionSamples
+    var zeroDelay = false
+    var scoped = false
     var body: some View {
-        NativeUtilityChild(phase: model.phase, identities: identities)
-            .offset(x: CGFloat(model.phase * 40))
-            .animation(Animation(NativeMotionProbe(samples: samples, generation: model.phase)), value: model.phase)
+        let native = Animation(NativeMotionProbe(samples: samples, generation: model.phase))
+        let animation = zeroDelay ? native.delay(0) : native
+        return Group {
+            if scoped {
+                NativeUtilityChild(phase: model.phase, identities: identities)
+                    .transaction { $0.animation = animation } body: { surface in
+                        AnyView(surface).offset(x: CGFloat(model.phase * 40))
+                    }
+            } else {
+                NativeUtilityChild(phase: model.phase, identities: identities)
+                    .offset(x: CGFloat(model.phase * 40))
+            }
+        }
+        .animation(animation, value: model.phase)
     }
 }
 private struct TypedMotionHarness: View {

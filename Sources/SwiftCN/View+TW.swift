@@ -56,7 +56,7 @@ struct TWModifier: ViewModifier {
             globalRules: rules, groupStates: groups.states, target: target)
         return source(content, appearance: appearance)
             .transaction { transaction in
-                if (animationScope == .content || animationScope == .all),
+                if (animationScope == .content || animationValue == nil && animationScope == .all),
                    animationValue == nil || transaction[TWAnimationChangeKey.self] == animationID {
                     appearance.motion.update(&transaction, reduceMotion: reduceMotion)
                 }
@@ -218,6 +218,9 @@ struct TWPhaseModifier: ViewModifier {
                 if let caller = transaction[TWCallerAnimationKey.self] { transaction.animation = caller.animation }
                 return
             }
+            // The native value driver already owns selected watched phases. Replacing its
+            // transaction here can retain a completed custom-animation timeline on macOS 15.
+            if watched && scope != .content { return }
             appearance.motion.update(&transaction, reduceMotion: reduceMotion)
         } body: { surface in
             stage(surface)
