@@ -42,7 +42,9 @@ struct DataTableExample: View {
     private func workspace(_ option: CNOption<String>) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(option.title)
-            if let detail = option.detail { Text(detail).tw("text-xs text-mutedForeground") }
+            if let detail = option.detail {
+                Text(detail).tw(rowSelection.contains(option.id) ? "text-xs" : "text-xs text-mutedForeground")
+            }
         }
     }
     private var supportsColumnVisibility: Bool {

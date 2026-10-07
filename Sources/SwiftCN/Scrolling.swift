@@ -22,7 +22,7 @@ public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: Vi
     private let content: (Data.Element) -> Content
     @State private var localPosition: Data.Element.ID?
     @State private var bottomID = UUID()
-    @Namespace private var scrollSpace
+    @State private var readingAnchor = CNMessageReadingAnchor<Data.Element.ID>()
     public init(_ data: Data, followNewMessages: Bool = false, scrollRevision: Int = 0,
                 position: Binding<Data.Element.ID?>? = nil, isAtBottom: Binding<Bool>? = nil,
                 classes: TWClasses = "", @ViewBuilder content: @escaping (Data.Element) -> Content) {
@@ -34,27 +34,44 @@ public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: Vi
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 8) {
-                        ForEach(data) { item in content(item).id(item.id) }
+                        ForEach(data) { item in
+                            content(item).id(item.id).background {
+                                if !followNewMessages && item.id == (position?.wrappedValue ?? localPosition) {
+                                    Color.clear.onGeometryChange(for: CGRect.self, of: { $0.frame(in: .scrollView(axis: .vertical)) }) { frame in
+                                        guard readingAnchor.frame == nil || readingAnchor.firstID == data.first?.id else { return }
+                                        readingAnchor.firstID = data.first?.id
+                                        readingAnchor.targetID = item.id
+                                        readingAnchor.frame = frame
+                                    }
+                                }
+                            }
+                        }
                     }.scrollTargetLayout()
                     Color.clear.frame(height: 1)
                         .id(bottomID)
-                        .background(GeometryReader { marker in
-                            Color.clear.preference(key: CNMessageBottomKey.self,
-                                value: marker.frame(in: .named(scrollSpace)).maxY)
-                        })
+                        .onGeometryChange(for: CGFloat.self, of: { $0.frame(in: .scrollView(axis: .vertical)).maxY }) { bottom in
+                            if let bottomState {
+                                let atBottom = bottom <= viewport.size.height + 24 && bottom >= 0
+                                if bottomState.wrappedValue != atBottom { bottomState.wrappedValue = atBottom }
+                            }
+                            if followNewMessages && bottom.isFinite && bottom > viewport.size.height + 1 {
+                                scrollToLatest(proxy)
+                            }
+                        }
                 }
-                .coordinateSpace(name: scrollSpace)
                 .scrollPosition(id: position ?? $localPosition, anchor: .top)
                 .defaultScrollAnchor(followNewMessages && position?.wrappedValue == nil ? .bottom : .top)
                 .tw("scroll-area")
-                .onPreferenceChange(CNMessageBottomKey.self) { bottom in
-                    if let bottomState {
-                        let atBottom = bottom <= viewport.size.height + 24 && bottom >= 0
-                        if bottomState.wrappedValue != atBottom { bottomState.wrappedValue = atBottom }
+                .onChange(of: data.first?.id) { _, _ in
+                    if followNewMessages { scrollToLatest(proxy) }
+                    else if let target = position?.wrappedValue ?? localPosition {
+                        let frame = readingAnchor.targetID == target ? readingAnchor.frame : nil
+                        let available = viewport.size.height - (frame?.height ?? 0)
+                        let anchor = UnitPoint(x: 0.5, y: available > 1 ? (frame?.minY ?? 0) / available : 0)
+                        var transaction = Transaction(); transaction.disablesAnimations = true
+                        withTransaction(transaction) { proxy.scrollTo(target, anchor: anchor) }
                     }
-                    if followNewMessages && bottom.isFinite && bottom > viewport.size.height + 1 {
-                        scrollToLatest(proxy)
-                    }
+                    readingAnchor.firstID = data.first?.id
                 }
                 .onChange(of: followNewMessages) { _, follow in if follow { scrollToLatest(proxy) } }
                 .onChange(of: scrollRevision) { _, _ in if followNewMessages { scrollToLatest(proxy) } }
@@ -70,9 +87,11 @@ public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: Vi
         withTransaction(transaction) { proxy.scrollTo(bottomID, anchor: .bottom) }
     }
 }
-private struct CNMessageBottomKey: PreferenceKey {
-    static let defaultValue: CGFloat = .infinity
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+// One visible target stores its pixel offset without invalidating body during scrolling.
+@MainActor private final class CNMessageReadingAnchor<ID: Hashable> {
+    var firstID: ID?
+    var targetID: ID?
+    var frame: CGRect?
 }
 /// Native scroll paging with a binding to the stable item ID. Size the viewport with classes.
 public struct CNCarousel<Data: RandomAccessCollection, Content: View>: View where Data.Element: Identifiable {

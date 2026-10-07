@@ -66,7 +66,8 @@ struct PresentationAndScrollingTests {
         try await settle(host)
         #expect(!model.open && model.backgroundEnabled)
     }
-    @Test func restoringAndPrependingHistoryKeepTheSameReadingTarget() async throws {
+    @Test(arguments: [0.0, 13.0])
+    func restoringAndPrependingHistoryKeepTheSameReadingTarget(partialOffset: CGFloat) async throws {
         let model = ScrollProbeModel()
         let controller = NSHostingController(rootView: ScrollProbe(model: model))
         let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 400, height: 240),
@@ -78,6 +79,12 @@ struct PresentationAndScrollingTests {
         let host = controller.view
         try await settle(host)
         #expect(model.position == 12)
+        let scroll = try #require(descendants(host).compactMap { $0 as? NSScrollView }.first)
+        if partialOffset > 0 {
+            var origin = scroll.documentVisibleRect.origin; origin.y += partialOffset
+            scroll.contentView.scroll(to: origin); scroll.reflectScrolledClipView(scroll.contentView)
+            try await settle(host)
+        }
         let original = try #require(model.frames[12])
         model.rows.insert(contentsOf: (-5..<0).map { ScrollProbeRow(id: $0) }, at: 0)
         try await settle(host)
@@ -92,7 +99,6 @@ struct PresentationAndScrollingTests {
         #expect(model.position == 12, "Stream revisions must also respect paused following.")
         model.follow = true
         try await settle(host)
-        let scroll = try #require(descendants(host).compactMap { $0 as? NSScrollView }.first)
         let document = try #require(scroll.documentView)
         #expect(abs(scroll.documentVisibleRect.maxY - document.bounds.maxY) < 2, "Resuming following must reach the end.")
         model.latestHeight = 160; model.revision += 1

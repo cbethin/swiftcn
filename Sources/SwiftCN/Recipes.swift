@@ -118,6 +118,7 @@ extension TWStyle {
             "skeleton-motion": "cn-shimmer-[1.6]",
             "toast": "p-4 bg-surface text-foreground border rounded-lg shadow-md",
             "table": "bg-surface text-foreground rounded-lg border w-full",
+            "data-table": "bg-surface rounded-lg border w-full",
             "table-row": "hover:bg-accent animate-none",
             "table-row-selected": "bg-accent",
             "table-cell": "px-4 py-3 text-sm",

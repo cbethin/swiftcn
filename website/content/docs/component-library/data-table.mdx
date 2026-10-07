@@ -58,7 +58,9 @@ struct DataTableExample: View {
     private func workspace(_ option: CNOption<String>) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(option.title)
-            if let detail = option.detail { Text(detail).tw("text-xs text-mutedForeground") }
+            if let detail = option.detail {
+                Text(detail).tw(rowSelection.contains(option.id) ? "text-xs" : "text-xs text-mutedForeground")
+            }
         }
     }
     private var supportsColumnVisibility: Bool {
@@ -217,7 +219,7 @@ where Row.ID: Sendable, Columns.TableRowValue == Row, Columns.TableColumnSortCom
     }
     public var body: some View {
         Table(rowsAreSorted || sortOrder.isEmpty ? rows : rows.sorted(using: sortOrder),
-              selection: selectionScope.binding($selection), sortOrder: $sortOrder) { columns }.tw(cn("table", classes))
+              selection: selectionScope.binding($selection), sortOrder: $sortOrder) { columns }.tw(cn("data-table", classes))
     }
 }
 
