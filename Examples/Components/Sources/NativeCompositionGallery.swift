@@ -76,9 +76,18 @@ struct NativeNavigationGalleryWindow: View {
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         NativeNavigationExample()
+            #if os(macOS)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
             }
+            #else
+            .safeAreaInset(edge: .bottom) {
+                HStack {
+                    Spacer()
+                    Button("Done") { dismiss() }.buttonStyle(.tw("button-outline"))
+                }.tw("px-6 py-3 bg-surface")
+            }
+            #endif
             .preferredColorScheme(dark ? .dark : .light)
     }
 }

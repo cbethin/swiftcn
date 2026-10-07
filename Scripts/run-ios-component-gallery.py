@@ -31,7 +31,7 @@ with tempfile.TemporaryDirectory(prefix='swiftcn-interactive-gallery-') as tempo
     sources += sorted((REPO / 'Examples/Components/Sources').glob('*.swift'))
     for source in sources:
         text = source.read_text()
-        if source.name != 'ComponentSource.swift':
+        if source.name not in {'ComponentSource.swift', 'NativeCompositionSource.swift'}:
             text = text.replace('import SwiftCN\n', '')
         (frozen / source.name).write_text(text)
     subprocess.run(['xcrun', 'swiftc', '-sdk', sdk, '-target', f'{architecture}-apple-ios17.0-simulator',

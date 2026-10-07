@@ -51,3 +51,14 @@ for (const component of catalog) {
   assert(source.includes(`struct ${component.symbol}`), `Missing copyable source: ${component.source}`);
 }
 console.log('Verified all 64 catalog entries, APIs, and downloadable component sources.');
+
+const nativeExamples = JSON.parse(await readFile(resolve('../Components/native-examples.json'), 'utf8'));
+const nativePage = await readFile(join(root, 'docs', 'native-composition', 'index.html'), 'utf8');
+for (const example of nativeExamples) {
+  assert(text.includes(example.title.toLowerCase()), `Missing native composition search entry: ${example.title}`);
+  assert(nativePage.includes(`id="${example.slug}"`), `Missing native composition anchor: ${example.slug}`);
+  const source = await readFile(join(root, 'registry', 'examples', example.example), 'utf8');
+  assert(source.includes('import SwiftCN'), `Missing native example import: ${example.example}`);
+  assert(source.includes(`struct ${example.example.replace('.swift', '')}`), `Missing native example: ${example.example}`);
+}
+console.log(`Verified ${nativeExamples.length} native composition examples, anchors, search entries, and downloads.`);

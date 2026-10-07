@@ -33,6 +33,7 @@ struct PresentationAndScrollingTests {
             #expect(!model.open && window.attachedSheet == nil)
         }
         #expect(model.dismissals == 2)
+        #expect(model.outerDismissals == 0)
     }
     @Test func nativeFormattedFieldSurvivesRecipeAndEnabledChanges() async throws {
         let model = NativeFieldProbeModel()
@@ -53,6 +54,32 @@ struct PresentationAndScrollingTests {
         try await settle(controller.view)
         #expect(descendants(controller.view).compactMap { $0 as? NSTextField }.first === editor)
         #expect(editor.isEnabled && model.amount == 42.25)
+    }
+    @Test func styledNativeSplitResizesWithoutReplacingTheEditor() async throws {
+        let model = PresentationProbeModel()
+        let controller = NSHostingController(rootView: NativeSplitProbe(model: model))
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 640, height: 240),
+                              styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+        controller.view.frame = window.contentLayoutRect
+        window.contentViewController = controller; window.orderFront(nil)
+        defer { window.orderOut(nil); window.contentViewController = nil }
+        try await settle(controller.view)
+        let split = try #require(descendants(controller.view).compactMap { $0 as? NSSplitView }.first)
+        let editor = try #require(descendants(controller.view).compactMap { $0 as? NSTextField }.first)
+        let original = split.subviews[0].frame.width
+        model.text = "Preserved split draft"
+        for position in [320.0, 170.0, 350.0] {
+            split.setPosition(position, ofDividerAt: 0)
+            try await settle(controller.view)
+            #expect(abs(split.subviews[0].frame.width - position) < 2)
+            #expect(split.subviews[0].frame.width >= 160 && split.subviews[1].frame.width >= 220)
+            #expect(descendants(controller.view).compactMap { $0 as? NSTextField }.first === editor)
+        }
+        #expect(abs(split.subviews[0].frame.width - original) > 20)
+        window.setContentSize(NSSize(width: 520, height: 240))
+        try await settle(controller.view)
+        #expect(split.subviews[0].frame.width >= 160 && split.subviews[1].frame.width >= 220)
+        #expect(editor.stringValue == "Preserved split draft")
     }
     @Test func longDialogContentUsesABoundedNativeViewport() async throws {
         let model = PresentationProbeModel()
@@ -238,6 +265,7 @@ private struct ScrollProbe: View {
     var detent = PresentationDetent.medium
     var draft = "Caller draft"
     var dismissals = 0
+    var outerDismissals = 0
     @ObservationIgnored var close: (() -> Void)?
 }
 private struct NativeDrawerProbe: View {
@@ -249,6 +277,7 @@ private struct NativeDrawerProbe: View {
                  onDismiss: { model.dismissals += 1 }) {
             NativeDrawerDismissProbe(model: model)
         } label: { Text("Open drawer") }
+            .environment(\.cnPresentationDismiss, { model.outerDismissals += 1 })
     }
 }
 private struct NativeDrawerDismissProbe: View {
@@ -281,6 +310,19 @@ private struct NativeFieldProbe: View {
                 if model.compact { $0.named["input"] = "px-3 py-1 min-h-[44] border rounded-lg bg-surface" }
             }
             .environment(\.locale, Locale(identifier: "en_US_POSIX"))
+    }
+}
+private struct NativeSplitProbe: View {
+    let model: PresentationProbeModel
+    var body: some View {
+        HSplitView {
+            Text("Inspector").frame(maxWidth: .infinity, maxHeight: .infinity)
+                .tw("min-w-[160] bg-surface")
+            TextField("Draft", text: Binding(get: { model.text }, set: { model.text = $0 }))
+                .textFieldStyle(.tw("input"))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .tw("min-w-[220] bg-surface")
+        }.tw("border rounded-lg")
     }
 }
 #endif
