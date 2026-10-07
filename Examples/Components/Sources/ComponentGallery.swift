@@ -71,6 +71,9 @@ enum CNComponentGallery: String, CaseIterable, Identifiable {
         switch self {
         case .dropdown_menu: AnyView(DropdownMenuExample(showsInlinePreview: true))
         case .sidebar: AnyView(SidebarExample(initialMobilePresented: true))
+        case .dialog: AnyView(DialogExample(initialPresented: true).frame(maxWidth: .infinity).frame(height: 360).cnPresentationHost())
+        case .sheet: AnyView(SheetExample(initialPresented: true).frame(maxWidth: .infinity).frame(height: 360).cnPresentationHost())
+        case .drawer: AnyView(DrawerExample(initialPresented: true).frame(maxWidth: .infinity).frame(height: 360).cnPresentationHost())
         default: example
         }
     }

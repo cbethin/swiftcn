@@ -376,17 +376,56 @@ import SwiftUI
 import SwiftCN
 
 struct DataTableExample: View {
+    private static let options = (1...120).map { CNOption(String($0), title: "Workspace \($0)", detail: $0.isMultiple(of: 2) ? "Team" : "Personal") }
     @State private var rowSelection: Set<String> = []
     @State private var sortOrder: [KeyPathComparator<CNOption<String>>] = []
-    private let options = [CNOption("design", title: "Design system"), CNOption("mobile", title: "Mobile app"), CNOption("archive", title: "Archived", isDisabled: true)]
-
+    @State private var query = ""
+    @State private var page = 1
+    @State private var showID = true
+    @State private var records = CNTableRecords(options)
     var body: some View {
+        let slice = records.page(page, size: 20)
         VStack(alignment: .leading, spacing: 12) {
-            CNDataTable(options, selection: $rowSelection, sortOrder: $sortOrder, classes: "h-[220]") {
-                TableColumn("Workspace", value: \.title)
+            CNInput("Filter workspaces…", text: $query)
+            CNCheckbox("Show ID column", isOn: $showID).disabled(!supportsColumnVisibility)
+            table(slice.rows)
+            CNPagination(page: $page, pageCount: slice.pageCount)
+            Text("\(slice.totalCount) matches · \(rowSelection.count) selected across pages")
+                .tw("text-xs text-mutedForeground")
+        }
+        .onChange(of: query) { _, _ in prepare(); page = 1 }
+        .onChange(of: sortOrder) { _, _ in prepare() }
+    }
+    @ViewBuilder private func table(_ rows: [CNOption<String>]) -> some View {
+        if #available(macOS 14.4, iOS 17.4, *) {
+            configurableTable(rows)
+        } else {
+            CNDataTable(rows, selection: $rowSelection, sortOrder: $sortOrder, rowsAreSorted: true, classes: "h-[260]") {
+                TableColumn("Workspace", value: \.title, content: workspace)
                 TableColumn("ID", value: \.id)
             }
-
+        }
+    }
+    @available(macOS 14.4, iOS 17.4, *)
+    private func configurableTable(_ rows: [CNOption<String>]) -> some View {
+        CNDataTable(rows, selection: $rowSelection, sortOrder: $sortOrder, rowsAreSorted: true, classes: "h-[260]") {
+            TableColumn("Workspace", value: \.title, content: workspace)
+            if showID { TableColumn("ID", value: \.id) }
+        }
+    }
+    private func workspace(_ option: CNOption<String>) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(option.title)
+            if let detail = option.detail { Text(detail).tw("text-xs text-mutedForeground") }
+        }
+    }
+    private var supportsColumnVisibility: Bool {
+        if #available(macOS 14.4, iOS 17.4, *) { true } else { false }
+    }
+    private func prepare() {
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        records = CNTableRecords(Self.options, sortOrder: sortOrder) {
+            query.isEmpty || $0.title.localizedStandardContains(query) || ($0.detail?.localizedStandardContains(query) ?? false)
         }
     }
 }
@@ -412,9 +451,12 @@ struct DatePickerExample: View {
 import SwiftUI
 import SwiftCN
 
+// At your screen or window root, install .cnPresentationHost().
 struct DialogExample: View {
     @State private var text = "Design system"
     @State private var presented = false
+
+    init(initialPresented: Bool = false) { _presented = State(initialValue: initialPresented) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -450,14 +492,17 @@ struct DirectionExample: View {
 import SwiftUI
 import SwiftCN
 
+// At your screen or window root, install .cnPresentationHost().
 struct DrawerExample: View {
     @State private var presented = false
+
+    init(initialPresented: Bool = false) { _presented = State(initialValue: initialPresented) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             CNDrawer(isPresented: $presented) {
                 CNDialogTitle("Activity")
-                Text("On iOS, drag between medium and large detents. macOS uses a native sheet.")
+                Text("Drag the handle to dismiss. Content keeps native scrolling.")
                 CNDialogClose()
             } label: { Text("Show activity") }
 
@@ -776,14 +821,38 @@ import SwiftUI
 import SwiftCN
 
 struct MessageScrollerExample: View {
-    private let options = [CNOption("design", title: "Design system"), CNOption("mobile", title: "Mobile app"), CNOption("archive", title: "Archived", isDisabled: true)]
-
+    private struct Message: Identifiable {
+        let id: Int
+        var text: String
+    }
+    @State private var messages = (1...12).map { Message(id: $0, text: "Message \($0): a stable native scroll target.") }
+    @State private var position: Int?
+    @State private var follow = false
+    @State private var atBottom = false
+    @State private var revision = 0
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            CNMessageScroller(options, classes: "h-[160]") { option in
-                CNBubble { Text(option.title) }
+            CNMessageScroller(messages, followNewMessages: follow, scrollRevision: revision,
+                              position: $position, isAtBottom: $atBottom, classes: "h-[240]") { message in
+                CNBubble { Text(message.text) }
             }
-
+            CNCheckbox("Follow latest messages", isOn: $follow)
+            CNButtonGroup {
+                CNButton("Earlier", variant: .outline) {
+                    let first = messages.first?.id ?? 1
+                    messages.insert(contentsOf: ((first - 5)..<first).map { Message(id: $0, text: "Earlier message \($0)") }, at: 0)
+                }
+                CNButton("Append", variant: .outline) {
+                    messages.append(Message(id: (messages.last?.id ?? 0) + 1, text: "A new message."))
+                }
+                CNButton("Stream", variant: .outline) {
+                    guard !messages.isEmpty else { return }
+                    messages[messages.count - 1].text += " More streamed text, wrapping naturally as the message grows."
+                    revision += 1
+                }
+            }
+            Text(atBottom ? "At the latest message" : "Reading history — position stays under your control")
+                .tw("text-xs text-mutedForeground")
         }
     }
 }
@@ -988,9 +1057,12 @@ struct SeparatorExample: View {
 import SwiftUI
 import SwiftCN
 
+// At your screen or window root, install .cnPresentationHost().
 struct SheetExample: View {
     @State private var presented = false
     @State private var isOn = true
+
+    init(initialPresented: Bool = false) { _presented = State(initialValue: initialPresented) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {

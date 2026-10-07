@@ -43,7 +43,7 @@ struct ComponentGalleryView: View {
                     }
                 }.tw("p-6 w-full")
             }.tw("bg-background")
-        }.preferredColorScheme(dark ? .dark : .light).cnPopoverHost()
+        }.preferredColorScheme(dark ? .dark : .light).cnPopoverHost().cnPresentationHost()
         #if os(macOS)
             .onChange(of: dark, initial: true) { _, dark in
                 NSApplication.shared.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)

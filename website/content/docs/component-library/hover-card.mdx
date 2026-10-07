@@ -33,7 +33,7 @@ struct HoverCardExample: View {
 
 ## Native behavior
 
-A custom SwiftUI popover opens after a short pointer delay. A delayed close allows travel from the trigger into the popover. Explicit button activation keeps the content open for keyboard and touch users. Outside interaction dismisses the popover. Supply noninteractive trigger content.
+Cancellable hover intent opens after 200 ms and keeps a 450 ms grace period for travel into the content. Override openDelay and closeDelay locally. Explicit activation pins the card for touch or keyboard use. Dismissal suppresses reopening until the pointer leaves, so an old delay cannot reopen a closed card. Place .cnPopoverHost() at the screen root for custom anchored placement; native popover presentation remains the fallback.
 
 ## Style and compose
 
@@ -57,58 +57,299 @@ To own the styling engine too, download the complete source bundle. It contains 
 import SwiftUI
 import SwiftCN
 
-/// Native sheet presentation. The binding remains the application's source of truth.
+/// Install once at a window or screen root, outside scrolling and native containers.
+/// Panels inherit the theme and rules without creating a second native window.
+public struct CNPresentationHost<Content: View>: View {
+    private let content: Content
+    @State private var active: [UUID] = []
+    public init(@ViewBuilder content: () -> Content) { self.content = content() }
+    public var body: some View {
+        content.environment(\.cnPresentationHosted, true)
+            .disabled(!active.isEmpty).accessibilityHidden(!active.isEmpty)
+            .overlayPreferenceValue(CNPresentationRequests.self) { requests in
+                GeometryReader { geometry in
+                    ZStack {
+                        ForEach(requests) { request in
+                            CNPresentationPanel(request: request, size: geometry.size)
+                                .transformEnvironment(\.self) { values in
+                                    // Preserve public appearance without importing private focus dispatch state.
+                                    values.twTheme = request.environment.twTheme
+                                    values.twRules = request.environment.twRules
+                                    values.twFieldInvalid = request.environment.twFieldInvalid
+                                    values.colorScheme = request.environment.colorScheme
+                                    values.dynamicTypeSize = request.environment.dynamicTypeSize
+                                    values.layoutDirection = request.environment.layoutDirection
+                                    values.font = request.environment.font
+                                    values.locale = request.environment.locale
+                                    values.calendar = request.environment.calendar
+                                    values.timeZone = request.environment.timeZone
+                                }
+                        }
+                    }.frame(width: geometry.size.width, height: geometry.size.height)
+                        .onChange(of: requests.filter { $0.presentation.wrappedValue }.map(\.id)) { old, new in
+                            guard let newest = new.first(where: { !old.contains($0) }) else { return }
+                            for request in requests where request.id != newest && request.presentation.wrappedValue {
+                                request.presentation.wrappedValue = false
+                            }
+                        }
+                }
+            }
+            .onPreferenceChange(CNPresentationPresence.self) { active = $0 }
+            .transformPreference(CNPresentationRequests.self) { $0 = [] }
+            .transformPreference(CNPresentationPresence.self) { $0 = [] }
+    }
+}
+
+extension View {
+    public func cnPresentationHost() -> some View { CNPresentationHost { self } }
+}
+
+private enum CNPresentationKind {
+    case dialog, sheet(Edge), drawer
+    var recipe: TWClasses {
+        switch self {
+        case .dialog: "presentation-dialog"
+        case .sheet: "presentation-sheet"
+        case .drawer: "presentation-drawer"
+        }
+    }
+    var alignment: Alignment {
+        switch self {
+        case .dialog: .center
+        case .drawer, .sheet(.bottom): .bottom
+        case .sheet(.top): .top
+        case .sheet(.leading): .leading
+        case .sheet: .trailing
+        }
+    }
+}
+
+private struct CNPresentationTrigger<Label: View, Popup: View>: View {
+    @Binding var isPresented: Bool
+    let kind: CNPresentationKind
+    let classes: TWClasses
+    let contentClasses: TWClasses
+    @ViewBuilder let content: () -> Popup
+    @ViewBuilder let label: () -> Label
+    @Environment(\.cnPresentationHosted) private var hosted
+    @Environment(\.self) private var environment
+    @Environment(\.isEnabled) private var enabled
+    @State private var id = UUID()
+    @State private var hasOpened = false
+    @FocusState private var triggerFocused: Bool
+    var body: some View {
+        let trigger = CNButton(variant: .outline, classes: classes, action: { isPresented = true }, label: label)
+            .focused($triggerFocused)
+            .onChange(of: isPresented) { _, open in
+                if open { hasOpened = true; triggerFocused = false }
+                else if enabled { triggerFocused = true }
+            }
+            .onChange(of: enabled) { _, enabled in
+                if enabled && hasOpened && !isPresented { triggerFocused = true }
+            }
+        if hosted {
+            trigger.preference(key: CNPresentationRequests.self, value: [
+                CNPresentationRequest(id: id, kind: kind, presentation: $isPresented, classes: contentClasses,
+                                      environment: environment, content: AnyView(content()))
+            ])
+            .preference(key: CNPresentationPresence.self, value: isPresented ? [id] : [])
+            .onDisappear { isPresented = false }
+        } else {
+            trigger.sheet(isPresented: $isPresented) {
+                if case .drawer = kind {
+                    CNDialogContent(contentClasses, content: content)
+                        .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+                } else {
+                    CNDialogContent(contentClasses, content: content)
+                }
+            }
+        }
+    }
+}
+
+private struct CNPresentationRequest: Identifiable {
+    let id: UUID
+    let kind: CNPresentationKind
+    let presentation: Binding<Bool>
+    let classes: TWClasses
+    let environment: EnvironmentValues
+    let content: AnyView
+}
+private struct CNPresentationRequests: PreferenceKey {
+    static var defaultValue: [CNPresentationRequest] { [] }
+    static func reduce(value: inout [CNPresentationRequest], nextValue: () -> [CNPresentationRequest]) { value += nextValue() }
+}
+private struct CNPresentationPresence: PreferenceKey {
+    static let defaultValue: [UUID] = []
+    static func reduce(value: inout [UUID], nextValue: () -> [UUID]) { value += nextValue() }
+}
+private struct CNPresentationHostedKey: EnvironmentKey { static let defaultValue = false }
+private struct CNPresentationDismissKey: EnvironmentKey { static var defaultValue: (() -> Void)? { nil } }
+extension EnvironmentValues {
+    fileprivate var cnPresentationHosted: Bool {
+        get { self[CNPresentationHostedKey.self] }
+        set { self[CNPresentationHostedKey.self] = newValue }
+    }
+    /// The active custom presentation's close action. Copied parts can use this too.
+    public var cnPresentationDismiss: (() -> Void)? {
+        get { self[CNPresentationDismissKey.self] }
+        set { self[CNPresentationDismissKey.self] = newValue }
+    }
+}
+
+private struct CNPresentationPanel: View {
+    let request: CNPresentationRequest
+    let size: CGSize
+    @State private var mounted = false
+    @State private var contentHeight: CGFloat = 240
+    @GestureState private var drag: CGFloat = 0
+    @FocusState private var focused: Bool
+    @Environment(\.layoutDirection) private var direction
+    private var open: Bool { request.presentation.wrappedValue }
+    private func close() { request.presentation.wrappedValue = false }
+    private var hiddenOffset: CGSize {
+        switch request.kind {
+        case .dialog: .zero
+        case .drawer, .sheet(.bottom): CGSize(width: 0, height: size.height)
+        case .sheet(.top): CGSize(width: 0, height: -size.height)
+        case .sheet(let edge): CGSize(width: (edge == .leading) == (direction == .leftToRight) ? -size.width : size.width, height: 0)
+        }
+    }
+    var body: some View {
+        ZStack(alignment: request.kind.alignment) {
+            Button(action: close) { Color.clear.tw("presentation-scrim") }
+                .buttonStyle(.plain).frame(width: size.width, height: size.height).opacity(open ? 1 : 0)
+                .accessibilityLabel("Dismiss presentation")
+            if mounted {
+                CNPopoverHost {
+                    VStack(alignment: .leading, spacing: 0) {
+                        if case .drawer = request.kind {
+                            Color.clear.frame(height: 32).contentShape(Rectangle())
+                                .overlay { Color.clear.tw("presentation-handle") }
+                                .gesture(DragGesture().updating($drag) { value, offset, transaction in
+                                    transaction.disablesAnimations = true
+                                    offset = max(0, value.translation.height)
+                                }.onEnded { value in
+                                    if value.predictedEndTranslation.height > min(120, size.height * 0.2) { close() }
+                                })
+                                .accessibilityLabel("Drawer handle")
+                                .accessibilityAction(named: Text("Dismiss drawer"), close)
+                        }
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 12) { request.content }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { height in
+                                    guard height > 0, abs(contentHeight - height) > 0.5 else { return }
+                                    var transaction = Transaction(); transaction.disablesAnimations = true
+                                    withTransaction(transaction) { contentHeight = height }
+                                }
+                        }
+                        .frame(height: panelHeight == nil ? min(contentHeight, max(0, size.height - 112)) : nil)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: panelHeight == nil ? nil : .infinity, alignment: .topLeading)
+                    .tw(cn(request.kind.recipe, request.classes))
+                }
+                .frame(width: panelWidth, height: panelHeight)
+                .padding(isEdgePanel ? 0 : 16)
+                .transition(entryTransition)
+                .scaleEffect(open || isEdgePanel ? 1 : 0.97)
+                .opacity(open || isEdgePanel ? 1 : 0)
+                .offset(x: open ? 0 : hiddenOffset.width, y: open ? drag : hiddenOffset.height)
+                .environment(\.cnPresentationDismiss, close)
+                .disabled(!open)
+                .accessibilityElement(children: .contain).accessibilityAddTraits(.isModal)
+                .accessibilityAction(.escape, close)
+                .focusable().focusEffectDisabled().focused($focused)
+                .onKeyPress(.escape) { close(); return .handled }
+            }
+        }
+        .frame(width: size.width, height: size.height)
+        .allowsHitTesting(open).accessibilityHidden(!open)
+        .twAnimation("presentation-motion", value: open, tracksHover: false)
+        .twAnimation("presentation-motion", value: drag, tracksHover: false)
+        .twAnimation("presentation-motion", value: mounted, tracksHover: false)
+        .onChange(of: open, initial: true) { _, open in
+            if open { mounted = true }
+            focused = open
+        }
+    }
+    private var entryTransition: AnyTransition {
+        switch request.kind {
+        case .dialog: .opacity.combined(with: .scale(scale: 0.97))
+        case .drawer: .move(edge: .bottom)
+        case .sheet(let edge): .move(edge: edge)
+        }
+    }
+    private var isEdgePanel: Bool { if case .sheet = request.kind { true } else { false } }
+    private var panelWidth: CGFloat {
+        switch request.kind {
+        case .dialog: max(0, min(480, size.width - 32))
+        case .drawer: max(0, min(640, size.width - 32))
+        case .sheet(.top), .sheet(.bottom): size.width
+        case .sheet: min(400, size.width)
+        }
+    }
+    private var panelHeight: CGFloat? {
+        switch request.kind {
+        case .sheet(.leading), .sheet(.trailing): size.height
+        default: nil
+        }
+    }
+}
+
+/// A centered custom dialog. Install cnPresentationHost at the screen root.
+/// Without a host, SwiftUI presents a native sheet.
 public struct CNDialog<Label: View, Content: View>: View {
     @Binding private var isPresented: Bool
     private let classes: TWClasses
+    private let contentClasses: TWClasses
     private let label: Label
     private let content: () -> Content
-    public init(isPresented: Binding<Bool>, classes: TWClasses = "", @ViewBuilder content: @escaping () -> Content,
-                @ViewBuilder label: () -> Label) {
-        _isPresented = isPresented; self.classes = classes; self.content = content; self.label = label()
+    public init(isPresented: Binding<Bool>, classes: TWClasses = "", contentClasses: TWClasses = "",
+                @ViewBuilder content: @escaping () -> Content, @ViewBuilder label: () -> Label) {
+        _isPresented = isPresented; self.classes = classes; self.contentClasses = contentClasses
+        self.content = content; self.label = label()
     }
     public var body: some View {
-        CNButton(variant: .outline, classes: classes, action: { isPresented = true }) { label }
-            .sheet(isPresented: $isPresented) {
-                CNDialogContent { content() }
-            }
+        CNPresentationTrigger(isPresented: $isPresented, kind: .dialog, classes: classes,
+                              contentClasses: contentClasses, content: content, label: { label })
     }
 }
 
-/// Native sheet presentation. The binding remains the application's source of truth.
+/// A custom edge panel. Leading and trailing edges follow the layout direction.
 public struct CNSheet<Label: View, Content: View>: View {
     @Binding private var isPresented: Bool
+    private let edge: Edge
     private let classes: TWClasses
+    private let contentClasses: TWClasses
     private let label: Label
     private let content: () -> Content
-    public init(isPresented: Binding<Bool>, classes: TWClasses = "", @ViewBuilder content: @escaping () -> Content,
-                @ViewBuilder label: () -> Label) {
-        _isPresented = isPresented; self.classes = classes; self.content = content; self.label = label()
+    public init(isPresented: Binding<Bool>, edge: Edge = .trailing, classes: TWClasses = "", contentClasses: TWClasses = "",
+                @ViewBuilder content: @escaping () -> Content, @ViewBuilder label: () -> Label) {
+        _isPresented = isPresented; self.edge = edge; self.classes = classes; self.contentClasses = contentClasses
+        self.content = content; self.label = label()
     }
     public var body: some View {
-        CNButton(variant: .outline, classes: classes, action: { isPresented = true }) { label }
-            .sheet(isPresented: $isPresented) {
-                CNDialogContent { content() }
-            }
+        CNPresentationTrigger(isPresented: $isPresented, kind: .sheet(edge), classes: classes,
+                              contentClasses: contentClasses, content: content, label: { label })
     }
 }
 
-/// Native sheet presentation. The binding remains the application's source of truth.
+/// A bottom drawer with a dedicated drag handle. Content scrolling keeps its native gesture.
 public struct CNDrawer<Label: View, Content: View>: View {
     @Binding private var isPresented: Bool
     private let classes: TWClasses
+    private let contentClasses: TWClasses
     private let label: Label
     private let content: () -> Content
-    public init(isPresented: Binding<Bool>, classes: TWClasses = "", @ViewBuilder content: @escaping () -> Content,
-                @ViewBuilder label: () -> Label) {
-        _isPresented = isPresented; self.classes = classes; self.content = content; self.label = label()
+    public init(isPresented: Binding<Bool>, classes: TWClasses = "", contentClasses: TWClasses = "",
+                @ViewBuilder content: @escaping () -> Content, @ViewBuilder label: () -> Label) {
+        _isPresented = isPresented; self.classes = classes; self.contentClasses = contentClasses
+        self.content = content; self.label = label()
     }
     public var body: some View {
-        CNButton(variant: .outline, classes: classes, action: { isPresented = true }) { label }
-            .sheet(isPresented: $isPresented) {
-                CNDialogContent { content() }
-            .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
-            }
+        CNPresentationTrigger(isPresented: $isPresented, kind: .drawer, classes: classes,
+                              contentClasses: contentClasses, content: content, label: { label })
     }
 }
 
@@ -133,6 +374,7 @@ public struct CNAlertDialog<Label: View, Actions: View, Message: View>: View {
 }
 public struct CNDialogClose<Label: View>: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.cnPresentationDismiss) private var closePresentation
     private let label: Label
     private let classes: TWClasses
     public init(_ classes: TWClasses = "", @ViewBuilder label: () -> Label) { self.classes = classes; self.label = label() }
@@ -140,7 +382,7 @@ public struct CNDialogClose<Label: View>: View {
         self.classes = classes; self.label = Text(title)
     }
     public var body: some View {
-        CNButton(variant: .outline, classes: classes, action: { dismiss() }) { label }.keyboardShortcut(.cancelAction)
+        CNButton(variant: .outline, classes: classes, action: { if let closePresentation { closePresentation() } else { dismiss() } }) { label }.keyboardShortcut(.cancelAction)
     }
 }
 public struct CNPopover<Label: View, Content: View>: View {
@@ -160,34 +402,63 @@ public struct CNPopover<Label: View, Content: View>: View {
             }
     }
 }
-/// Pointer entry opens after a short delay. Pointer exit allows travel into the popover.
-/// Explicit activation keeps the popover open until outside or keyboard dismissal.
+/// Hover uses cancellable intent delays; activation pins the card for keyboard or touch use.
 public struct CNHoverCard<Label: View, Content: View>: View {
-    @State private var isPresented = false
+    @State private var intent = CNHoverIntent()
     @State private var triggerHovered = false
     @State private var contentHovered = false
-    @State private var openedByHover = false
+    private let openDelay: Duration
+    private let closeDelay: Duration
     private let classes: TWClasses
     private let label: Label
     private let content: () -> Content
-    public init(_ classes: TWClasses = "", @ViewBuilder content: @escaping () -> Content, @ViewBuilder label: () -> Label) {
-        self.classes = classes; self.content = content; self.label = label()
+    public init(_ classes: TWClasses = "", openDelay: Duration = .milliseconds(200), closeDelay: Duration = .milliseconds(450),
+                @ViewBuilder content: @escaping () -> Content, @ViewBuilder label: () -> Label) {
+        self.classes = classes; self.openDelay = openDelay; self.closeDelay = closeDelay
+        self.content = content; self.label = label()
     }
+    private var hovering: Bool { triggerHovered || contentHovered }
     public var body: some View {
-        CNButton(variant: .outline, classes: classes, action: { openedByHover = false; isPresented.toggle() }) { label }
+        let schedule = intent.schedule(hovering: hovering)
+        CNButton(variant: .outline, classes: classes, action: { intent.activate(hovering: hovering) }) { label }
             .onHover { triggerHovered = $0 }
-            .cnPopover(isPresented: $isPresented) {
+            .cnPopover(isPresented: Binding(get: { intent.isPresented }, set: { if !$0 { intent.dismiss(hovering: hovering) } })) {
                 VStack(alignment: .leading, spacing: 8) { content() }
                     .tw("hover-card").onHover { contentHovered = $0 }
             }
-            .onChange(of: isPresented) { _, presented in if !presented { openedByHover = false; contentHovered = false } }
-            .task(id: triggerHovered || contentHovered) {
-                let hovering = triggerHovered || contentHovered
-                do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
-                guard !Task.isCancelled else { return }
-                if hovering && !isPresented { openedByHover = true; isPresented = true }
-                else if !hovering && openedByHover { isPresented = false }
+            .onChange(of: intent.isPresented) { _, open in if !open { contentHovered = false } }
+            .onChange(of: hovering) { _, hovered in if !hovered { intent.suppressed = false } }
+            .task(id: schedule) {
+                guard let schedule else { return }
+                do { try await Task.sleep(for: schedule == .open ? openDelay : closeDelay) } catch { return }
+                guard !Task.isCancelled, intent.schedule(hovering: hovering) == schedule else { return }
+                intent.complete(schedule)
             }
+    }
+}
+// Intent is separate from animation. Old delays cannot override explicit activation or dismissal.
+struct CNHoverIntent {
+    enum Schedule { case open, close }
+    var isPresented = false
+    var pinned = false
+    var suppressed = false
+    func schedule(hovering: Bool) -> Schedule? {
+        if hovering && !isPresented && !suppressed { return .open }
+        if !hovering && isPresented && !pinned { return .close }
+        return nil
+    }
+    mutating func activate(hovering: Bool) {
+        if isPresented { dismiss(hovering: hovering) }
+        else { isPresented = true; pinned = true; suppressed = false }
+    }
+    mutating func dismiss(hovering: Bool) {
+        isPresented = false; pinned = false; suppressed = hovering
+    }
+    mutating func complete(_ schedule: Schedule) {
+        switch schedule {
+        case .open: isPresented = true; pinned = false
+        case .close: isPresented = false
+        }
     }
 }
 public struct CNTooltip<Label: View>: View {

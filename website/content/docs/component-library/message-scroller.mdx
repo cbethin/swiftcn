@@ -18,14 +18,38 @@ import SwiftUI
 import SwiftCN
 
 struct MessageScrollerExample: View {
-    private let options = [CNOption("design", title: "Design system"), CNOption("mobile", title: "Mobile app"), CNOption("archive", title: "Archived", isDisabled: true)]
-
+    private struct Message: Identifiable {
+        let id: Int
+        var text: String
+    }
+    @State private var messages = (1...12).map { Message(id: $0, text: "Message \($0): a stable native scroll target.") }
+    @State private var position: Int?
+    @State private var follow = false
+    @State private var atBottom = false
+    @State private var revision = 0
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            CNMessageScroller(options, classes: "h-[160]") { option in
-                CNBubble { Text(option.title) }
+            CNMessageScroller(messages, followNewMessages: follow, scrollRevision: revision,
+                              position: $position, isAtBottom: $atBottom, classes: "h-[240]") { message in
+                CNBubble { Text(message.text) }
             }
-
+            CNCheckbox("Follow latest messages", isOn: $follow)
+            CNButtonGroup {
+                CNButton("Earlier", variant: .outline) {
+                    let first = messages.first?.id ?? 1
+                    messages.insert(contentsOf: ((first - 5)..<first).map { Message(id: $0, text: "Earlier message \($0)") }, at: 0)
+                }
+                CNButton("Append", variant: .outline) {
+                    messages.append(Message(id: (messages.last?.id ?? 0) + 1, text: "A new message."))
+                }
+                CNButton("Stream", variant: .outline) {
+                    guard !messages.isEmpty else { return }
+                    messages[messages.count - 1].text += " More streamed text, wrapping naturally as the message grows."
+                    revision += 1
+                }
+            }
+            Text(atBottom ? "At the latest message" : "Reading history — position stays under your control")
+                .tw("text-xs text-mutedForeground")
         }
     }
 }
@@ -33,7 +57,7 @@ struct MessageScrollerExample: View {
 
 ## Native behavior
 
-Preserves reading position by default. Opt into followNewMessages only while the user follows the conversation. The host owns that decision. Following uses native scroll positioning and respects Reduce Motion. Pass scrollRevision when an existing message grows during streaming.
+A lazy native scroll view uses stable message IDs and scroll targets. Bind position to restore a reading target and retain it when earlier history is prepended. Following defaults to false and no initial bottom jump is forced. Set followNewMessages to true to follow appends and viewport changes; increment scrollRevision when streamed text changes height. Streaming scroll updates disable competing animations. Bind isAtBottom to observe proximity to the end and implement your host policy. The host owns keyboard placement, loading, and following decisions.
 
 ## Style and compose
 
@@ -67,36 +91,69 @@ public struct CNScrollArea<Content: View>: View {
     }
     public var body: some View { ScrollView(axes, showsIndicators: indicators) { content }.tw(cn("scroll-area", classes)) }
 }
-/// Reading position stays unchanged by default. The host explicitly opts into following new messages.
+/// Stable native scroll targets preserve reading position when history is prepended.
+/// The host owns following policy. Bind isAtBottom to observe proximity to the end.
 public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: View where Data.Element: Identifiable {
     private let data: Data
     private let followNewMessages: Bool
     private let scrollRevision: Int
+    private let position: Binding<Data.Element.ID?>?
+    private let bottomState: Binding<Bool>?
     private let classes: TWClasses
     private let content: (Data.Element) -> Content
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    public init(_ data: Data, followNewMessages: Bool = false, scrollRevision: Int = 0, classes: TWClasses = "",
-                @ViewBuilder content: @escaping (Data.Element) -> Content) {
-        self.data = data; self.followNewMessages = followNewMessages; self.scrollRevision = scrollRevision; self.classes = classes; self.content = content
+    @State private var localPosition: Data.Element.ID?
+    @State private var bottomID = UUID()
+    @Namespace private var scrollSpace
+    public init(_ data: Data, followNewMessages: Bool = false, scrollRevision: Int = 0,
+                position: Binding<Data.Element.ID?>? = nil, isAtBottom: Binding<Bool>? = nil,
+                classes: TWClasses = "", @ViewBuilder content: @escaping (Data.Element) -> Content) {
+        self.data = data; self.followNewMessages = followNewMessages; self.scrollRevision = scrollRevision
+        self.position = position; bottomState = isAtBottom; self.classes = classes; self.content = content
     }
     public var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 8) {
-                    ForEach(data) { item in content(item).id(item.id) }
+        GeometryReader { viewport in
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 8) {
+                        ForEach(data) { item in content(item).id(item.id) }
+                    }.scrollTargetLayout()
+                    Color.clear.frame(height: 1)
+                        .id(bottomID)
+                        .background(GeometryReader { marker in
+                            Color.clear.preference(key: CNMessageBottomKey.self,
+                                value: marker.frame(in: .named(scrollSpace)).maxY)
+                        })
                 }
-            }.tw(cn("scroll-area", classes))
-                .onAppear { if let id = data.last?.id { proxy.scrollTo(id, anchor: .bottom) } }
-                .onChange(of: scrollRevision) { _, _ in
-                    guard followNewMessages, let id = data.last?.id else { return }
-                    withAnimation(reduceMotion ? nil : .smooth) { proxy.scrollTo(id, anchor: .bottom) }
+                .coordinateSpace(name: scrollSpace)
+                .scrollPosition(id: position ?? $localPosition, anchor: .top)
+                .defaultScrollAnchor(followNewMessages && position?.wrappedValue == nil ? .bottom : .top)
+                .tw("scroll-area")
+                .onPreferenceChange(CNMessageBottomKey.self) { bottom in
+                    if let bottomState {
+                        let atBottom = bottom <= viewport.size.height + 24 && bottom >= 0
+                        if bottomState.wrappedValue != atBottom { bottomState.wrappedValue = atBottom }
+                    }
+                    if followNewMessages && bottom.isFinite && bottom > viewport.size.height + 1 {
+                        scrollToLatest(proxy)
+                    }
                 }
-                .onChange(of: data.last?.id) { _, id in
-                    guard followNewMessages, let id else { return }
-                    withAnimation(reduceMotion ? nil : .smooth) { proxy.scrollTo(id, anchor: .bottom) }
-                }
-        }
+                .onChange(of: followNewMessages) { _, follow in if follow { scrollToLatest(proxy) } }
+                .onChange(of: scrollRevision) { _, _ in if followNewMessages { scrollToLatest(proxy) } }
+                .onChange(of: data.last?.id) { _, _ in if followNewMessages { scrollToLatest(proxy) } }
+                .onChange(of: viewport.size) { _, _ in if followNewMessages { scrollToLatest(proxy) } }
+            }
+        }.tw(classes)
     }
+    private func scrollToLatest(_ proxy: ScrollViewProxy) {
+        guard !data.isEmpty else { return }
+        // Streaming and keyboard layout changes must not enqueue competing animations.
+        var transaction = Transaction(); transaction.disablesAnimations = true
+        withTransaction(transaction) { proxy.scrollTo(bottomID, anchor: .bottom) }
+    }
+}
+private struct CNMessageBottomKey: PreferenceKey {
+    static let defaultValue: CGFloat = .infinity
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
 }
 /// Native scroll paging with a binding to the stable item ID. Size the viewport with classes.
 public struct CNCarousel<Data: RandomAccessCollection, Content: View>: View where Data.Element: Identifiable {

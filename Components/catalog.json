@@ -165,7 +165,7 @@
     "symbol": "CNDataTable",
     "source": "Table.swift",
     "example": "DataTableExample.swift",
-    "notes": "Supply native TableColumn builders and key paths, a selection binding, and sort order. The table sorts a copy of the records. Native compact-width tables show their first column; provide a rich first cell for compact layouts."
+    "notes": "Native Table preserves selection IDs, sortable columns, and rich cell builders. CNTableRecords prepares filtered and sorted rows when your inputs change; page only slices that snapshot. Pass rowsAreSorted: true to avoid sorting prepared rows again. Keep selection in the host across filtering and pages. The example composes CNInput, CNPagination, and native column visibility (iOS 17.4 or macOS 14.4 and later). Compact native tables display the first column, so the example includes record details there. CNTable is for small intrinsic-width layouts; use CNDataTable or paging for large record sets."
   },
   {
     "name": "Date Picker",
@@ -181,7 +181,7 @@
     "symbol": "CNDialog",
     "source": "Presentation.swift",
     "example": "DialogExample.swift",
-    "notes": "Uses a native sheet rather than a web overlay. Compose headers, fields, footer actions, and CNDialogClose. The close button uses the native cancel shortcut."
+    "notes": "A centered custom SwiftUI panel uses native buttons, editors, and focus. Install .cnPresentationHost() once at the screen or window root, outside scrolling containers. Compose headers, fields, footer actions, and CNDialogClose. Backdrop activation, Escape, and the accessibility escape action dismiss it. The mounted panel preserves drafts through interrupted motion. Without a host, presentation falls back to a native sheet. Override contentClasses or presentation-dialog, presentation-scrim, and presentation-motion in your global rules."
   },
   {
     "name": "Direction",
@@ -197,7 +197,7 @@
     "symbol": "CNDrawer",
     "source": "Presentation.swift",
     "example": "DrawerExample.swift",
-    "notes": "Uses a native sheet. iOS supports medium and large detents and a drag indicator. macOS retains its native sheet presentation."
+    "notes": "A custom bottom drawer uses .cnPresentationHost() at the screen root. A dedicated drag handle tracks the finger and uses predicted travel to dismiss; content keeps native scrolling. Backdrop activation, Escape, and CNDialogClose also dismiss it. Reversals retarget the shared presentation-motion recipe and preserve the mounted content. Without a host, SwiftUI presents a native sheet."
   },
   {
     "name": "Dropdown Menu",
@@ -229,7 +229,7 @@
     "symbol": "CNHoverCard",
     "source": "Presentation.swift",
     "example": "HoverCardExample.swift",
-    "notes": "A custom SwiftUI popover opens after a short pointer delay. A delayed close allows travel from the trigger into the popover. Explicit button activation keeps the content open for keyboard and touch users. Outside interaction dismisses the popover. Supply noninteractive trigger content."
+    "notes": "Cancellable hover intent opens after 200 ms and keeps a 450 ms grace period for travel into the content. Override openDelay and closeDelay locally. Explicit activation pins the card for touch or keyboard use. Dismissal suppresses reopening until the pointer leaves, so an old delay cannot reopen a closed card. Place .cnPopoverHost() at the screen root for custom anchored placement; native popover presentation remains the fallback."
   },
   {
     "name": "Input",
@@ -309,7 +309,7 @@
     "symbol": "CNMessageScroller",
     "source": "Scrolling.swift",
     "example": "MessageScrollerExample.swift",
-    "notes": "Preserves reading position by default. Opt into followNewMessages only while the user follows the conversation. The host owns that decision. Following uses native scroll positioning and respects Reduce Motion. Pass scrollRevision when an existing message grows during streaming."
+    "notes": "A lazy native scroll view uses stable message IDs and scroll targets. Bind position to restore a reading target and retain it when earlier history is prepended. Following defaults to false and no initial bottom jump is forced. Set followNewMessages to true to follow appends and viewport changes; increment scrollRevision when streamed text changes height. Streaming scroll updates disable competing animations. Bind isAtBottom to observe proximity to the end and implement your host policy. The host owns keyboard placement, loading, and following decisions."
   },
   {
     "name": "Native Select",
@@ -405,7 +405,7 @@
     "symbol": "CNSheet",
     "source": "Presentation.swift",
     "example": "SheetExample.swift",
-    "notes": "Uses native sheet presentation and dismissal. Presentations keep keyboard, focus, modality, accessibility, and environment behavior in SwiftUI."
+    "notes": "A custom edge panel uses the same presentation host as Dialog. Install .cnPresentationHost() at the screen root. Set edge to leading, trailing, top, or bottom; horizontal edges follow the layout direction. Native content scrolls inside the panel. Backdrop activation, Escape, and CNDialogClose dismiss it. Set presentation-motion to animate-none to disable motion. Without a host, SwiftUI presents a native sheet."
   },
   {
     "name": "Sidebar",

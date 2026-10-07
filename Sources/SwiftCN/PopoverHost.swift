@@ -6,6 +6,7 @@ import AppKit
 /// Place this at the window or screen root so popovers can extend beyond scrolling children.
 public struct CNPopoverHost<Content: View>: View {
     private let content: Content
+    @Environment(\.isEnabled) private var isEnabled
     public init(@ViewBuilder content: () -> Content) { self.content = content() }
     public var body: some View {
         content.environment(\.cnPopoverHostAvailable, true)
@@ -52,6 +53,9 @@ public struct CNPopoverHost<Content: View>: View {
                         .onChange(of: visible.map(\.id)) { old, new in
                             guard let newest = new.first(where: { !old.contains($0) }) else { return }
                             for request in visible where request.id != newest { request.presentation.wrappedValue = false }
+                        }
+                        .onChange(of: isEnabled) { _, enabled in
+                            if !enabled { for request in visible { request.presentation.wrappedValue = false } }
                         }
                     }
                     .frame(width: geometry.size.width, height: geometry.size.height)

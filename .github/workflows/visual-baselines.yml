@@ -34,12 +34,13 @@ jobs:
         timeout-minutes: 15
         if: inputs.ios_component == ''
         run: |
-          swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests|ComponentRenderingTests|CompositionRenderingTests|CatalogNativeRenderingTests|PopoverInteractionTests|MotionRenderingTests|TouchTargetInteractionTests'
+          swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests|ComponentRenderingTests|CompositionRenderingTests|CatalogNativeRenderingTests|PopoverInteractionTests|MotionRenderingTests|TouchTargetInteractionTests|PresentationAndScrollingTests'
           swift test --filter MotionRenderingTests
           swift test --filter CompositionRenderingTests
           swift test --filter ComponentRenderingTests
           swift test --filter CatalogNativeRenderingTests
           swift test --filter PopoverInteractionTests
+          swift test --filter PresentationAndScrollingTests
           swift test --filter TouchTargetInteractionTests
           SWIFTCN_GALLERY_APPEARANCE_TESTS=1 swift test --filter GalleryAppearanceTests
           swift test --filter NativeUtilityRenderingTests
