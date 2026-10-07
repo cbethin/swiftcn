@@ -98,3 +98,5 @@ jobs:
             Tests/SwiftCNVisualTests/__Snapshots__/components-ios-18.5-iphone-16/
             artifacts/visual-diffs/
             artifacts/ios-components/*-launch.log
+            ~/Library/Logs/DiagnosticReports/*swiftcn*.ips
+            ~/Library/Logs/DiagnosticReports/*swiftcn*.crash
