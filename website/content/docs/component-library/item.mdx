@@ -35,7 +35,7 @@ struct ItemExample: View {
 
 ## Native behavior
 
-Compose leading media, CNItemContent, title, description, and CNItemActions in a native row. The row aligns content at its center. Place interactive content in native controls to define activation semantics.
+Compose leading media, CNItemContent, title, description, and CNItemActions in a native row. The row aligns content at its center. Place interactive content in native controls to define activation semantics. CNItemActions keeps the same controls in a row or a vertical stack, based on their natural widths and the available space. It uses the shared native adaptive action layout.
 
 ## Style and compose
 
@@ -103,7 +103,7 @@ public struct CNItemActions<Content: View>: View {
         self.classes = classes; self.spacing = spacing; self.content = content()
     }
     public var body: some View {
-        HStack(alignment: .top, spacing: spacing) { content }.tw(cn("", classes))
+        CNAdaptiveActionLayout(spacing: spacing) { content }.tw(classes)
     }
 }
 
@@ -223,7 +223,7 @@ public struct CNMessageActions<Content: View>: View {
         self.classes = classes; self.spacing = spacing; self.content = content()
     }
     public var body: some View {
-        HStack(alignment: .top, spacing: spacing) { content }.tw(cn("", classes))
+        CNAdaptiveActionLayout(spacing: spacing) { content }.tw(classes)
     }
 }
 

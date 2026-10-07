@@ -3,7 +3,7 @@
     "slug": "styles",
     "title": "Native control styles",
     "example": "NativeStylesExample.swift",
-    "notes": "Use native Button, TextField, Toggle, and Label with our style adapters. Formatting, enum-based focus, roles, keyboard shortcuts, and submission remain SwiftUI APIs. Pass explicit focus state to the style for focus appearance. CNFieldControl decorates native controls that do not have a matching style protocol. Convenience components share the same recipes and styling engine."
+    "notes": "Use native Button, TextField, Toggle, and Label with our style adapters. Formatting, enum-based focus, roles, keyboard shortcuts, and submission remain SwiftUI APIs. Pass explicit focus state to the style for focus appearance. CNFieldControl decorates native controls that do not have a matching style protocol. Convenience components share the same recipes and styling engine. Change CNField.axis to move the label above or beside the same control group. AnyLayout preserves the children; .tw(\"feedback-motion\", value: horizontal) supplies motion. Group the editor and supporting text so they remain together in both orientations."
   },
   {
     "slug": "drawer",

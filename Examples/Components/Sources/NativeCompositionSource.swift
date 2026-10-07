@@ -13,21 +13,24 @@ struct NativeStylesExample: View {
     @State private var notifications = true
     @State private var disabled = false
     @State private var compact = false
+    @State private var horizontal = false
     @State private var saves = 0
     @FocusState private var focusedField: Field?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            CNField {
+            CNField(spacing: 12, axis: horizontal ? .horizontal : .vertical) {
                 Label("Amount", systemImage: "number")
                     .labelStyle(.tw("field-label", base: .titleAndIcon))
-                TextField("Amount", value: $amount, format: .number)
-                    .textFieldStyle(.tw("input", state: .init(isFocused: focusedField == .amount)))
-                    .focused($focusedField, equals: .amount)
-                    .onSubmit(save)
-                    .disabled(disabled)
-                CNFieldDescription("Formatting, selection, and submit handling stay native.")
-            }
+                VStack(alignment: .leading, spacing: 6) {
+                    TextField("Amount", value: $amount, format: .number)
+                        .textFieldStyle(.tw("input", state: .init(isFocused: focusedField == .amount)))
+                        .focused($focusedField, equals: .amount)
+                        .onSubmit(save)
+                        .disabled(disabled)
+                    CNFieldDescription("Formatting, selection, and submit handling stay native.")
+                }
+            }.tw("feedback-motion", value: horizontal)
             Toggle("Notifications", isOn: $notifications)
                 .toggleStyle(.tw("switch", base: .switch))
                 .disabled(disabled)
@@ -42,6 +45,7 @@ struct NativeStylesExample: View {
                 .tw("text-sm text-mutedForeground")
             CNCheckbox("Disable controls", isOn: $disabled)
             CNCheckbox("Compact input recipe", isOn: $compact)
+            CNCheckbox("Label beside the input", isOn: $horizontal)
         }
         .twRules {
             if compact {

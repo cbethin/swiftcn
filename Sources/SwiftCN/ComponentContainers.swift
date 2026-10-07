@@ -44,7 +44,7 @@ public struct CNItemActions<Content: View>: View {
         self.classes = classes; self.spacing = spacing; self.content = content()
     }
     public var body: some View {
-        HStack(alignment: .top, spacing: spacing) { content }.tw(cn("", classes))
+        CNAdaptiveActionLayout(spacing: spacing) { content }.tw(classes)
     }
 }
 
@@ -164,7 +164,7 @@ public struct CNMessageActions<Content: View>: View {
         self.classes = classes; self.spacing = spacing; self.content = content()
     }
     public var body: some View {
-        HStack(alignment: .top, spacing: spacing) { content }.tw(cn("", classes))
+        CNAdaptiveActionLayout(spacing: spacing) { content }.tw(classes)
     }
 }
 

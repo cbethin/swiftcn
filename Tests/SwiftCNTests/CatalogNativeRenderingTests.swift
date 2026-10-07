@@ -191,6 +191,55 @@ struct CatalogNativeRenderingTests {
         #expect(model.text == "draft")
         #expect(host.fittingSize.height > rowHeight + 20)
     }
+    @Test(arguments: [false, true])
+    func actionPartsReflowWithoutReplacingTheirControls(message: Bool) throws {
+        let model = CatalogControlModel()
+        let (host, window) = host(CatalogActionPartProbe(model: model, message: message))
+        defer { window.contentView = nil }
+        let editor = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
+        let rowHeight = host.fittingSize.height
+        editor.stringValue = "action draft"
+        editor.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: editor))
+        #expect(window.makeFirstResponder(editor))
+        let responder = window.firstResponder
+        try captureComposition(host, name: "\(message ? "message" : "item")-actions-wide")
+        for narrow in [true, false, true] {
+            model.narrow = narrow; settle(host)
+            #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)
+            #expect(window.firstResponder === responder)
+            #expect(model.text == "action draft")
+            if narrow { #expect(host.fittingSize.height > rowHeight + 20) }
+        }
+        try captureComposition(host, name: "\(message ? "message" : "item")-actions-narrow")
+    }
+    @Test(arguments: [false, true], [false, true])
+    func fieldAxisChangesPreserveEditorFocusAndDraft(dark: Bool, large: Bool) throws {
+        let model = CatalogControlModel()
+        let (host, window) = host(CatalogFieldAxisProbe(model: model)
+            .tw("p-4")
+            .background(TWTheme.standard.color(.background, scheme: dark ? .dark : .light))
+            .environment(\.colorScheme, dark ? .dark : .light)
+            .environment(\.dynamicTypeSize, large ? .accessibility3 : .large)
+            .environment(\.layoutDirection, dark ? .rightToLeft : .leftToRight))
+        defer { window.contentView = nil }
+        let editor = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
+        let verticalHeight = host.fittingSize.height
+        editor.stringValue = "unfinished field draft"
+        editor.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: editor))
+        #expect(window.makeFirstResponder(editor))
+        let responder = window.firstResponder
+        try captureComposition(host, name: "field-vertical-\(dark ? "dark-rtl" : "light-ltr")-\(large ? "large" : "standard")")
+        for horizontal in [true, false, true, false, true] {
+            model.horizontal = horizontal; settle(host)
+            #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)
+            #expect(window.firstResponder === responder)
+            #expect(model.text == "unfinished field draft")
+            #expect(Set(model.identities).count == 1)
+            if horizontal { #expect(host.fittingSize.height < verticalHeight - 10) }
+        }
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.25))
+        try captureComposition(host, name: "field-horizontal-\(dark ? "dark-rtl" : "light-ltr")-\(large ? "large" : "standard")")
+    }
     @Test func inputKeepsTheEditorThroughValidationThemeAndClassChanges() throws {
         let model = CatalogControlModel()
         let (host, window) = host(CatalogInputProbe(model: model))
@@ -298,22 +347,22 @@ struct CatalogNativeRenderingTests {
         #expect(viewport.minY >= -1 && viewport.maxY <= 181)
         let document = try #require(scroll.documentView)
         let deckHeight = document.bounds.height
-        try captureToastStack(host, name: "toast-deck-\(dark ? "dark" : "light")-\(large ? "large" : "standard")")
+        try captureComposition(host, name: "toast-deck-\(dark ? "dark" : "light")-\(large ? "large" : "standard")")
         model.toastsExpanded = true; settle(host)
         #expect(document.bounds.height > scroll.contentSize.height)
         #expect(document.bounds.height > deckHeight * 2, "The collapsed deck must overlap cards instead of arranging a vertical stack.")
         scroll.contentView.scroll(to: CGPoint(x: 0, y: document.bounds.maxY - scroll.contentSize.height))
         scroll.reflectScrolledClipView(scroll.contentView)
         #expect(abs(scroll.documentVisibleRect.maxY - document.bounds.maxY) < 2)
-        try captureToastStack(host, name: "toast-stack-compact-\(dark ? "dark" : "light")-\(large ? "large" : "standard")")
+        try captureComposition(host, name: "toast-stack-compact-\(dark ? "dark" : "light")-\(large ? "large" : "standard")")
         model.toasts.remove(at: 3); settle(host)
         window.setContentSize(NSSize(width: 480, height: 720)); settle(host)
         #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)
         #expect(scroll.bounds.width <= 361)
         #expect(model.toasts.count == 7)
-        try captureToastStack(host, name: "toast-stack-expanded-\(dark ? "dark" : "light")-\(large ? "large" : "standard")")
+        try captureComposition(host, name: "toast-stack-expanded-\(dark ? "dark" : "light")-\(large ? "large" : "standard")")
     }
-    private func captureToastStack(_ host: NSView, name: String) throws {
+    private func captureComposition(_ host: NSView, name: String) throws {
         guard let path = ProcessInfo.processInfo.environment["SWIFTCN_COMPOSITION_ARTIFACTS"] else { return }
         let directory = URL(fileURLWithPath: path, isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -427,11 +476,49 @@ private struct SidebarDetailControlProbe: View {
     var invalid = false
     var large = false
     var narrow = false
+    var horizontal = false
+    @ObservationIgnored var identities: [UUID] = []
     var tab = 0
     var on = false
     var toast: CNToast? = nil
     var toasts: [CNToast] = []
     var toastsExpanded = false
+}
+private struct CatalogActionPartProbe: View {
+    let model: CatalogControlModel
+    let message: Bool
+    var body: some View {
+        Group {
+            if message { CNMessageActions { controls } }
+            else { CNItemActions { controls } }
+        }.frame(width: model.narrow ? 140 : 360)
+    }
+    private var controls: some View {
+        Group {
+            CNInput("Name", text: Binding(get: { model.text }, set: { model.text = $0 }), classes: "w-[120]")
+            CNButton("Save workspace", action: {})
+        }
+    }
+}
+private struct CatalogFieldAxisProbe: View {
+    let model: CatalogControlModel
+    var body: some View {
+        CNField(spacing: 12, axis: model.horizontal ? .horizontal : .vertical) {
+            CNFieldLabel("Name")
+            VStack(alignment: .leading, spacing: 6) {
+                CatalogFieldEditorProbe(model: model)
+                CNFieldDescription("Your workspace name.")
+            }
+        }.tw("feedback-motion", value: model.horizontal)
+    }
+}
+private struct CatalogFieldEditorProbe: View {
+    let model: CatalogControlModel
+    @State private var identity = UUID()
+    var body: some View {
+        model.identities.append(identity)
+        return CNInput("Name", text: Binding(get: { model.text }, set: { model.text = $0 }))
+    }
 }
 private struct CatalogActionProbe: View {
     let model: CatalogControlModel

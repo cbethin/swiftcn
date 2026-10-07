@@ -36,7 +36,7 @@ struct FieldExample: View {
 
 ## Native behavior
 
-Imported and copied parts share the public validation environment. Native controls retain their labels, bindings, focus, and accessibility. Use native labels or accessibilityLabel to associate field meaning.
+Imported and copied parts share the public validation environment. Native controls retain their labels, bindings, focus, and accessibility. Use native labels or accessibilityLabel to associate field meaning. CNField defaults to a vertical layout. Set axis: .horizontal to place the label beside a grouped control and its supporting text. Choose the axis from native size information. AnyLayout keeps the child views mounted when the axis changes; .tw("feedback-motion", value: axis) supplies optional motion.
 ## Compose with native SwiftUI
 
 See [complete native composition examples](/docs/native-composition#styles) for direct native controls, caller-owned sheets, navigation, and desktop split views. The examples use the same editable recipes.
@@ -69,17 +69,24 @@ public struct CNField<Content: View>: View {
     private let isInvalid: Bool
     private let classes: TWClasses
     private let spacing: CGFloat
+    private let axis: Axis
     private let content: Content
 
-    public init(isInvalid: Bool = false, classes: TWClasses = "", spacing: CGFloat = 6, @ViewBuilder content: () -> Content) {
+    /// Group the control and supporting text in one child when the label sits beside them.
+    /// Changing the axis keeps the same child views and their native control state.
+    public init(isInvalid: Bool = false, classes: TWClasses = "", spacing: CGFloat = 6, axis: Axis = .vertical, @ViewBuilder content: () -> Content) {
         self.isInvalid = isInvalid
         self.classes = classes
         self.spacing = spacing
+        self.axis = axis
         self.content = content()
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: spacing) { content }
+        let layout = axis == .horizontal
+            ? AnyLayout(HStackLayout(alignment: .top, spacing: spacing))
+            : AnyLayout(VStackLayout(alignment: .leading, spacing: spacing))
+        layout { content }
             .frame(maxWidth: .infinity, alignment: .leading)
             .tw(cn("field", classes))
             .environment(\.twFieldInvalid, isInvalid)

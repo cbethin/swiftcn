@@ -221,7 +221,7 @@
     "symbol": "CNField",
     "source": "Field.swift",
     "example": "FieldExample.swift",
-    "notes": "Imported and copied parts share the public validation environment. Native controls retain their labels, bindings, focus, and accessibility. Use native labels or accessibilityLabel to associate field meaning."
+    "notes": "Imported and copied parts share the public validation environment. Native controls retain their labels, bindings, focus, and accessibility. Use native labels or accessibilityLabel to associate field meaning. CNField defaults to a vertical layout. Set axis: .horizontal to place the label beside a grouped control and its supporting text. Choose the axis from native size information. AnyLayout keeps the child views mounted when the axis changes; .tw(\"feedback-motion\", value: axis) supplies optional motion."
   },
   {
     "name": "Hover Card",
@@ -261,7 +261,7 @@
     "symbol": "CNItem",
     "source": "ComponentContainers.swift",
     "example": "ItemExample.swift",
-    "notes": "Compose leading media, CNItemContent, title, description, and CNItemActions in a native row. The row aligns content at its center. Place interactive content in native controls to define activation semantics."
+    "notes": "Compose leading media, CNItemContent, title, description, and CNItemActions in a native row. The row aligns content at its center. Place interactive content in native controls to define activation semantics. CNItemActions keeps the same controls in a row or a vertical stack, based on their natural widths and the available space. It uses the shared native adaptive action layout."
   },
   {
     "name": "Kbd",
@@ -301,7 +301,7 @@
     "symbol": "CNMessage",
     "source": "ComponentContainers.swift",
     "example": "MessageExample.swift",
-    "notes": "Compose an avatar, CNMessageContent, metadata, bubbles, and CNMessageActions in native stacks. The host owns sender identity, grouping, timestamps, and action effects. Child links and controls retain native interaction."
+    "notes": "Compose an avatar, CNMessageContent, metadata, bubbles, and CNMessageActions in native stacks. The host owns sender identity, grouping, timestamps, and action effects. Child links and controls retain native interaction. CNMessageActions keeps the same controls in a row or a vertical stack, based on their natural widths and the available space. It uses the shared native adaptive action layout."
   },
   {
     "name": "Message Scroller",

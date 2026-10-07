@@ -13,7 +13,7 @@ All paths share `TWGlobalRules.named`, `TWTheme`, and the existing `.tw` engine.
 
 ## Native control styles
 
-Use native Button, TextField, Toggle, and Label with our style adapters. Formatting, enum-based focus, roles, keyboard shortcuts, and submission remain SwiftUI APIs. Pass explicit focus state to the style for focus appearance. CNFieldControl decorates native controls that do not have a matching style protocol. Convenience components share the same recipes and styling engine.
+Use native Button, TextField, Toggle, and Label with our style adapters. Formatting, enum-based focus, roles, keyboard shortcuts, and submission remain SwiftUI APIs. Pass explicit focus state to the style for focus appearance. CNFieldControl decorates native controls that do not have a matching style protocol. Convenience components share the same recipes and styling engine. Change CNField.axis to move the label above or beside the same control group. AnyLayout preserves the children; .tw("feedback-motion", value: horizontal) supplies motion. Group the editor and supporting text so they remain together in both orientations.
 
 ```swift title="NativeStylesExample.swift"
 import SwiftUI
@@ -25,21 +25,24 @@ struct NativeStylesExample: View {
     @State private var notifications = true
     @State private var disabled = false
     @State private var compact = false
+    @State private var horizontal = false
     @State private var saves = 0
     @FocusState private var focusedField: Field?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            CNField {
+            CNField(spacing: 12, axis: horizontal ? .horizontal : .vertical) {
                 Label("Amount", systemImage: "number")
                     .labelStyle(.tw("field-label", base: .titleAndIcon))
-                TextField("Amount", value: $amount, format: .number)
-                    .textFieldStyle(.tw("input", state: .init(isFocused: focusedField == .amount)))
-                    .focused($focusedField, equals: .amount)
-                    .onSubmit(save)
-                    .disabled(disabled)
-                CNFieldDescription("Formatting, selection, and submit handling stay native.")
-            }
+                VStack(alignment: .leading, spacing: 6) {
+                    TextField("Amount", value: $amount, format: .number)
+                        .textFieldStyle(.tw("input", state: .init(isFocused: focusedField == .amount)))
+                        .focused($focusedField, equals: .amount)
+                        .onSubmit(save)
+                        .disabled(disabled)
+                    CNFieldDescription("Formatting, selection, and submit handling stay native.")
+                }
+            }.tw("feedback-motion", value: horizontal)
             Toggle("Notifications", isOn: $notifications)
                 .toggleStyle(.tw("switch", base: .switch))
                 .disabled(disabled)
@@ -54,6 +57,7 @@ struct NativeStylesExample: View {
                 .tw("text-sm text-mutedForeground")
             CNCheckbox("Disable controls", isOn: $disabled)
             CNCheckbox("Compact input recipe", isOn: $compact)
+            CNCheckbox("Label beside the input", isOn: $horizontal)
         }
         .twRules {
             if compact {
