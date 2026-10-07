@@ -1,0 +1,38 @@
+name: iPhone Duo
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swiftcn-duo-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  duo:
+    runs-on: xcode-27
+    timeout-minutes: 45
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v7
+      - name: Inspect Duo toolchain
+        run: |
+          mkdir -p artifacts/duo-sdk
+          xcodebuild -version
+          swift --version
+          xcrun simctl list -j > artifacts/duo-sdk/simulators.json
+          xcrun simctl help > artifacts/duo-sdk/simctl.txt
+          xcrun simctl io help > artifacts/duo-sdk/io.txt 2>&1 || true
+          sdk="$(xcrun --sdk iphonesimulator --show-sdk-path)"
+          for framework in SwiftUI SwiftUICore; do
+            cp "$sdk/System/Library/Frameworks/$framework.framework/Modules/$framework.swiftmodule/arm64-apple-ios-simulator.swiftinterface" "artifacts/duo-sdk/$framework.swiftinterface"
+          done
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: swiftcn-duo-evidence
+          path: artifacts/duo-sdk/
