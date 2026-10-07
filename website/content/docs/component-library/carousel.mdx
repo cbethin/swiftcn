@@ -126,18 +126,17 @@ public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: Vi
                             }
                         }
                 }
-                .scrollPosition(id: position ?? $localPosition, anchor: .top)
-                .defaultScrollAnchor(followNewMessages && position?.wrappedValue == nil ? .bottom : .top)
+                .scrollPosition(id: position ?? $localPosition, anchor: followNewMessages ? .bottom : .top)
+                .defaultScrollAnchor(followNewMessages ? .bottom : (position?.wrappedValue == nil ? .top : nil))
                 .tw("scroll-area")
+                .onAppear {
+                    if followNewMessages { scrollToLatest(proxy) }
+                    else { restoreReadingTarget(proxy, height: viewportHeight) }
+                    readingAnchor.hasAppeared = true
+                }
                 .onChange(of: data.first?.id) { _, _ in
                     if followNewMessages { scrollToLatest(proxy) }
-                    else if let target = position?.wrappedValue ?? localPosition {
-                        let frame = readingAnchor.targetID == target ? readingAnchor.frame : nil
-                        let available = viewport.size.height - (frame?.height ?? 0)
-                        let anchor = UnitPoint(x: 0.5, y: available > 1 ? (frame?.minY ?? 0) / available : 0)
-                        var transaction = Transaction(); transaction.disablesAnimations = true
-                        withTransaction(transaction) { proxy.scrollTo(target, anchor: anchor) }
-                    }
+                    else { restoreReadingTarget(proxy, height: viewportHeight) }
                     readingAnchor.firstID = data.first?.id
                 }
                 .onChange(of: followNewMessages) { _, follow in if follow { scrollToLatest(proxy) } }
@@ -146,6 +145,14 @@ public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: Vi
                 .onChange(of: viewport.size) { _, _ in if followNewMessages { scrollToLatest(proxy) } }
             }
         }.tw(classes)
+    }
+    private func restoreReadingTarget(_ proxy: ScrollViewProxy, height: CGFloat) {
+        guard let target = position?.wrappedValue ?? localPosition else { return }
+        let frame = readingAnchor.hasAppeared && readingAnchor.targetID == target ? readingAnchor.frame : nil
+        let available = height - (frame?.height ?? 0)
+        let anchor = UnitPoint(x: 0.5, y: available > 1 ? (frame?.minY ?? 0) / available : 0)
+        var transaction = Transaction(); transaction.disablesAnimations = true
+        withTransaction(transaction) { proxy.scrollTo(target, anchor: anchor) }
     }
     private func scrollToLatest(_ proxy: ScrollViewProxy) {
         guard !data.isEmpty else { return }
@@ -156,6 +163,7 @@ public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: Vi
 }
 // One visible target stores its pixel offset without invalidating body during scrolling.
 @MainActor private final class CNMessageReadingAnchor<ID> {
+    var hasAppeared = false
     var firstID: ID?
     var targetID: ID?
     var frame: CGRect?

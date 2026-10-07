@@ -61,6 +61,9 @@ jobs:
         env:
           SWIFTCN_COMPONENT_VISUAL_ONLY: ${{ inputs.mac_component }}
         run: bash Scripts/component-visual-test.sh record ci
+      - name: Check message reading and presentation behavior
+        if: inputs.ios_component != '' && contains(inputs.mac_component, 'message-scroller')
+        run: swift test --filter PresentationAndScrollingTests
       - name: Verify component candidates
         if: inputs.ios_component == '' || inputs.mac_component != ''
         env:
@@ -98,5 +101,3 @@ jobs:
             Tests/SwiftCNVisualTests/__Snapshots__/components-ios-18.5-iphone-16/
             artifacts/visual-diffs/
             artifacts/ios-components/*-launch.log
-            ~/Library/Logs/DiagnosticReports/*swiftcn*.ips
-            ~/Library/Logs/DiagnosticReports/*swiftcn*.crash

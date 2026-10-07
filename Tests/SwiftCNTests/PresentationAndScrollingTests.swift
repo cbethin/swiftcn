@@ -79,6 +79,9 @@ struct PresentationAndScrollingTests {
         let host = controller.view
         try await settle(host)
         #expect(model.position == 12)
+        let initial = try #require(model.frames[12])
+        let viewport = try #require(model.frames[Int.min])
+        #expect(abs(initial.minY - viewport.minY) < 2, "The initial requested target must be visible: \(initial), viewport \(viewport).")
         let scroll = try #require(descendants(host).compactMap { $0 as? NSScrollView }.first)
         if partialOffset > 0 {
             var origin = scroll.documentVisibleRect.origin; origin.y += partialOffset
@@ -90,7 +93,7 @@ struct PresentationAndScrollingTests {
         try await settle(host)
         #expect(model.position == 12)
         let afterPrepend = try #require(model.frames[12])
-        #expect(abs(afterPrepend.minY - original.minY) < 2)
+        #expect(abs(afterPrepend.minY - original.minY) < 2, "Original: \(original); after prepend: \(afterPrepend)")
         model.rows.append(ScrollProbeRow(id: 100))
         try await settle(host)
         #expect(model.position == 12, "New messages must not pull a paused reader to the bottom.")
@@ -106,7 +109,8 @@ struct PresentationAndScrollingTests {
         #expect(abs(scroll.documentVisibleRect.maxY - document.bounds.maxY) < 2, "Streaming growth must keep the end visible.")
         window.setContentSize(NSSize(width: 400, height: 180))
         try await settle(host)
-        #expect(abs(scroll.documentVisibleRect.maxY - document.bounds.maxY) < 2, "Viewport changes must retain following.")
+        #expect(abs(scroll.documentVisibleRect.maxY - document.bounds.maxY) < 2,
+                "Viewport changes must retain following: visible \(scroll.documentVisibleRect), document \(document.bounds).")
 
     }
     private func settle(_ host: NSView, seconds: Double = 0.4) async throws {
@@ -187,7 +191,9 @@ private struct ScrollProbe: View {
                 .background(GeometryReader { geometry in
                     Color.clear.preference(key: ScrollFramesKey.self, value: [row.id: geometry.frame(in: .global)])
                 })
-        }.onPreferenceChange(ScrollFramesKey.self) { model.frames = $0 }
+        }.background(GeometryReader { geometry in
+            Color.clear.preference(key: ScrollFramesKey.self, value: [Int.min: geometry.frame(in: .global)])
+        }).onPreferenceChange(ScrollFramesKey.self) { model.frames = $0 }
     }
 }
 private struct ScrollFramesKey: PreferenceKey {

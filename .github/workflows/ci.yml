@@ -97,5 +97,3 @@ jobs:
             artifacts/ios-visual/*-launch.log
             Tests/SwiftCNVisualTests/__Snapshots__/macos-15-xcode-16.4/
             Tests/SwiftCNVisualTests/__Snapshots__/ios-18.5-iphone-16/
-            ~/Library/Logs/DiagnosticReports/*swiftcn*.ips
-            ~/Library/Logs/DiagnosticReports/*swiftcn*.crash

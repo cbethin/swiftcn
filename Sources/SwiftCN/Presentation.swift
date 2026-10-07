@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Install once at a window or screen root, outside scrolling and native containers.
 /// Panels inherit the theme and rules without creating a second native window.
+/// Place shared environment dependencies above the host; inject presenter-local dependencies inside panel content.
 public struct CNPresentationHost<Content: View>: View {
     private let content: Content
     @State private var active: [UUID] = []
