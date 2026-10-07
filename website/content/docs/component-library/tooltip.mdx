@@ -143,6 +143,7 @@ private struct CNPresentationTrigger<Label: View, Popup: View>: View {
         let trigger = Button(action: { isPresented = true }, label: label)
             .focusable().focusEffectDisabled().focused($triggerFocused)
             .buttonStyle(.tw(cn("button-outline", classes), state: .init(isFocused: triggerFocused)))
+            .onKeyPress(keys: [.return, .space]) { _ in isPresented = true; return .handled }
             .onChange(of: isPresented, initial: true) { _, open in
                 if open { restoreFocus = true; triggerFocused = false }
                 else if enabled && restoreFocus { triggerFocused = true; restoreFocus = false }

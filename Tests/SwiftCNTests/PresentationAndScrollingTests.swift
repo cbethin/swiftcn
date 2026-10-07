@@ -32,6 +32,17 @@ struct PresentationAndScrollingTests {
                 #expect(responders.values.allSatisfy { $0 !== responder }, "Each dialog restores a distinct trigger.")
                 responders[index] = responder
             }
+            let key = index == 0 ? " " : "\r"
+            let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [],
+                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                context: nil, characters: key, charactersIgnoringModifiers: key, isARepeat: false,
+                keyCode: index == 0 ? 49 : 36))
+            window.sendEvent(event)
+            try await settle(controller.view)
+            #expect(model.open[index], "Space and Return must activate the restored trigger.")
+            #expect(!model.open[1 - index], "Keyboard activation must open only the focused dialog.")
+            model.open[index] = false
+            try await settle(controller.view)
         }
     }
     @Test func nativeDrawerDismissalRunsTheCallbackAndPreservesTheCaller() async throws {
