@@ -90,10 +90,13 @@ private struct CNPresentationTrigger<Label: View, Popup: View>: View {
             .onKeyPress(keys: [.return, .space]) { _ in isPresented = true; return .handled }
             .onChange(of: isPresented, initial: true) { _, open in
                 if open { restoreFocus = true; triggerFocused = false }
-                else if enabled && restoreFocus { triggerFocused = true; restoreFocus = false }
             }
-            .onChange(of: enabled) { _, enabled in
-                if enabled && restoreFocus && !isPresented { triggerFocused = true; restoreFocus = false }
+            .task(id: enabled && restoreFocus && !isPresented) {
+                guard enabled && restoreFocus && !isPresented else { return }
+                // Let the closing panel release focus and the trigger rejoin the enabled focus scope.
+                await Task.yield()
+                guard !Task.isCancelled, enabled, restoreFocus, !isPresented else { return }
+                triggerFocused = true; restoreFocus = false
             }
         if hosted {
             trigger.preference(key: CNPresentationRequests.self, value: [
