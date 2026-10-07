@@ -71,3 +71,15 @@ extension EnvironmentValues {
         set { self[CNSidebarContextKey.self] = newValue }
     }
 }
+
+// One shared key keeps copied and imported presentation parts interoperable.
+private struct CNPresentationDismissKey: EnvironmentKey {
+    static var defaultValue: (() -> Void)? { nil }
+}
+extension EnvironmentValues {
+    /// The active custom presentation's close action. Nil uses native dismissal.
+    public var cnPresentationDismiss: (() -> Void)? {
+        get { self[CNPresentationDismissKey.self] }
+        set { self[CNPresentationDismissKey.self] = newValue }
+    }
+}

@@ -53,15 +53,15 @@ struct ComponentCatalogVisualTests {
         window.contentView = host
         defer { window.contentView = nil }
         host.layoutSubtreeIfNeeded()
-        if component == .carousel {
-            // Pin the native scroller geometry before SwiftUI centers each page.
-            // Otherwise AppKit can switch from overlay to legacy after layout.
-            pinCarouselScrollers(host)
+        if component == .carousel || component == .data_table {
+            // Native scrollbar preferences must not change the snapshot geometry.
+            // Carousel baselines use legacy bars; table baselines use overlay bars.
+            pinSnapshotScrollers(host, style: component == .carousel ? .legacy : .overlay)
         }
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.08))
-        if component == .carousel {
+        if component == .carousel || component == .data_table {
             // SwiftUI can install the native scroll view during the first run-loop turn.
-            pinCarouselScrollers(host)
+            pinSnapshotScrollers(host, style: component == .carousel ? .legacy : .overlay)
             RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.08))
         }
         // Stop native indeterminate indicators at a reproducible frame; behavior tests cover state.
@@ -77,13 +77,13 @@ struct ComponentCatalogVisualTests {
         if let indicator = view as? NSProgressIndicator { indicator.stopAnimation(nil) }
         for child in view.subviews { stopIndicators(child) }
     }
-    private func pinCarouselScrollers(_ view: NSView) {
+    private func pinSnapshotScrollers(_ view: NSView, style: NSScroller.Style) {
         if let scroll = view as? NSScrollView {
-            scroll.scrollerStyle = .legacy
-            scroll.autohidesScrollers = false
+            scroll.scrollerStyle = style
+            scroll.autohidesScrollers = style == .overlay
             scroll.tile()
         }
-        for child in view.subviews { pinCarouselScrollers(child) }
+        for child in view.subviews { pinSnapshotScrollers(child, style: style) }
     }
 }
 #endif

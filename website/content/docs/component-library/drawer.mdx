@@ -193,16 +193,10 @@ private struct CNPresentationPresence: PreferenceKey {
     static func reduce(value: inout [UUID], nextValue: () -> [UUID]) { value += nextValue() }
 }
 private struct CNPresentationHostedKey: EnvironmentKey { static let defaultValue = false }
-private struct CNPresentationDismissKey: EnvironmentKey { static var defaultValue: (() -> Void)? { nil } }
 extension EnvironmentValues {
     fileprivate var cnPresentationHosted: Bool {
         get { self[CNPresentationHostedKey.self] }
         set { self[CNPresentationHostedKey.self] = newValue }
-    }
-    /// The active custom presentation's close action. Copied parts can use this too.
-    public var cnPresentationDismiss: (() -> Void)? {
-        get { self[CNPresentationDismissKey.self] }
-        set { self[CNPresentationDismissKey.self] = newValue }
     }
 }
 
