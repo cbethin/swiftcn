@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Build and launch the interactive component gallery on its own iPhone simulator."""
+import argparse
 import json
 import os
 from pathlib import Path
@@ -8,6 +9,9 @@ import subprocess
 import tempfile
 
 REPO = Path(__file__).resolve().parents[1]
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--duo', action='store_true', help='Use a dedicated iPhone Duo simulator with Xcode 27.1 or later')
+args = parser.parse_args()
 
 def run(*args, capture=False):
     result = subprocess.run(args, check=True, text=True, capture_output=capture)
@@ -15,6 +19,8 @@ def run(*args, capture=False):
 
 sdk = run('xcrun', '--sdk', 'iphonesimulator', '--show-sdk-path', capture=True)
 version = run('xcrun', '--sdk', 'iphonesimulator', '--show-sdk-version', capture=True)
+if args.duo and tuple(map(int, version.split('.'))) < (27, 1):
+    raise SystemExit('The Duo gallery requires Xcode 27.1 or later and its matching iOS runtime.')
 architecture = run('uname', '-m', capture=True)
 app = REPO / 'artifacts' / 'SwiftCN iOS Component Gallery.app'
 app.mkdir(parents=True, exist_ok=True)
@@ -46,15 +52,16 @@ if runtime_info is None:
     raise SystemExit(f'Install the iOS {version} simulator runtime in Xcode to run the gallery.')
 runtime = runtime_info['identifier']
 devices = json.loads(run('xcrun', 'simctl', 'list', 'devices', 'available', '-j', capture=True))['devices']
-device = next((d for d in devices.get(runtime, []) if d['name'] == 'swiftcn-component-gallery'), None)
+device_name = 'swiftcn-duo-gallery' if args.duo else 'swiftcn-component-gallery'
+device = next((d for d in devices.get(runtime, []) if d['name'] == device_name), None)
 if device is None:
     device_type = next(d['identifier'] for d in runtime_info['supportedDeviceTypes']
-                       if d['name'].startswith('iPhone ') and 'Pro Max' not in d['name'])
-    udid = run('xcrun', 'simctl', 'create', 'swiftcn-component-gallery', device_type, runtime, capture=True)
+                       if (d['name'] == 'iPhone Duo' if args.duo else d['name'].startswith('iPhone ') and 'Pro Max' not in d['name']))
+    udid = run('xcrun', 'simctl', 'create', device_name, device_type, runtime, capture=True)
     device = dict(udid=udid, state='Shutdown')
 if device['state'] != 'Booted':
     run('xcrun', 'simctl', 'boot', device['udid'])
 run('xcrun', 'simctl', 'bootstatus', device['udid'], '-b')
 run('xcrun', 'simctl', 'install', device['udid'], str(app))
 run('xcrun', 'simctl', 'launch', '--terminate-running-process', device['udid'], bundle_id)
-print(f'Interactive gallery running on {device["udid"]}. Open swiftcn-component-gallery in Xcode Device Hub or Simulator.')
+print(f'Interactive gallery running on {device["udid"]}. Open {device_name} in Xcode Device Hub or Simulator.')

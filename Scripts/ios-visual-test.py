@@ -78,6 +78,8 @@ def main():
     args = parser.parse_args()
     if args.duo and (args.mode != "capture" or args.profile != "local" or not args.components):
         parser.error("--duo requires capture local --components; existing reviewed references stay on their pinned simulator")
+    if args.duo and tuple(map(int, run(XCRUN, "--sdk", "iphonesimulator", "--show-sdk-version", capture=True).split('.'))) < (27, 1):
+        parser.error("The Duo capture requires Xcode 27.1 or later and its matching iOS runtime")
     if args.only:
         if not args.components:
             parser.error("--only requires --components")
@@ -154,6 +156,8 @@ def main():
                     captures.append((flags, name))
                 if args.duo and entry['slug'] in {"calendar", "field", "input-group", "message", "pagination", "resizable", "sidebar", "table", "toast"}:
                     captures.append((["--component", entry['slug'].replace('-', '_'), "--rtl"], f"component-{entry['slug']}-rtl"))
+            if args.duo:
+                captures.append((["--arrangement"], "native-arrangement"))
         else:
             for scene in ["controls", "rules"]:
                 for dark, large in [(False, False), (True, False), (False, True), (True, True)]:

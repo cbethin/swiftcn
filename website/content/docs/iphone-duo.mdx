@@ -1,0 +1,74 @@
+---
+title: iPhone Duo
+description: Native pane placement, reserved regions, and repeatable catalog checks.
+---
+
+Build your app with Xcode 27.1 or later to use the complete Duo display and the new SwiftUI APIs.
+SwiftCN keeps its iOS 17 and macOS 14 deployment targets.
+Older SDKs compile the fallback paths.
+
+## Compose a screen
+
+Use `NavigationSplitView` for app navigation.
+Use native sheets, alerts, tab views, and toolbars for platform presentation.
+SwiftUI handles their placement as the device opens, closes, or folds.
+
+Use `ArrangementView` for two related panes on supported systems.
+Keep navigation outside the arrangement.
+Put each pane's scrolling content inside the arrangement.
+Keep shared state in the screen that owns both panes.
+See the [complete native arrangement example](/docs/native-composition#arrangement).
+
+Use `AnyLayout` when your content needs a different stack axis as available space changes.
+Choose the layout from view bounds or size classes.
+The same child controls retain their identity during reflow.
+
+## Custom component placement
+
+Install `cnPopoverHost()` and `cnPresentationHost()` at the screen root, outside scrolling content.
+Hosts use local bounds, safe areas, and active reserved regions.
+Popovers stay near their triggers.
+Dialogs and edge panels choose a clear region that matches their placement.
+Toast decks stay within a clear region near the trailing bottom corner.
+These calculations use physical coordinates, including for right-to-left layouts.
+
+`CNResizable` retains your explicit axis and fraction binding.
+An active division along that axis separates its panes and hides the drag handle over the fold.
+The saved fraction returns when the division becomes inactive.
+Geometry, axis, and layout-direction changes cancel an active grab.
+Use `ArrangementView` when SwiftUI needs to choose the pane arrangement itself.
+
+## Run the gallery
+
+Install the matching iOS simulator runtime in Xcode.
+Select the Xcode 27.1 toolchain for these commands.
+
+```bash
+python3 Scripts/run-ios-component-gallery.py --duo
+```
+
+Open `swiftcn-duo-gallery` in Device Hub.
+Use its pose controls to open, close, rotate, and partially fold the device.
+Edit a field before each change.
+Check that its draft and selection remain intact.
+Check open menus, dialogs, toast decks, and divider handles near each reserved region.
+Check the keyboard, large text, right-to-left layouts, and Split View multitasking.
+
+## Capture the catalog
+
+```bash
+python3 Scripts/ios-visual-test.py capture local --components --duo
+```
+
+This command captures all 64 components on a dedicated Duo simulator in its default pose.
+It adds large-text and right-to-left cases for layout-sensitive components.
+Each capture includes native window dimensions, safe areas, and size classes.
+The Duo workflow uploads the captures as review evidence.
+It does not replace the reviewed references from the existing visual tests.
+
+These captures do not prove fold transitions, touch behavior, or physical-device performance.
+Use Device Hub for pose changes and a physical device for final interaction checks.
+Apple's CLI does not expose a hinge-angle command in the inspected Xcode 27.1 toolchain.
+
+See Apple's [Duo preparation guide](https://developer.apple.com/iphone-duo/prepare/)
+and [SwiftUI arrangement guidance](https://developer.apple.com/videos/play/tech-talks/111463/).

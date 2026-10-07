@@ -74,7 +74,7 @@ public struct CNPresentationHost<Content: View>: View {
                         ForEach(requests) { request in
                             let regions = geometry.cnPlacementRegions(layoutDirection: direction)
                             let placement = CNPlacementRegions.preferred(in: regions,
-                                near: CGPoint(x: direction == .leftToRight ? geometry.size.width : 0, y: geometry.size.height))
+                                near: request.kind.preferredPoint(in: geometry.size, direction: direction))
                             CNPresentationPanel(request: request, size: geometry.size, placement: placement)
                                 .transformEnvironment(\.self) { values in
                                     // Preserve public appearance without importing private focus dispatch state.
@@ -111,6 +111,14 @@ extension View {
 
 private enum CNPresentationKind {
     case dialog, sheet(Edge)
+    func preferredPoint(in size: CGSize, direction: LayoutDirection) -> CGPoint {
+        switch self {
+        case .dialog: CGPoint(x: size.width / 2, y: size.height / 2)
+        case .sheet(.top): CGPoint(x: size.width / 2, y: 0)
+        case .sheet(.bottom): CGPoint(x: size.width / 2, y: size.height)
+        case .sheet(let edge): CGPoint(x: (edge == .leading) == (direction == .leftToRight) ? 0 : size.width, y: size.height / 2)
+        }
+    }
     var recipe: TWClasses {
         switch self {
         case .dialog: "presentation-dialog"

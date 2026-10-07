@@ -4,6 +4,30 @@ import Testing
 
 @Suite("Reserved placement regions")
 struct PlacementRegionTests {
+    @Test func dividerPlacementRestoresTheSavedFractionAndMirrorsPanes() {
+        let size = CGSize(width: 800, height: 600)
+        let fold = CGRect(x: 300, y: 0, width: 20, height: 600)
+        let folded = CNResizePlacement(size: size, divisions: [fold], axis: .horizontal,
+                                       direction: .leftToRight, fraction: 0.35, handleExtent: 44)
+        #expect(folded.first == 300 && folded.handle == 20 && folded.length - folded.first == 480)
+        let rtl = CNResizePlacement(size: size, divisions: [fold], axis: .horizontal,
+                                   direction: .rightToLeft, fraction: 0.35, handleExtent: 44)
+        #expect(rtl.first == 480 && rtl.length - rtl.first == 300)
+        let flat = CNResizePlacement(size: size, divisions: [], axis: .horizontal,
+                                    direction: .leftToRight, fraction: 0.35, handleExtent: 44)
+        #expect(abs(flat.first - 756 * 0.35) < 0.001 && flat.handle == 44 && !flat.divided)
+        let dragged = CNResizePlacement(size: size, divisions: [], axis: .horizontal,
+                                       direction: .leftToRight, fraction: 0.4, handleExtent: 44)
+        #expect(flat.divisionStart == dragged.divisionStart && flat.handle == dragged.handle,
+                "Ordinary binding updates must not invalidate a divider grab.")
+    }
+    @Test func popoverEdgesMirrorWithinPhysicalPlacementBounds() {
+        let bounds = CGRect(x: 410, y: 30, width: 370, height: 540)
+        let anchor = CGRect(x: 570, y: 100, width: 40, height: 44)
+        let popup = CGSize(width: 120, height: 80)
+        #expect(CNPopoverPosition.origin(anchor: anchor, popup: popup, bounds: bounds, edge: .leading).x == 616)
+        #expect(CNPopoverPosition.origin(anchor: anchor, popup: popup, bounds: bounds, edge: .leading, direction: .rightToLeft).x == 444)
+    }
     @Test func safeBoundsUsePhysicalInsetsInBothDirections() {
         let size = CGSize(width: 800, height: 600)
         let insets = EdgeInsets(top: 12, leading: 24, bottom: 20, trailing: 60)

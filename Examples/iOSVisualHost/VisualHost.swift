@@ -27,6 +27,8 @@ struct SwiftCNVisualHost: App {
                             component.previewExample
                         }.tw("p-5 w-full")
                     }.tw("bg-background")
+                } else if arguments.contains("--arrangement") {
+                    NativeArrangementExample()
                 } else { IOSFixture(rulesScene: rulesScene) }
             }
                 .preferredColorScheme(dark ? .dark : .light)

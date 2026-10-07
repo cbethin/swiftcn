@@ -40,14 +40,10 @@ jobs:
       - name: Compile the Duo SDK integration
         run: bash Scripts/check-ios.sh
       - name: Install Duo runtime
+        timeout-minutes: 15
         run: |
           xcodebuild -downloadPlatform iOS -buildVersion 27.1 -architectureVariant arm64
           xcrun simctl list -j > artifacts/duo-sdk/simulators-with-duo.json
-          duo="$(xcrun simctl create swiftcn-duo com.apple.CoreSimulator.SimDeviceType.iPhone-Duo com.apple.CoreSimulator.SimRuntime.iOS-27-1)"
-          trap 'xcrun simctl shutdown "$duo"; xcrun simctl delete "$duo"' EXIT
-          xcrun simctl boot "$duo"
-          xcrun simctl bootstatus "$duo" -b
-          xcrun simctl io "$duo" enumerate > artifacts/duo-sdk/displays.txt
       - name: Capture the entire native catalog
         run: python3 Scripts/ios-visual-test.py capture local --components --duo
       - uses: actions/upload-artifact@v7
