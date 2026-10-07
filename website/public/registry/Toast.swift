@@ -55,6 +55,7 @@ public struct CNToastHost<Content: View>: View {
                                     .zIndex(Double(index))
                             }
                         }
+                        .tw("p-2")
                     }
                     .defaultScrollAnchor(.bottom)
                     .scrollBounceBehavior(.basedOnSize)
