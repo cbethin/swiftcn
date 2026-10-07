@@ -37,11 +37,12 @@ struct TouchTargetInteractionTests {
         }
     }
 
-    @Test(arguments: [false, true])
-    func tableNestedControlsKeepTheirIndependentActions(scrolling: Bool) async throws {
+    @Test(arguments: [false, true], [false, true])
+    func tableNestedControlsKeepTheirIndependentActions(scrolling: Bool, selectable: Bool) async throws {
         try await withHost(scrolling: scrolling) { model, host, window in
             // SwiftUI row taps need an active app gesture dispatcher. Gallery checks cover those taps.
             // This CLI fixture checks that native controls do not also run the row action.
+            model.rowSelectable = selectable
             model.rowSelected = true
             try await settle(host)
             let check = try #require(model.frames["table-checkbox"])
@@ -127,6 +128,7 @@ struct TouchTargetInteractionTests {
     var switched = false
     var toggled = false
     var rowSelected = false
+    var rowSelectable = true
     var rowActions = 0
     var cellActions = 0
     var expanded = false
@@ -152,7 +154,7 @@ private struct HitAreaHarness: View {
             measure(CNToggle("Toggle", isOn: $model.toggled, classes: "w-[280] h-[44]"), "toggle")
             measure(CNButton("Disabled", classes: "w-[280] h-[44]") { model.disabledActions += 1 }.disabled(true), "disabled")
             CNTable {
-                CNTableRow(isSelected: model.rowSelected, onSelect: { model.rowActions += 1; model.rowSelected.toggle() }) {
+                CNTableRow(isSelected: model.rowSelected, onSelect: model.rowSelectable ? { model.rowActions += 1; model.rowSelected.toggle() } : nil) {
                     CNTableCell { measure(CNCheckbox("", isOn: $model.rowSelected), "table-checkbox") }
                     measure(CNTableCell("Invoice", classes: "w-[140]"), "table-text")
                     CNTableCell { measure(CNButton("Open", variant: .ghost) { model.cellActions += 1 }, "table-action") }

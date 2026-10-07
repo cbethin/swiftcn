@@ -68,6 +68,23 @@ public struct CNSidebar<Sidebar: View, Detail: View>: View {
                 VStack(spacing: 0) { sidebar }
                     .frame(width: context.isCollapsed ? collapsedWidth : panelWidth, height: geometry.size.height,
                            alignment: .topLeading)
+                    .background(alignment: hiddenSign < 0 ? .leading : .trailing) {
+                        if compact && mobile.wrappedValue {
+                            // Keep the recognizer off child controls. Native controls in front of
+                            // this edge surface retain their hit testing and drag handling.
+                            Color.clear.frame(width: 24).contentShape(Rectangle())
+                                .gesture(DragGesture(minimumDistance: 20)
+                                    .updating($dragOffset) { value, offset, transaction in
+                                        guard abs(value.translation.width) > abs(value.translation.height) * 1.5 else { return }
+                                        transaction.disablesAnimations = true
+                                        offset = hiddenSign * min(panelWidth, max(0, hiddenSign * value.translation.width))
+                                    }.onEnded { value in
+                                        guard abs(value.translation.width) > abs(value.translation.height) * 1.5 else { return }
+                                        if hiddenSign * value.predictedEndTranslation.width > panelWidth * 0.35 { context.dismiss() }
+                                    })
+                                .accessibilityHidden(true)
+                        }
+                    }
                     .tw(cn("sidebar", classes))
                     .overlay(alignment: side == .leading ? .trailing : .leading) {
                         CNSeparator(axis: .vertical)
@@ -83,17 +100,6 @@ public struct CNSidebar<Sidebar: View, Detail: View>: View {
                     .focusable(compact && mobile.wrappedValue)
                     .focusEffectDisabled()
                     .focused($drawerFocused)
-                    .simultaneousGesture(DragGesture(minimumDistance: 20)
-                        .updating($dragOffset) { value, offset, transaction in
-                            guard compact, mobile.wrappedValue,
-                                  abs(value.translation.width) > abs(value.translation.height) * 1.5 else { return }
-                            // Track the finger immediately; animate only the reset after release or cancellation.
-                            transaction.disablesAnimations = true
-                            offset = hiddenSign * min(panelWidth, max(0, hiddenSign * value.translation.width))
-                        }.onEnded { value in
-                            guard compact, abs(value.translation.width) > abs(value.translation.height) * 1.5 else { return }
-                            if hiddenSign * value.predictedEndTranslation.width > panelWidth * 0.35 { context.dismiss() }
-                        })
             }.environment(\.cnSidebarContext, context)
                 .twAnimation("sidebar-motion", value: desktopOpen, tracksHover: false)
                 .twAnimation("sidebar-motion", value: mobile.wrappedValue, tracksHover: false)

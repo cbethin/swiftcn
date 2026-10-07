@@ -4,6 +4,16 @@ import Testing
 
 @Suite("Custom calendar and dropdown behavior")
 struct CustomControlBehaviorTests {
+    @Test func changedDateBoundsRecoverNavigationFromABrowsedMonth() {
+        let calendar = gregorian()
+        let browsed = date(2026, 2, 1, calendar: calendar)
+        let range = date(2026, 6, 15, hour: 12, calendar: calendar)...date(2026, 8, 31, calendar: calendar)
+        let visible = CNCalendarGrid.month(containing: browsed, in: range, calendar: calendar)
+        #expect(visible == date(2026, 6, 1, calendar: calendar))
+        #expect(CNCalendarGrid.adjacent(to: visible, offset: 1, in: range, calendar: calendar) == date(2026, 7, 1, calendar: calendar))
+        #expect(CNCalendarGrid.month(containing: date(2026, 12, 1, calendar: calendar), in: range, calendar: calendar) == date(2026, 8, 1, calendar: calendar))
+        #expect(CNCalendarGrid.month(containing: date(2026, 7, 1, calendar: calendar), in: range, calendar: calendar) == date(2026, 7, 1, calendar: calendar))
+    }
     private func gregorian(_ zone: String = "UTC", firstWeekday: Int = 1) -> Calendar {
         var value = Calendar(identifier: .gregorian)
         value.timeZone = TimeZone(identifier: zone)!

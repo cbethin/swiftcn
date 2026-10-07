@@ -7,6 +7,35 @@ import Testing
 @Suite("Popover pointer interaction", .serialized)
 @MainActor
 struct PopoverInteractionTests {
+    @Test func oversizedPopoverScrollsWithinTheHostAndPreservesItsEditorOnResize() async throws {
+        let model = PopoverViewportModel()
+        let controller = NSHostingController(rootView: PopoverViewportHarness(model: model))
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 300, height: 220),
+                              styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+        controller.view.frame = window.contentLayoutRect
+        window.contentViewController = controller; window.orderFront(nil)
+        defer { window.orderOut(nil); window.contentViewController = nil }
+        try await settle(controller.view, seconds: 0.3)
+        let scroll = try #require(descendants(controller.view).compactMap { $0 as? NSScrollView }.first)
+        let editor = try #require(descendants(scroll).compactMap { $0 as? NSTextField }.first)
+        let viewport = scroll.convert(scroll.bounds, to: controller.view)
+        #expect(viewport.minX >= 7 && viewport.maxX <= 293)
+        #expect(viewport.minY >= 7 && viewport.maxY <= 213)
+        let document = try #require(scroll.documentView)
+        #expect(document.bounds.width > scroll.contentSize.width && document.bounds.height > scroll.contentSize.height)
+        scroll.contentView.scroll(to: CGPoint(x: document.bounds.maxX - scroll.contentSize.width,
+                                              y: document.bounds.maxY - scroll.contentSize.height))
+        scroll.reflectScrolledClipView(scroll.contentView)
+        #expect(abs(scroll.documentVisibleRect.maxY - document.bounds.maxY) < 2, "The final menu rows must be reachable.")
+        model.draft = "Persistent popup draft"
+        window.setContentSize(CGSize(width: 640, height: 720))
+        try await settle(controller.view, seconds: 0.2)
+        #expect(descendants(controller.view).compactMap { $0 as? NSTextField }.first === editor)
+        #expect(editor.stringValue == model.draft)
+        #expect(scroll.contentSize.width > 500 && scroll.contentSize.height > 600)
+        #expect(scroll.contentSize.width < 624 && scroll.contentSize.height < 704, "Short content keeps its intrinsic size.")
+    }
+    private func descendants(_ root: NSView) -> [NSView] { root.subviews.flatMap { [$0] + descendants($0) } }
     @Test func popoverBuilderChildrenHaveSeparateVerticalFrames() async throws {
         let model = PopoverChildFrameModel()
         let controller = NSHostingController(rootView: PopoverBuilderHarness(model: model))
@@ -140,6 +169,21 @@ private struct PointerTriggerBounds: PreferenceKey {
     static let defaultValue: CGRect = .zero
     static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
         let next = nextValue(); if !next.isEmpty { value = next }
+    }
+}
+@MainActor @Observable private final class PopoverViewportModel { var draft = "Popup draft" }
+private struct PopoverViewportHarness: View {
+    @Bindable var model: PopoverViewportModel
+    var body: some View {
+        VStack {
+            CNPopover(isPresented: .constant(true)) {
+                VStack {
+                    TextField("Draft", text: $model.draft).textFieldStyle(.plain)
+                    ForEach(0..<20) { index in Text("Menu row \(index)").frame(height: 24) }
+                }.frame(width: 520, height: 620)
+            } label: { Text("Open") }
+            Spacer()
+        }.frame(maxWidth: .infinity, maxHeight: .infinity).cnPopoverHost()
     }
 }
 #endif

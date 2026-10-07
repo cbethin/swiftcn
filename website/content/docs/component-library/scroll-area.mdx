@@ -94,7 +94,10 @@ public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: Vi
                         ForEach(data) { item in
                             content(item).id(item.id).background {
                                 if !followNewMessages && item.id == (position?.wrappedValue ?? localPosition) {
-                                    Color.clear.onGeometryChange(for: CGRect.self, of: { $0.frame(in: .scrollView(axis: .vertical)) }) { frame in
+                                    Color.clear.onGeometryChange(for: CNMessageReadingFrame.self, of: {
+                                        let frame = $0.frame(in: .scrollView(axis: .vertical))
+                                        return CNMessageReadingFrame(minY: frame.minY, height: frame.height)
+                                    }) { frame in
                                         guard readingAnchor.frame == nil || readingAnchor.firstID == data.first?.id else { return }
                                         readingAnchor.firstID = data.first?.id
                                         readingAnchor.targetID = item.id
@@ -168,7 +171,12 @@ public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: Vi
     var initialRestorationPending = true
     var firstID: ID?
     var targetID: ID?
-    var frame: CGRect?
+    var frame: CNMessageReadingFrame?
+}
+// Only these two values are needed. Avoid exposing CGRect's SDK conformance in the opaque body type.
+private struct CNMessageReadingFrame: Equatable {
+    let minY: CGFloat
+    let height: CGFloat
 }
 private struct CNMessageEndGeometry: Equatable {
     let bottom: CGFloat

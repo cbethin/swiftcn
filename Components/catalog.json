@@ -5,7 +5,7 @@
     "symbol": "CNAccordion",
     "source": "Disclosure.swift",
     "example": "AccordionExample.swift",
-    "notes": "Stable caller-owned IDs preserve expansion through reorder. Choose single or multiple expansion. A custom native DisclosureGroup style makes the complete header, including whitespace and the chevron, one native Button."
+    "notes": "Stable caller-owned IDs preserve expansion through reorder. Choose single or multiple expansion. A custom native DisclosureGroup style makes the complete header, including whitespace and the chevron, one native Button. Collapsed content unmounts by default. Set keepContentMounted: true to retain child state. Mounted hidden controls cannot receive input or accessibility focus; their tasks continue until the host removes them."
   },
   {
     "name": "Alert",
@@ -93,7 +93,7 @@
     "symbol": "CNCalendar",
     "source": "Calendar.swift",
     "example": "CalendarExample.swift",
-    "notes": "A custom six-week SwiftUI grid uses styled day buttons and month navigation. Calendar arithmetic respects the environment calendar, locale, time zone, and daylight-saving changes. Selected, today, adjacent-month, and disabled days have separate recipes. Bounds apply to days and month navigation. Day buttons expose full date labels and selected state. External selection changes reveal that month. Override dayClasses or reuse CNCalendarDay in your own layout."
+    "notes": "A custom six-week SwiftUI grid uses styled day buttons and month navigation. Calendar arithmetic respects the environment calendar, locale, time zone, and daylight-saving changes. Selected, today, adjacent-month, and disabled days have separate recipes. Bounds apply to days and month navigation. Day buttons expose full date labels and selected state. External selection changes reveal that month. Override dayClasses or reuse CNCalendarDay in your own layout. Changes to the allowed date range reconcile the displayed month and clear an unavailable focused day."
   },
   {
     "name": "Card",
@@ -133,7 +133,7 @@
     "symbol": "CNCollapsible",
     "source": "Disclosure.swift",
     "example": "CollapsibleExample.swift",
-    "notes": "A bound native DisclosureGroup uses a full-width Button header, including whitespace and its chevron. Supply a custom label and content. Expanded layout changes use disclosure-motion and respect Reduce Motion."
+    "notes": "A bound native DisclosureGroup uses a full-width Button header, including whitespace and its chevron. Supply a custom label and content. Expanded layout changes use disclosure-motion and respect Reduce Motion. Collapsed content unmounts by default. Set keepContentMounted: true to retain child state. Mounted hidden controls cannot receive input or accessibility focus; their tasks continue until the host removes them."
   },
   {
     "name": "Combobox",
@@ -141,7 +141,7 @@
     "symbol": "CNCombobox",
     "source": "Command.swift",
     "example": "ComboboxExample.swift",
-    "notes": "A searchable custom SwiftUI popover selects stable option IDs. Empty results and disabled options are handled. The selected value remains in the caller binding."
+    "notes": "A searchable custom SwiftUI popover selects stable option IDs. Empty results and disabled options are handled. The selected value remains in the caller binding. Hosted popovers keep their intrinsic size until the host bounds limit them. A native scroll viewport makes oversized content reachable without replacing child controls during resizing."
   },
   {
     "name": "Command",
@@ -205,7 +205,7 @@
     "symbol": "CNDropdownMenu",
     "source": "Menus.swift",
     "example": "DropdownMenuExample.swift",
-    "notes": "A custom SwiftUI action surface opens in an anchored popover, including compact iOS layouts. Compose CNDropdownMenuItem, Label, Separator, Shortcut, and CheckboxItem. Arrow keys wrap through enabled items; Home and End move to the first and last item. Return activates, and Escape or outside interaction dismisses. Action items close the popover; checkbox items keep it open. A shortcut label is a visual hint; attach keyboardShortcut to install the action. Use isPresented to control presentation externally, contentClasses to style the surface, or CNDropdownMenuContent for your own presentation. Use these parts instead of native Menu items. Add .cnPopoverHost() at the screen root for the custom in-window surface and repeatable trigger clicks. Without a host, presentation uses the system popover. The popover-motion recipe controls interruptible entry and exit; repeated trigger clicks immediately reverse presentation."
+    "notes": "A custom SwiftUI action surface opens in an anchored popover, including compact iOS layouts. Compose CNDropdownMenuItem, Label, Separator, Shortcut, and CheckboxItem. Arrow keys wrap through enabled items; Home and End move to the first and last item. Return activates, and Escape or outside interaction dismisses. Action items close the popover; checkbox items keep it open. A shortcut label is a visual hint; attach keyboardShortcut to install the action. Use isPresented to control presentation externally, contentClasses to style the surface, or CNDropdownMenuContent for your own presentation. Use these parts instead of native Menu items. Add .cnPopoverHost() at the screen root for the custom in-window surface and repeatable trigger clicks. Without a host, presentation uses the system popover. The popover-motion recipe controls interruptible entry and exit; repeated trigger clicks immediately reverse presentation. Hosted popovers keep their intrinsic size until the host bounds limit them. A native scroll viewport makes oversized content reachable without replacing child controls during resizing."
   },
   {
     "name": "Empty",
@@ -341,7 +341,7 @@
     "symbol": "CNPopover",
     "source": "Presentation.swift",
     "example": "PopoverExample.swift",
-    "notes": "A native button toggles a custom SwiftUI popover. Choose its preferred side and compose arbitrary content. Classes style the trigger. Add .cnPopoverHost() at the screen root for custom in-window presentation beyond scrolling children. Without a host, presentation uses the system popover. The popover-motion recipe controls interruptible entry and exit. Outside interaction dismisses the surface."
+    "notes": "A native button toggles a custom SwiftUI popover. Choose its preferred side and compose arbitrary content. Classes style the trigger. Add .cnPopoverHost() at the screen root for custom in-window presentation beyond scrolling children. Without a host, presentation uses the system popover. The popover-motion recipe controls interruptible entry and exit. Outside interaction dismisses the surface. Hosted popovers keep their intrinsic size until the host bounds limit them. A native scroll viewport makes oversized content reachable without replacing child controls during resizing."
   },
   {
     "name": "Progress",
@@ -413,7 +413,7 @@
     "symbol": "CNSidebar",
     "source": "Sidebar.swift",
     "example": "SidebarExample.swift",
-    "notes": "A custom SwiftUI sidebar composes pinned headers and footers, scrollable groups, selected menu buttons, badges, and nested menus. Desktop visibility supports icon rails, offcanvas collapse, or a fixed panel. Compact widths use a separate controlled or local drawer state; outside activation, menu selection, Escape, and a horizontal swipe dismiss it. Native buttons retain focus, disabled state, roles, and accessibility. The detail and sidebar remain mounted through reversible transitions. Set sidebar-motion to animate-none in global rules to disable motion; presets also respect Reduce Motion. The host owns navigation destinations and selection."
+    "notes": "A custom SwiftUI sidebar composes pinned headers and footers, scrollable groups, selected menu buttons, badges, and nested menus. Desktop visibility supports icon rails, offcanvas collapse, or a fixed panel. Compact widths use a separate controlled or local drawer state; outside activation, menu selection, Escape, and a horizontal swipe dismiss it. Native buttons retain focus, disabled state, roles, and accessibility. The detail and sidebar remain mounted through reversible transitions. Set sidebar-motion to animate-none in global rules to disable motion; presets also respect Reduce Motion. The host owns navigation destinations and selection. Swipe dismissal uses a background surface along the outer 24-point edge. Native controls in front keep their gestures."
   },
   {
     "name": "Skeleton",
@@ -453,7 +453,7 @@
     "symbol": "CNTable",
     "source": "Table.swift",
     "example": "TableExample.swift",
-    "notes": "Compose rich aligned columns with native Grid, GridRow, CNTableHead, and CNTableCell parts. The table fills its viewport and scrolls horizontally when columns need more room. Header cells expose accessibility headings. Rows have separators, immediate hover feedback, and a caller-controlled selected appearance. Cells accept leading, center, or trailing alignment. CNTableCaption adds supporting text outside the table. Pass onSelect: to make row whitespace selectable. Child checkboxes, buttons, and editors handle their own events without also activating the row; use CNDataTable for native record sorting."
+    "notes": "Compose rich aligned columns with native Grid, GridRow, CNTableHead, and CNTableCell parts. The table fills its viewport and scrolls horizontally when columns need more room. Header cells expose accessibility headings. Rows have separators, immediate hover feedback, and a caller-controlled selected appearance. Cells accept leading, center, or trailing alignment. CNTableCaption adds supporting text outside the table. Pass onSelect: to make row whitespace selectable. Child checkboxes, buttons, and editors handle their own events without also activating the row; use CNDataTable for native record sorting. Adding or removing onSelect preserves editable cell identity and child state."
   },
   {
     "name": "Tabs",

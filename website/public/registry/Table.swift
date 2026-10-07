@@ -53,13 +53,10 @@ private extension EnvironmentValues {
 private struct CNTableCellActivation: ViewModifier {
     @Environment(\.cnTableRowAction) private var onSelect
     @Environment(\.isEnabled) private var isEnabled
-    @ViewBuilder func body(content: Content) -> some View {
-        if let onSelect {
-            content.contentShape(.interaction, Rectangle())
-                .onTapGesture { if isEnabled { onSelect() } }
-        } else {
-            content
-        }
+    func body(content: Content) -> some View {
+        content.contentShape(.interaction, Rectangle())
+            .gesture(TapGesture().onEnded { if isEnabled { onSelect?() } },
+                     including: onSelect == nil ? .subviews : .all)
     }
 }
 public struct CNTableCell<Content: View>: View {

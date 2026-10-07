@@ -28,8 +28,12 @@ public struct CNPopoverHost<Content: View>: View {
                                 let bounds = CGRect(origin: .zero, size: geometry.size)
                                 let edge = request.edge
                                 if request.isPresented {
-                                    request.content
-                                        .fixedSize(horizontal: true, vertical: true)
+                                    // Constrain the native viewport before requesting its ideal size.
+                                    // The content keeps one identity as the host resizes.
+                                    ScrollView([.horizontal, .vertical]) { request.content.fixedSize() }
+                                        .scrollBounceBehavior(.basedOnSize)
+                                        .frame(maxWidth: max(0, bounds.width - 16), maxHeight: max(0, bounds.height - 16))
+                                        .fixedSize()
                                         .alignmentGuide(.leading) { size in
                                             -CNPopoverPosition.origin(anchor: anchor,
                                                 popup: CGSize(width: size.width, height: size.height),

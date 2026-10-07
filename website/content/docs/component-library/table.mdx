@@ -90,7 +90,7 @@ struct TableExample: View {
 
 ## Native behavior
 
-Compose rich aligned columns with native Grid, GridRow, CNTableHead, and CNTableCell parts. The table fills its viewport and scrolls horizontally when columns need more room. Header cells expose accessibility headings. Rows have separators, immediate hover feedback, and a caller-controlled selected appearance. Cells accept leading, center, or trailing alignment. CNTableCaption adds supporting text outside the table. Pass onSelect: to make row whitespace selectable. Child checkboxes, buttons, and editors handle their own events without also activating the row; use CNDataTable for native record sorting.
+Compose rich aligned columns with native Grid, GridRow, CNTableHead, and CNTableCell parts. The table fills its viewport and scrolls horizontally when columns need more room. Header cells expose accessibility headings. Rows have separators, immediate hover feedback, and a caller-controlled selected appearance. Cells accept leading, center, or trailing alignment. CNTableCaption adds supporting text outside the table. Pass onSelect: to make row whitespace selectable. Child checkboxes, buttons, and editors handle their own events without also activating the row; use CNDataTable for native record sorting. Adding or removing onSelect preserves editable cell identity and child state.
 
 ## Style and compose
 
@@ -166,13 +166,10 @@ private extension EnvironmentValues {
 private struct CNTableCellActivation: ViewModifier {
     @Environment(\.cnTableRowAction) private var onSelect
     @Environment(\.isEnabled) private var isEnabled
-    @ViewBuilder func body(content: Content) -> some View {
-        if let onSelect {
-            content.contentShape(.interaction, Rectangle())
-                .onTapGesture { if isEnabled { onSelect() } }
-        } else {
-            content
-        }
+    func body(content: Content) -> some View {
+        content.contentShape(.interaction, Rectangle())
+            .gesture(TapGesture().onEnded { if isEnabled { onSelect?() } },
+                     including: onSelect == nil ? .subviews : .all)
     }
 }
 public struct CNTableCell<Content: View>: View {

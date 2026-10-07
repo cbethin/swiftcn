@@ -7,6 +7,44 @@ import Testing
 @Suite("Component composition", .serialized)
 @MainActor
 struct ComponentRenderingTests {
+    @Test func tableSelectionAvailabilityPreservesChildStateAndTheNativeEditor() throws {
+        let model = CompositionLifetimeModel()
+        let (host, window) = host(TableLifetimeHarness(model: model), width: 400)
+        defer { window.contentView = nil }
+        let editor = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
+        editor.stringValue = "Edited table draft"
+        editor.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: editor))
+        let identities = model.identities
+        #expect(identities.count == 1)
+        for selectable in [true, false, true] {
+            model.selectable = selectable; settle(host)
+            #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)
+            #expect(model.identities == identities && model.draft == "Edited table draft")
+        }
+    }
+    @Test(arguments: [false, true])
+    func collapsibleContentRetentionIsExplicit(keepMounted: Bool) throws {
+        let model = CompositionLifetimeModel()
+        let (host, window) = host(DisclosureLifetimeHarness(model: model, keepMounted: keepMounted), width: 400)
+        defer { window.contentView = nil }
+        let editor = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
+        let firstIdentity = try #require(model.identities.first)
+        model.expanded = false; settle(host)
+        if keepMounted {
+            #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)
+            #expect(!editor.isEnabled, "Mounted hidden controls cannot receive input.")
+        } else {
+            #expect(descendants(host).allSatisfy { !($0 is NSTextField) })
+        }
+        model.expanded = true; settle(host)
+        let reopened = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
+        #expect(reopened.isEnabled)
+        if keepMounted {
+            #expect(reopened === editor && model.identities == [firstIdentity])
+        } else {
+            #expect(model.identities.count == 2 && model.identities.last != firstIdentity)
+        }
+    }
     @Test func nativeEditorBindingAndIdentitySurviveValidationChanges() throws {
         let model = ComponentModel()
         let (host, window) = host(ComponentEditor(model: model), width: 320)
@@ -212,6 +250,40 @@ private struct ComponentVisualFixture: View {
         }
         .padding(16)
         .background(TWTheme.standard.color(.background, scheme: scheme))
+    }
+}
+@MainActor @Observable private final class CompositionLifetimeModel {
+    var expanded = true
+    var selectable = false
+    var draft = "Initial draft"
+    var identities: [UUID] = []
+}
+private struct LifetimeEditor: View {
+    @Bindable var model: CompositionLifetimeModel
+    @State private var identity = UUID()
+    var body: some View {
+        TextField("Draft", text: $model.draft).textFieldStyle(.plain)
+            .onAppear { model.identities.append(identity) }
+    }
+}
+private struct TableLifetimeHarness: View {
+    @Bindable var model: CompositionLifetimeModel
+    var body: some View {
+        CNTable {
+            CNTableRow(onSelect: model.selectable ? {} : nil) {
+                CNTableCell { LifetimeEditor(model: model) }
+            }
+        }
+    }
+}
+private struct DisclosureLifetimeHarness: View {
+    @Bindable var model: CompositionLifetimeModel
+    let keepMounted: Bool
+    var body: some View {
+        CNCollapsible(isExpanded: $model.expanded, keepContentMounted: keepMounted) {
+            LifetimeEditor(model: model)
+        } label: { Text("Details") }
+            .twRules { $0.named["disclosure-motion"] = TWStyle() }
     }
 }
 #endif

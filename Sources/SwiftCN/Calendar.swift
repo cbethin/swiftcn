@@ -22,7 +22,9 @@ public struct CNCalendar: View {
     private var calendar: Calendar {
         var value = environmentCalendar; value.timeZone = timeZone; value.locale = locale; return value
     }
-    private var month: Date { CNCalendarGrid.month(containing: visibleMonth ?? min(max(date, range.lowerBound), range.upperBound), calendar: calendar) }
+    private var month: Date {
+        CNCalendarGrid.month(containing: visibleMonth ?? date, in: range, calendar: calendar)
+    }
     private var days: [Date] { CNCalendarGrid.days(in: month, calendar: calendar) }
     private var weekdaySymbols: [String] {
         let symbols = calendar.veryShortStandaloneWeekdaySymbols
@@ -68,6 +70,12 @@ public struct CNCalendar: View {
         .onChange(of: date) { _, _ in visibleMonth = nil }
         .onChange(of: timeZone) { _, _ in visibleMonth = nil }
         .onChange(of: environmentCalendar) { _, _ in visibleMonth = nil }
+        .onChange(of: range) { _, _ in
+            visibleMonth = month
+            if let focusedDate, CNCalendarGrid.selection(for: focusedDate, in: range, calendar: calendar) == nil {
+                self.focusedDate = nil
+            }
+        }
     }
     private func moveFocus(from day: Date, key: KeyEquivalent) {
         let component: Calendar.Component = key == .pageUp || key == .pageDown ? .month : .day
@@ -153,6 +161,9 @@ public struct CNCalendarDay: View {
 
 // Calendar arithmetic uses day addition rather than fixed seconds across DST.
 enum CNCalendarGrid {
+    static func month(containing date: Date, in range: ClosedRange<Date>, calendar: Calendar) -> Date {
+        month(containing: min(max(date, range.lowerBound), range.upperBound), calendar: calendar)
+    }
     static func month(containing date: Date, calendar: Calendar) -> Date {
         calendar.dateInterval(of: .month, for: date)?.start ?? calendar.startOfDay(for: date)
     }

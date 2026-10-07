@@ -35,7 +35,7 @@ struct PopoverExample: View {
 
 ## Native behavior
 
-A native button toggles a custom SwiftUI popover. Choose its preferred side and compose arbitrary content. Classes style the trigger. Add .cnPopoverHost() at the screen root for custom in-window presentation beyond scrolling children. Without a host, presentation uses the system popover. The popover-motion recipe controls interruptible entry and exit. Outside interaction dismisses the surface.
+A native button toggles a custom SwiftUI popover. Choose its preferred side and compose arbitrary content. Classes style the trigger. Add .cnPopoverHost() at the screen root for custom in-window presentation beyond scrolling children. Without a host, presentation uses the system popover. The popover-motion recipe controls interruptible entry and exit. Outside interaction dismisses the surface. Hosted popovers keep their intrinsic size until the host bounds limit them. A native scroll viewport makes oversized content reachable without replacing child controls during resizing.
 
 ## Style and compose
 

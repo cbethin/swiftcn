@@ -313,7 +313,7 @@ struct CollapsibleExample: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            CNCollapsible(isExpanded: $isOn) { Text("Details keep native disclosure behavior.").tw("text-sm") } label: { Text("Show details") }
+            CNCollapsible(isExpanded: $isOn, keepContentMounted: true) { Text("Details keep native disclosure behavior.").tw("text-sm") } label: { Text("Show details") }
 
         }
     }
