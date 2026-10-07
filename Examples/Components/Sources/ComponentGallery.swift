@@ -73,7 +73,7 @@ enum CNComponentGallery: String, CaseIterable, Identifiable {
         case .sidebar: AnyView(SidebarExample(initialMobilePresented: true))
         case .dialog: AnyView(DialogExample(initialPresented: true).frame(maxWidth: .infinity).frame(height: 360).cnPresentationHost())
         case .sheet: AnyView(SheetExample(initialPresented: true).frame(maxWidth: .infinity).frame(height: 360).cnPresentationHost())
-        case .drawer: AnyView(DrawerExample(initialPresented: true).frame(maxWidth: .infinity).frame(height: 360).cnPresentationHost())
+        case .drawer: AnyView(DrawerExample(showsInlinePreview: true))
         default: example
         }
     }

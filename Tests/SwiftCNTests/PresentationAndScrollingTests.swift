@@ -22,7 +22,7 @@ struct PresentationAndScrollingTests {
         #expect(scroll.contentSize.height > 100 && scroll.contentSize.height < 400)
         #expect(document.bounds.height > scroll.contentSize.height * 3)
     }
-    @Test(arguments: [0, 1, 2], [false, true])
+    @Test(arguments: [0, 1], [false, true])
     func panelsHaveDistinctPlacementAndReverseWithoutReplacingTheEditor(kind: Int, disableMotion: Bool) async throws {
         let model = PresentationProbeModel()
         let controller = NSHostingController(rootView: PresentationProbe(model: model, kind: kind)
@@ -46,7 +46,6 @@ struct PresentationAndScrollingTests {
         #expect(frame.intersection(viewport).height > 10, "The editor must be visible inside a nonzero viewport.")
         if kind == 0 { #expect(abs(frame.midX - 400) < 5) }
         if kind == 1 { #expect(frame.minX >= 390) }
-        if kind == 2 { #expect(frame.midY > 450) }
         model.text = "a persistent draft"
         model.animations.removeAll()
         for open in [false, true, false, true] {
@@ -137,10 +136,8 @@ private struct PresentationProbe: View {
             PresentationEnabledProbe { model.backgroundEnabled = $0 }
             if kind == 0 {
                 CNDialog(isPresented: Binding(get: { model.open }, set: { model.open = $0 })) { popup } label: { Text("Open") }
-            } else if kind == 1 {
-                CNSheet(isPresented: Binding(get: { model.open }, set: { model.open = $0 })) { popup } label: { Text("Open") }
             } else {
-                CNDrawer(isPresented: Binding(get: { model.open }, set: { model.open = $0 })) { popup } label: { Text("Open") }
+                CNSheet(isPresented: Binding(get: { model.open }, set: { model.open = $0 })) { popup } label: { Text("Open") }
             }
         }.frame(maxWidth: .infinity, maxHeight: .infinity)
             .cnPresentationHost()

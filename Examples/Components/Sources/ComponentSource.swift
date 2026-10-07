@@ -494,20 +494,29 @@ struct DirectionExample: View {
 import SwiftUI
 import SwiftCN
 
-// At your screen or window root, install .cnPresentationHost().
 struct DrawerExample: View {
     @State private var presented = false
+    private let showsInlinePreview: Bool
 
-    init(initialPresented: Bool = false) { _presented = State(initialValue: initialPresented) }
+    init(showsInlinePreview: Bool = false) { self.showsInlinePreview = showsInlinePreview }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            CNDrawer(isPresented: $presented) {
-                CNDialogTitle("Activity")
-                Text("Drag the handle to dismiss. Content keeps native scrolling.")
-                CNDialogClose()
-            } label: { Text("Show activity") }
+        if showsInlinePreview {
+            // Snapshot the shared content; the live example uses the system sheet.
+            VStack(alignment: .leading, spacing: 12) { drawerContent }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .tw("drawer")
+        } else {
+            CNDrawer(isPresented: $presented) { drawerContent } label: { Text("Show activity") }
+        }
+    }
 
+    private var drawerContent: some View {
+        Group {
+            CNDialogTitle("Activity")
+            Text("A native sheet handles resizing, dragging, and dismissal.")
+                .tw("text-sm text-mutedForeground")
+            CNDialogClose()
         }
     }
 }

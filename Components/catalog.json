@@ -197,7 +197,7 @@
     "symbol": "CNDrawer",
     "source": "Presentation.swift",
     "example": "DrawerExample.swift",
-    "notes": "A custom bottom drawer uses .cnPresentationHost() at the screen root. A dedicated drag handle tracks the finger and uses predicted travel to dismiss; content keeps native scrolling. Backdrop activation, Escape, and CNDialogClose also dismiss it. Reversals retarget the shared presentation-motion recipe and preserve the mounted content. Without a host, SwiftUI presents a native sheet."
+    "notes": "CNDrawer presents a native SwiftUI sheet with medium and large detents. SwiftUI owns dragging, resizing, and dismissal; CNDialogClose uses native dismissal. The drawer recipe styles the content through .tw, and contentClasses overrides it. No presentation host is required. The static preview shows shared content; the live gallery shows platform sheet chrome and gestures."
   },
   {
     "name": "Dropdown Menu",
