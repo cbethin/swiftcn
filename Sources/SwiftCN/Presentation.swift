@@ -189,7 +189,7 @@ private struct CNPresentationPanel: View {
                 .disabled(!open)
                 .accessibilityElement(children: .contain).accessibilityAddTraits(.isModal)
                 .accessibilityAction(.escape, close)
-                .focusable().focusEffectDisabled().focused($focused)
+                .focusable(open).focusEffectDisabled().focused($focused)
                 .onKeyPress(.escape) { close(); return .handled }
             }
         }
