@@ -79,21 +79,20 @@ struct PresentationAndScrollingTests {
         let host = controller.view
         try await settle(host)
         #expect(model.position == 12)
-        let initial = try #require(model.frames[12])
-        let viewport = try #require(model.frames[Int.min])
-        #expect(abs(initial.minY - viewport.minY) < 2, "The initial requested target must be visible: \(initial), viewport \(viewport).")
         let scroll = try #require(descendants(host).compactMap { $0 as? NSScrollView }.first)
+        #expect(abs(scroll.documentVisibleRect.minY - 12 * 48) < 2,
+                "The native viewport must start at the requested target: \(scroll.documentVisibleRect).")
         if partialOffset > 0 {
             var origin = scroll.documentVisibleRect.origin; origin.y += partialOffset
             scroll.contentView.scroll(to: origin); scroll.reflectScrolledClipView(scroll.contentView)
             try await settle(host)
         }
-        let original = try #require(model.frames[12])
+        let original = scroll.documentVisibleRect.minY
         model.rows.insert(contentsOf: (-5..<0).map { ScrollProbeRow(id: $0) }, at: 0)
         try await settle(host)
         #expect(model.position == 12)
-        let afterPrepend = try #require(model.frames[12])
-        #expect(abs(afterPrepend.minY - original.minY) < 2, "Original: \(original); after prepend: \(afterPrepend)")
+        let afterPrepend = scroll.documentVisibleRect.minY
+        #expect(abs(afterPrepend - original - 5 * 48) < 2, "Original native offset: \(original); after prepend: \(afterPrepend)")
         model.rows.append(ScrollProbeRow(id: 100))
         try await settle(host)
         #expect(model.position == 12, "New messages must not pull a paused reader to the bottom.")
@@ -180,7 +179,6 @@ private struct ScrollProbeRow: Identifiable { let id: Int }
     var revision = 0
     var follow = false
     var latestHeight: CGFloat = 40
-    @ObservationIgnored var frames: [Int: CGRect] = [:]
 }
 private struct ScrollProbe: View {
     let model: ScrollProbeModel
@@ -188,16 +186,7 @@ private struct ScrollProbe: View {
         CNMessageScroller(model.rows, followNewMessages: model.follow, scrollRevision: model.revision,
                           position: Binding(get: { model.position }, set: { model.position = $0 })) { row in
             Text("Message \(row.id)").frame(height: row.id == model.rows.last?.id ? model.latestHeight : 40)
-                .background(GeometryReader { geometry in
-                    Color.clear.preference(key: ScrollFramesKey.self, value: [row.id: geometry.frame(in: .global)])
-                })
-        }.background(GeometryReader { geometry in
-            Color.clear.preference(key: ScrollFramesKey.self, value: [Int.min: geometry.frame(in: .global)])
-        }).onPreferenceChange(ScrollFramesKey.self) { model.frames = $0 }
+        }
     }
-}
-private struct ScrollFramesKey: PreferenceKey {
-    static let defaultValue: [Int: CGRect] = [:]
-    static func reduce(value: inout [Int: CGRect], nextValue: () -> [Int: CGRect]) { value.merge(nextValue()) { _, next in next } }
 }
 #endif
