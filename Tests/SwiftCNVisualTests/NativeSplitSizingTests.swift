@@ -9,14 +9,15 @@ import Testing
 @MainActor
 struct NativeSplitSizingTests {
     @Test func splitExampleAllowsBothPanesToGrow() throws {
-        try verifySizing(NativeSplitExample(), positions: [220, 550, 250], minimumDetail: 220)
+        try verifySizing(NativeSplitExample(), positions: [140, 550, 250], minimumSidebar: 160, minimumDetail: 220)
     }
 
     @Test func navigationExampleAllowsAWideSidebar() throws {
-        try verifySizing(NativeNavigationExample(), positions: [200, 500, 240], minimumDetail: 300)
+        try verifySizing(NativeNavigationExample(), positions: [160, 500, 240], minimumSidebar: 180, minimumDetail: 300)
     }
 
-    private func verifySizing<V: View>(_ root: V, positions: [CGFloat], minimumDetail: CGFloat) throws {
+    private func verifySizing<V: View>(_ root: V, positions: [CGFloat], minimumSidebar: CGFloat,
+                                      minimumDetail: CGFloat) throws {
         let controller = NSHostingController(rootView: root)
         let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 900, height: 560),
                               styleMask: [.titled, .resizable], backing: .buffered, defer: false)
@@ -35,7 +36,7 @@ struct NativeSplitSizingTests {
         for position in positions {
             split.setPosition(position, ofDividerAt: 0)
             settle(controller.view)
-            #expect(abs(split.arrangedSubviews[0].frame.width - position) < 3,
+            #expect(abs(split.arrangedSubviews[0].frame.width - max(position, minimumSidebar)) < 3,
                     "The real gallery example must resize beyond its intrinsic or default column width.")
             #expect(split.arrangedSubviews[1].frame.width >= minimumDetail - 1)
             #expect(descendants(controller.view).compactMap { $0 as? NSTextView }.first === editor)
@@ -44,8 +45,11 @@ struct NativeSplitSizingTests {
         }
         window.setContentSize(NSSize(width: 640, height: 560))
         settle(controller.view)
+        #expect(split.arrangedSubviews[0].frame.width >= minimumSidebar - 1)
         #expect(split.arrangedSubviews[1].frame.width >= minimumDetail - 1)
+        #expect(descendants(controller.view).compactMap { $0 as? NSTextView }.first === editor)
         #expect(editor.string == "A draft survives native pane resizing.")
+        #expect(window.firstResponder === editor)
     }
 
     private func settle(_ view: NSView) {
