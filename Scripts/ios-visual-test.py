@@ -70,11 +70,14 @@ def launch_capture_attempt(device, bundle_id, flags, ready, artifacts, name, att
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=["record", "verify"], nargs="?", default="verify")
+    parser.add_argument("mode", choices=["record", "verify", "capture"], nargs="?", default="verify")
     parser.add_argument("profile", choices=["local", "ci"], nargs="?", default="local")
     parser.add_argument("--components", action="store_true", help="Capture all 64 component examples")
+    parser.add_argument("--duo", action="store_true", help="Capture the actual Duo simulator with the matching SDK runtime")
     parser.add_argument("--only", nargs="+", metavar="SLUG", help="Capture selected component slugs for a focused review")
     args = parser.parse_args()
+    if args.duo and (args.mode != "capture" or args.profile != "local" or not args.components):
+        parser.error("--duo requires capture local --components; existing reviewed references stay on their pinned simulator")
     if args.only:
         if not args.components:
             parser.error("--only requires --components")
@@ -86,7 +89,7 @@ def main():
         sdk_version = run(XCRUN, "--sdk", "iphonesimulator", "--show-sdk-version", capture=True)
         if sdk_version != "18.5" or "Xcode 16.4" not in run("/usr/bin/xcodebuild", "-version", capture=True):
             raise RuntimeError("The ci profile requires Xcode 16.4 with iOS 18.5. Use the local profile.")
-    artifacts = REPO / "artifacts" / ("ios-components" if args.components else "ios-visual")
+    artifacts = REPO / "artifacts" / ("duo-components" if args.duo else "ios-components" if args.components else "ios-visual")
     artifacts.mkdir(parents=True, exist_ok=True)
     app = artifacts / "SwiftCNVisualHost.app"
     app.mkdir(exist_ok=True)
@@ -96,7 +99,9 @@ def main():
                       "CFBundleName": "SwiftCN Visual Host", "CFBundleVersion": "1",
                       "CFBundleShortVersionString": "1", "CFBundlePackageType": "APPL",
                       "MinimumOSVersion": "17.0", "UIDeviceFamily": [1], "UILaunchScreen": {},
-                      "UISupportedInterfaceOrientations": ["UIInterfaceOrientationPortrait"]}, handle)
+                      "UISupportedInterfaceOrientations": (["UIInterfaceOrientationPortrait", "UIInterfaceOrientationPortraitUpsideDown",
+                                                            "UIInterfaceOrientationLandscapeLeft", "UIInterfaceOrientationLandscapeRight"]
+                                                           if args.duo else ["UIInterfaceOrientationPortrait"])}, handle)
     sdk = run(XCRUN, "--sdk", "iphonesimulator", "--show-sdk-path", capture=True)
     architecture = run("uname", "-m", capture=True)
     # Freeze inputs. Components use public package APIs; the visual host owns a source copy.
@@ -124,13 +129,16 @@ def main():
     if args.profile == "ci" and runtime != "com.apple.CoreSimulator.SimRuntime.iOS-18-5":
         raise RuntimeError("The ci profile requires the iOS 18.5 runtime")
     device = run(XCRUN, "simctl", "create", "swiftcn-visual-tests",
-                 "com.apple.CoreSimulator.SimDeviceType.iPhone-16", runtime, capture=True)
+                 "com.apple.CoreSimulator.SimDeviceType.iPhone-Duo" if args.duo else "com.apple.CoreSimulator.SimDeviceType.iPhone-16",
+                 runtime, capture=True)
     try:
         print("Booting the dedicated visual simulator", flush=True)
         run(XCRUN, "simctl", "boot", device)
         run(XCRUN, "simctl", "bootstatus", device, "-b", capture=True, timeout=300)
         print("Booted the dedicated visual simulator", flush=True)
         run(XCRUN, "simctl", "install", device, str(app))
+        if args.duo:
+            (artifacts / "displays.txt").write_text(run(XCRUN, "simctl", "io", device, "enumerate", capture=True))
         container = Path(run(XCRUN, "simctl", "get_app_container", device, bundle_id, "data", capture=True))
         ready = container / "Documents/visual-ready"
         captures = []
@@ -144,6 +152,8 @@ def main():
                     flags = ["--component", entry['slug'].replace('-', '_')] + (["--dark"] if dark else []) + (["--large-text"] if large else [])
                     name = f"component-{entry['slug']}-{'dark' if dark else 'light'}-{'large-text' if large else 'standard'}"
                     captures.append((flags, name))
+                if args.duo and entry['slug'] in {"calendar", "field", "input-group", "message", "pagination", "resizable", "sidebar", "table", "toast"}:
+                    captures.append((["--component", entry['slug'].replace('-', '_'), "--rtl"], f"component-{entry['slug']}-rtl"))
         else:
             for scene in ["controls", "rules"]:
                 for dark, large in [(False, False), (True, False), (False, True), (True, True)]:
@@ -153,11 +163,15 @@ def main():
             ready.unlink(missing_ok=True)
             launch_capture(device, bundle_id, flags, ready, artifacts, name)
             shutil.copyfile(container / "Documents/visual-snapshot.png", artifacts / f"{name}.png")
+            shutil.copyfile(container / "Documents/visual-metrics.json", artifacts / f"{name}.json")
             print(f"Captured {name}", flush=True)
     finally:
         # Delete only the simulator created by this run.
         subprocess.run([XCRUN, "simctl", "shutdown", device], check=False)
         run(XCRUN, "simctl", "delete", device)
+    if args.mode == "capture":
+        print(f"Captured {len(captures)} images for review in {artifacts}. No reference images changed.", flush=True)
+        return
     references = (REPO / ("Tests/SwiftCNVisualTests/__Snapshots__/components-ios-18.5-iphone-16" if args.components else "Tests/SwiftCNVisualTests/__Snapshots__/ios-18.5-iphone-16")
                   if args.profile == "ci" else REPO / ("artifacts/ios-component-baselines" if args.components else "artifacts/ios-local-baselines"))
     references.mkdir(parents=True, exist_ok=True)

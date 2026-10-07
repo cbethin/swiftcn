@@ -373,7 +373,7 @@
     "symbol": "CNResizable",
     "source": "Resizable.swift",
     "example": "ResizableExample.swift",
-    "notes": "Only the divider captures drag gestures. It tracks the pointer immediately in a stable coordinate space and preserves the grab offset. Horizontal, vertical, and right-to-left layouts support a normalized binding, minimum fractions, and accessible adjustment. Drag updates suppress inherited animations; release and cancellation clear the grab. Disabled splits ignore dragging and accessible adjustment. Size the container with classes."
+    "notes": "Only the divider captures drag gestures. It tracks the pointer immediately in a stable coordinate space and preserves the grab offset. Horizontal, vertical, and right-to-left layouts support a normalized binding, minimum fractions, and accessible adjustment. Drag updates suppress inherited animations; release and cancellation clear the grab. Disabled splits ignore dragging and accessible adjustment. Size the container with classes. An active full-span division separates the panes without exposing a drag target over the fold. The saved fraction stays unchanged and returns when the division becomes inactive. Container, axis, and layout-direction changes cancel the current grab. Use native ArrangementView for system-owned pane placement; this component keeps your explicit axis and fraction binding."
   },
   {
     "name": "Scroll Area",

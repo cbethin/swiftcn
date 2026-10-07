@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftCN
 
 enum CNNativeComposition: String, CaseIterable, Identifiable {
-    case styles, drawer, navigation, split
+    case styles, drawer, navigation, split, arrangement
     var id: Self { self }
     var title: String {
         switch self {
@@ -10,6 +10,7 @@ enum CNNativeComposition: String, CaseIterable, Identifiable {
         case .drawer: "Native drawer content"
         case .navigation: "Native navigation"
         case .split: "Native split views"
+        case .arrangement: "Native arrangements"
         }
     }
     @MainActor var example: AnyView {
@@ -18,7 +19,35 @@ enum CNNativeComposition: String, CaseIterable, Identifiable {
         case .drawer: AnyView(NativeDrawerExample())
         case .navigation: AnyView(NativeNavigationLauncher())
         case .split: AnyView(NativeSplitExample())
+        case .arrangement: AnyView(NativeArrangementLauncher())
         }
+    }
+}
+
+private struct NativeArrangementLauncher: View {
+    @State private var presented = false
+    #if os(macOS)
+    @Environment(\.openWindow) private var openWindow
+    #endif
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Button("Open native arrangement") {
+                #if os(macOS)
+                openWindow(id: "native-arrangement")
+                #else
+                presented = true
+                #endif
+            }.buttonStyle(.tw("button-outline"))
+            Text("Open a complete workspace. New systems place its panes around active folds; older systems use a native stack.")
+                .tw("text-sm text-mutedForeground")
+        }
+        #if !os(macOS)
+        .fullScreenCover(isPresented: $presented) {
+            NativeArrangementExample().toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { presented = false } }
+            }
+        }
+        #endif
     }
 }
 

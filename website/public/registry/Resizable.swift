@@ -27,15 +27,26 @@ public struct CNResizable<First: View, Second: View>: View {
     }
     public var body: some View {
         GeometryReader { geometry in
-            let length = max(0, (axis == .horizontal ? geometry.size.width : geometry.size.height) - handleExtent)
+            let division = CNPlacementRegions.divider(in: CGRect(origin: .zero, size: geometry.size),
+                                                     regions: geometry.cnDivisionRegions, axis: axis)
+            let extent = division.map { axis == .horizontal ? $0.width : $0.height } ?? handleExtent
+            let length = max(0, (axis == .horizontal ? geometry.size.width : geometry.size.height) - extent)
             let split = Self.clamp(fraction, minimum: minimumFraction)
+            let firstLength = division.map {
+                axis == .vertical ? $0.minY : (direction == .leftToRight ? $0.minX : geometry.size.width - $0.maxX)
+            } ?? length * split
             let layout = axis == .horizontal ? AnyLayout(HStackLayout(spacing: 0)) : AnyLayout(VStackLayout(spacing: 0))
             layout {
-                first.frame(width: axis == .horizontal ? length * split : nil, height: axis == .vertical ? length * split : nil)
+                first.frame(width: axis == .horizontal ? firstLength : nil, height: axis == .vertical ? firstLength : nil)
                 handle(length: length)
-                second.frame(width: axis == .horizontal ? length * (1 - split) : nil, height: axis == .vertical ? length * (1 - split) : nil)
+                    .opacity(division == nil ? 1 : 0)
+                    .allowsHitTesting(division == nil)
+                    .accessibilityHidden(division != nil)
+                    .frame(width: axis == .horizontal ? extent : nil, height: axis == .vertical ? extent : nil)
+                second.frame(width: axis == .horizontal ? length - firstLength : nil, height: axis == .vertical ? length - firstLength : nil)
             }.coordinateSpace(name: coordinateSpace)
                 .onChange(of: geometry.size) { _, _ in invalidateDrag() }
+                .onChange(of: division) { _, _ in invalidateDrag() }
         }.tw(cn("resizable", classes))
             .onChange(of: isDragging) { _, active in
                 // GestureState also resets after system cancellation, which has no onEnded callback.

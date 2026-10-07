@@ -4,6 +4,22 @@ import Testing
 
 @Suite("Reserved placement regions")
 struct PlacementRegionTests {
+    @Test func safeBoundsUsePhysicalInsetsInBothDirections() {
+        let size = CGSize(width: 800, height: 600)
+        let insets = EdgeInsets(top: 12, leading: 24, bottom: 20, trailing: 60)
+        #expect(CNPlacementRegions.safeBounds(size: size, insets: insets, direction: .leftToRight) == CGRect(x: 24, y: 12, width: 716, height: 568))
+        #expect(CNPlacementRegions.safeBounds(size: size, insets: insets, direction: .rightToLeft) == CGRect(x: 60, y: 12, width: 716, height: 568))
+    }
+    @Test func onlyActiveFullSpanDivisionsReplaceTheResizeHandle() {
+        let bounds = CGRect(x: 0, y: 0, width: 800, height: 600)
+        let vertical = CGRect(x: 390, y: 0, width: 20, height: 600)
+        let horizontal = CGRect(x: 0, y: 290, width: 800, height: 20)
+        let camera = CGRect(x: 710, y: 0, width: 70, height: 50)
+        #expect(CNPlacementRegions.divider(in: bounds, regions: [camera, vertical], axis: .horizontal) == vertical)
+        #expect(CNPlacementRegions.divider(in: bounds, regions: [horizontal], axis: .vertical) == horizontal)
+        #expect(CNPlacementRegions.divider(in: bounds, regions: [vertical], axis: .vertical) == nil)
+        #expect(CNPlacementRegions.divider(in: bounds, regions: [CGRect(x: 400, y: 0, width: 0, height: 600)], axis: .horizontal) == nil)
+    }
     @Test func verticalFoldKeepsAnchoredControlsOnTheirSide() {
         let bounds = CGRect(x: 0, y: 0, width: 800, height: 600)
         let hinge = CGRect(x: 390, y: 0, width: 20, height: 600)

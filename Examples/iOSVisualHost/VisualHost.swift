@@ -31,6 +31,7 @@ struct SwiftCNVisualHost: App {
             }
                 .preferredColorScheme(dark ? .dark : .light)
                 .environment(\.dynamicTypeSize, large ? .accessibility3 : .large)
+                .environment(\.layoutDirection, arguments.contains("--rtl") ? .rightToLeft : .leftToRight)
                 .environment(\.locale, Locale(identifier: "en_US_POSIX"))
                 .environment(\.calendar, Calendar(identifier: .gregorian))
                 .environment(\.timeZone, TimeZone(secondsFromGMT: 0)!)
@@ -63,6 +64,16 @@ struct SwiftCNVisualHost: App {
                     }
                     do {
                         try image.write(to: directory.appendingPathComponent("visual-snapshot.png"))
+                        let metrics: [String: Any] = [
+                            "width": view.bounds.width, "height": view.bounds.height,
+                            "scale": view.traitCollection.displayScale,
+                            "horizontalSizeClass": view.traitCollection.horizontalSizeClass.rawValue,
+                            "verticalSizeClass": view.traitCollection.verticalSizeClass.rawValue,
+                            "safeArea": ["top": view.safeAreaInsets.top, "left": view.safeAreaInsets.left,
+                                         "bottom": view.safeAreaInsets.bottom, "right": view.safeAreaInsets.right]
+                        ]
+                        try JSONSerialization.data(withJSONObject: metrics, options: [.sortedKeys])
+                            .write(to: directory.appendingPathComponent("visual-metrics.json"), options: .atomic)
                         try Data(captureID.utf8).write(to: directory.appendingPathComponent("visual-ready"), options: .atomic)
                     } catch { print("Visual capture failed: \(error)") }
                 }

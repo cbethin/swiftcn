@@ -3,7 +3,6 @@ name: iPhone Duo
 on:
   pull_request:
   workflow_dispatch:
-  workflow_call:
 
 permissions:
   contents: read
@@ -27,12 +26,17 @@ jobs:
           swift --version
           xcrun simctl list -j > artifacts/duo-sdk/simulators.json
           xcrun simctl help > artifacts/duo-sdk/simctl.txt
-          xcrun simctl help ui > artifacts/duo-sdk/ui.txt
+          xcrun simctl help ui > artifacts/duo-sdk/ui.txt 2>&1
           xcrun simctl io help > artifacts/duo-sdk/io.txt 2>&1 || true
           sdk="$(xcrun --sdk iphonesimulator --show-sdk-path)"
           for framework in SwiftUI SwiftUICore; do
             cp "$sdk/System/Library/Frameworks/$framework.framework/Modules/$framework.swiftmodule/arm64-apple-ios-simulator.swiftinterface" "artifacts/duo-sdk/$framework.swiftinterface"
           done
+          cp "$DEVELOPER_DIR/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/XCUIAutomation.framework/Headers/XCUIDevice.h" artifacts/duo-sdk/XCUIDevice.h
+      - uses: actions/upload-artifact@v7
+        with:
+          name: swiftcn-duo-sdk
+          path: artifacts/duo-sdk/
       - name: Compile the Duo SDK integration
         run: bash Scripts/check-ios.sh
       - name: Install Duo runtime
@@ -44,8 +48,12 @@ jobs:
           xcrun simctl boot "$duo"
           xcrun simctl bootstatus "$duo" -b
           xcrun simctl io "$duo" enumerate > artifacts/duo-sdk/displays.txt
+      - name: Capture the entire native catalog
+        run: python3 Scripts/ios-visual-test.py capture local --components --duo
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: swiftcn-duo-evidence
-          path: artifacts/duo-sdk/
+          path: |
+            artifacts/duo-sdk/
+            artifacts/duo-components/

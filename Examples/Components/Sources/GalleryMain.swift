@@ -19,6 +19,9 @@ import AppKit
         WindowGroup("Native navigation", id: "native-navigation") {
             NativeNavigationGalleryWindow(dark: dark)
         }.defaultSize(width: 840, height: 560)
+        WindowGroup("Native arrangement", id: "native-arrangement") {
+            NativeArrangementExample().preferredColorScheme(dark ? .dark : .light)
+        }.defaultSize(width: 840, height: 560)
         #else
         WindowGroup("SwiftCN Component Gallery") { ComponentGalleryView(dark: $dark) }
         #endif

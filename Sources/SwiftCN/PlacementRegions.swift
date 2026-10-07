@@ -3,6 +3,22 @@ import SwiftUI
 /// Local placement regions for custom controls, popovers, and presentation surfaces.
 /// These helpers do not alter navigation or displace continuous scrolling content.
 public enum CNPlacementRegions {
+    /// Find a division that separates the two panes along their chosen axis.
+    public static func divider(in bounds: CGRect, regions: [CGRect], axis: Axis) -> CGRect? {
+        regions.compactMap { region -> CGRect? in
+            let frame = bounds.intersection(region)
+            guard !frame.isNull, frame.width > 0, frame.height > 0 else { return nil }
+            let separates = axis == .horizontal ? frame.height >= bounds.height : frame.width >= bounds.width
+            return separates ? frame : nil
+        }.first
+    }
+
+    static func safeBounds(size: CGSize, insets: EdgeInsets, direction: LayoutDirection) -> CGRect {
+        let left = direction == .leftToRight ? insets.leading : insets.trailing
+        let right = direction == .leftToRight ? insets.trailing : insets.leading
+        return CGRect(x: left, y: insets.top, width: max(0, size.width - left - right),
+                      height: max(0, size.height - insets.top - insets.bottom))
+    }
     /// Produce maximal rectangular candidates that avoid each occupied region.
     public static func available(in bounds: CGRect, avoiding exclusions: [CGRect]) -> [CGRect] {
         guard bounds.width > 0, bounds.height > 0, !bounds.isInfinite, !bounds.isNull else { return [] }
@@ -51,11 +67,7 @@ extension GeometryProxy {
     }
     /// Query this view's bounds, safe area, and native reserved regions on supported systems.
     public func cnPlacementRegions(layoutDirection: LayoutDirection) -> [CGRect] {
-        let left = layoutDirection == .leftToRight ? safeAreaInsets.leading : safeAreaInsets.trailing
-        let right = layoutDirection == .leftToRight ? safeAreaInsets.trailing : safeAreaInsets.leading
-        let bounds = CGRect(x: left, y: safeAreaInsets.top,
-                            width: max(0, size.width - left - right),
-                            height: max(0, size.height - safeAreaInsets.top - safeAreaInsets.bottom))
+        let bounds = CNPlacementRegions.safeBounds(size: size, insets: safeAreaInsets, direction: layoutDirection)
         // Xcode 27.1 exports these symbols in SwiftUI 8.0.85.27. Older SDKs compile the fallback.
         #if os(iOS) && canImport(SwiftUI, _version: 8.0.85.27)
         if #available(iOS 27.1, *) {

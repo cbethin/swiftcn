@@ -22,5 +22,11 @@
     "title": "Native split views",
     "example": "NativeSplitExample.swift",
     "notes": "Use HSplitView or VSplitView on macOS and apply .tw to their panes. SwiftUI owns the dividers; native frames or sizing classes define minimum pane sizes. Native split views do not expose a SwiftUI fraction binding. CNResizable supplies that explicit binding and the mobile touch handle. Keep state outside the panes so resizing preserves native editors and controls."
+  },
+  {
+    "slug": "arrangement",
+    "title": "Native arrangements",
+    "example": "NativeArrangementExample.swift",
+    "notes": "Use ArrangementView on iOS 27.1 or macOS 27.1 for two related panes. SwiftUI chooses their placement around active divisions. Keep navigation outside the arrangement. Put each pane's scrolling content inside the arrangement. Keep shared state in the screen. Apply .tw to the native content. The example uses AnyLayout on older systems and opens as a complete screen in the gallery. Compile the new API with Xcode 27.1 or later. The package keeps its iOS 17 and macOS 14 deployment targets."
   }
 ]
