@@ -15,6 +15,7 @@ public struct CNToast: Identifiable, Equatable, Sendable {
 }
 /// Per-window notifications with stable, unique IDs. Append to show a stack, or use one optional toast.
 public struct CNToastHost<Content: View>: View {
+    @Environment(\.layoutDirection) private var direction
     @Binding private var toasts: [CNToast]
     @Binding private var boundExpansion: Bool
     private let usesLocalExpansion: Bool
@@ -41,6 +42,8 @@ public struct CNToastHost<Content: View>: View {
         let layout = expanded ? AnyLayout(VStackLayout(alignment: .trailing, spacing: 8)) : AnyLayout(CNToastDeckLayout())
         content.overlay(alignment: .bottomTrailing) {
             GeometryReader { geometry in
+                let region = CNPlacementRegions.preferred(in: geometry.cnPlacementRegions(layoutDirection: direction),
+                    near: CGPoint(x: direction == .leftToRight ? geometry.size.width : 0, y: geometry.size.height))
                 VStack(alignment: .trailing, spacing: 8) {
                     ScrollView {
                         layout {
@@ -59,7 +62,7 @@ public struct CNToastHost<Content: View>: View {
                     }
                     .defaultScrollAnchor(.bottom)
                     .scrollBounceBehavior(.basedOnSize)
-                    .frame(maxHeight: max(0, geometry.size.height - (toasts.count > 1 ? expansionControlHeight + 8 : 0)))
+                    .frame(maxHeight: max(0, region.height - (toasts.count > 1 ? expansionControlHeight + 8 : 0)))
                     .fixedSize(horizontal: false, vertical: true)
                     if toasts.count > 1 {
                         Button { expansion.wrappedValue.toggle() } label: {
@@ -74,9 +77,10 @@ public struct CNToastHost<Content: View>: View {
                     }
                 }
                 .twAnimation(cn("feedback-motion", classes), value: CNToastPresentation(ids: toasts.map(\.id), expanded: expanded))
-                .frame(maxWidth: min(360, max(0, geometry.size.width)))
+                .frame(maxWidth: min(360, region.width))
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                .frame(width: region.width, height: region.height, alignment: .bottomTrailing)
+                .position(x: region.midX, y: region.midY)
             }
             .allowsHitTesting(!toasts.isEmpty)
             .accessibilityHidden(toasts.isEmpty)

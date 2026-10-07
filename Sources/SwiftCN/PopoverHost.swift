@@ -7,6 +7,7 @@ import AppKit
 public struct CNPopoverHost<Content: View>: View {
     private let content: Content
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.layoutDirection) private var direction
     public init(@ViewBuilder content: () -> Content) { self.content = content() }
     public var body: some View {
         content.environment(\.cnPopoverHostAvailable, true)
@@ -25,7 +26,8 @@ public struct CNPopoverHost<Content: View>: View {
                             }
                             ForEach(requests) { request in
                                 let anchor = geometry[request.anchor]
-                                let bounds = CGRect(origin: .zero, size: geometry.size)
+                                let bounds = CNPlacementRegions.preferred(in: geometry.cnPlacementRegions(layoutDirection: direction),
+                                    near: CGPoint(x: anchor.midX, y: anchor.midY))
                                 let edge = request.edge
                                 if request.isPresented {
                                     // Constrain the native viewport before requesting its ideal size.

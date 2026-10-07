@@ -14,6 +14,7 @@ public struct CNResizable<First: View, Second: View>: View {
     @Namespace private var coordinateSpace
     @GestureState private var isDragging = false
     @State private var drag: CNResizeDrag?
+    @State private var dragInvalidated = false
     public init(fraction: Binding<Double>, axis: Axis = .horizontal, minimumFraction: Double = 0.15,
                 classes: TWClasses = "", @ViewBuilder first: () -> First, @ViewBuilder second: () -> Second) {
         precondition(minimumFraction.isFinite && (0...0.5).contains(minimumFraction))
@@ -33,12 +34,15 @@ public struct CNResizable<First: View, Second: View>: View {
                 handle(length: length)
                 second.frame(width: axis == .horizontal ? length * (1 - split) : nil, height: axis == .vertical ? length * (1 - split) : nil)
             }.coordinateSpace(name: coordinateSpace)
+                .onChange(of: geometry.size) { _, _ in invalidateDrag() }
         }.tw(cn("resizable", classes))
             .onChange(of: isDragging) { _, active in
                 // GestureState also resets after system cancellation, which has no onEnded callback.
-                if !active { drag = nil }
+                if !active { drag = nil; dragInvalidated = false }
             }
-            .onChange(of: isEnabled) { _, enabled in if !enabled { drag = nil } }
+            .onChange(of: isEnabled) { _, enabled in if !enabled { invalidateDrag() } }
+            .onChange(of: axis) { _, _ in invalidateDrag() }
+            .onChange(of: direction) { _, _ in invalidateDrag() }
     }
     private var handleExtent: CGFloat {
         #if os(macOS)
@@ -58,7 +62,7 @@ public struct CNResizable<First: View, Second: View>: View {
                     active = true
                     transaction.disablesAnimations = true
                 }.onChanged { value in
-                    guard isEnabled, length > 0 else { return }
+                    guard isEnabled, length > 0, !dragInvalidated else { return }
                     // The containing split, rather than the moving divider, defines pointer coordinates.
                     // Capture the grab offset before publishing any binding change.
                     if drag == nil {
@@ -67,8 +71,8 @@ public struct CNResizable<First: View, Second: View>: View {
                     }
                     update(at: value.location, length: length)
                 }.onEnded { value in
-                    if isEnabled { update(at: value.location, length: length) }
-                    drag = nil
+                    if isEnabled && !dragInvalidated { update(at: value.location, length: length) }
+                    drag = nil; dragInvalidated = false
                 })
             .accessibilityElement().accessibilityLabel("Resize panels").accessibilityValue("\(Int(Self.clamp(fraction, minimum: minimumFraction) * 100)) percent")
             .accessibilityAdjustableAction { direction in
@@ -79,6 +83,10 @@ public struct CNResizable<First: View, Second: View>: View {
     }
     private func position(_ point: CGPoint, length: CGFloat) -> CGFloat {
         CNResizeDrag.position(point, axis: axis, direction: direction, length: length, handleExtent: handleExtent)
+    }
+    private func invalidateDrag() {
+        if isDragging { dragInvalidated = true }
+        drag = nil
     }
     private func update(at point: CGPoint, length: CGFloat) {
         guard let drag, length > 0 else { return }

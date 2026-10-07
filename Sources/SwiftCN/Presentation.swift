@@ -6,6 +6,7 @@ import SwiftUI
 public struct CNPresentationHost<Content: View>: View {
     private let content: Content
     @State private var active: [UUID] = []
+    @Environment(\.layoutDirection) private var direction
     public init(@ViewBuilder content: () -> Content) { self.content = content() }
     public var body: some View {
         content.environment(\.cnPresentationHosted, true)
@@ -14,7 +15,10 @@ public struct CNPresentationHost<Content: View>: View {
                 GeometryReader { geometry in
                     ZStack {
                         ForEach(requests) { request in
-                            CNPresentationPanel(request: request, size: geometry.size)
+                            let regions = geometry.cnPlacementRegions(layoutDirection: direction)
+                            let placement = CNPlacementRegions.preferred(in: regions,
+                                near: CGPoint(x: direction == .leftToRight ? geometry.size.width : 0, y: geometry.size.height))
+                            CNPresentationPanel(request: request, size: geometry.size, placement: placement)
                                 .transformEnvironment(\.self) { values in
                                     // Preserve public appearance without importing private focus dispatch state.
                                     values.twTheme = request.environment.twTheme
@@ -132,6 +136,7 @@ extension EnvironmentValues {
 private struct CNPresentationPanel: View {
     let request: CNPresentationRequest
     let size: CGSize
+    let placement: CGRect
     @State private var mounted = false
     @State private var contentHeight: CGFloat = 240
     @FocusState private var focused: Bool
@@ -163,7 +168,7 @@ private struct CNPresentationPanel: View {
                                     withTransaction(transaction) { contentHeight = height }
                                 }
                         }
-                        .frame(height: panelHeight == nil ? min(contentHeight, max(0, size.height - 112)) : nil)
+                        .frame(height: panelHeight == nil ? min(contentHeight, max(0, placement.height - 112)) : nil)
                     }
                     .frame(maxWidth: .infinity, maxHeight: panelHeight == nil ? nil : .infinity, alignment: .topLeading)
                     .tw(cn(request.kind.recipe, request.classes))
@@ -174,6 +179,8 @@ private struct CNPresentationPanel: View {
                 .scaleEffect(open || isEdgePanel ? 1 : 0.97)
                 .opacity(open || isEdgePanel ? 1 : 0)
                 .offset(x: open ? 0 : hiddenOffset.width, y: open ? 0 : hiddenOffset.height)
+                .frame(width: placement.width, height: placement.height, alignment: request.kind.alignment)
+                .position(x: placement.midX, y: placement.midY)
                 .environment(\.cnPresentationDismiss, close)
                 .disabled(!open)
                 .accessibilityElement(children: .contain).accessibilityAddTraits(.isModal)
@@ -200,14 +207,14 @@ private struct CNPresentationPanel: View {
     private var isEdgePanel: Bool { if case .sheet = request.kind { true } else { false } }
     private var panelWidth: CGFloat {
         switch request.kind {
-        case .dialog: max(0, min(480, size.width - 32))
-        case .sheet(.top), .sheet(.bottom): size.width
-        case .sheet: min(400, size.width)
+        case .dialog: max(0, min(480, placement.width - 32))
+        case .sheet(.top), .sheet(.bottom): placement.width
+        case .sheet: min(400, placement.width)
         }
     }
     private var panelHeight: CGFloat? {
         switch request.kind {
-        case .sheet(.leading), .sheet(.trailing): size.height
+        case .sheet(.leading), .sheet(.trailing): placement.height
         default: nil
         }
     }

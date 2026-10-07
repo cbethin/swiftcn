@@ -27,11 +27,23 @@ jobs:
           swift --version
           xcrun simctl list -j > artifacts/duo-sdk/simulators.json
           xcrun simctl help > artifacts/duo-sdk/simctl.txt
+          xcrun simctl help ui > artifacts/duo-sdk/ui.txt
           xcrun simctl io help > artifacts/duo-sdk/io.txt 2>&1 || true
           sdk="$(xcrun --sdk iphonesimulator --show-sdk-path)"
           for framework in SwiftUI SwiftUICore; do
             cp "$sdk/System/Library/Frameworks/$framework.framework/Modules/$framework.swiftmodule/arm64-apple-ios-simulator.swiftinterface" "artifacts/duo-sdk/$framework.swiftinterface"
           done
+      - name: Compile the Duo SDK integration
+        run: bash Scripts/check-ios.sh
+      - name: Install Duo runtime
+        run: |
+          xcodebuild -downloadPlatform iOS -buildVersion 27.1 -architectureVariant arm64
+          xcrun simctl list -j > artifacts/duo-sdk/simulators-with-duo.json
+          duo="$(xcrun simctl create swiftcn-duo com.apple.CoreSimulator.SimDeviceType.iPhone-Duo com.apple.CoreSimulator.SimRuntime.iOS-27-1)"
+          trap 'xcrun simctl shutdown "$duo"; xcrun simctl delete "$duo"' EXIT
+          xcrun simctl boot "$duo"
+          xcrun simctl bootstatus "$duo" -b
+          xcrun simctl io "$duo" enumerate > artifacts/duo-sdk/displays.txt
       - uses: actions/upload-artifact@v7
         if: always()
         with:
