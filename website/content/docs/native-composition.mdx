@@ -277,14 +277,16 @@ struct NativeArrangementExample: View {
         }
     }
     private var editor: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Draft").tw("text-lg font-semibold")
-            TextEditor(text: $draft)
-                .scrollContentBackground(.hidden)
-                .font(monospaced ? .system(.body, design: .monospaced) : .body)
-                .accessibilityLabel("Arrangement draft")
-                .tw("p-3 border rounded-lg bg-surface")
-        }.tw("p-6 w-full h-full bg-background")
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Draft").tw("text-lg font-semibold")
+                TextEditor(text: $draft)
+                    .scrollContentBackground(.hidden)
+                    .font(monospaced ? .system(.body, design: .monospaced) : .body)
+                    .accessibilityLabel("Arrangement draft")
+                    .tw("min-h-[240] p-3 border rounded-lg bg-surface")
+            }.tw("p-6 w-full")
+        }.scrollBounceBehavior(.basedOnSize).tw("w-full h-full bg-background")
     }
     private var inspector: some View {
         ScrollView {
