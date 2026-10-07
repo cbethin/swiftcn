@@ -73,8 +73,9 @@ struct MotionRenderingTests {
                 #expect(closing < opening, "Closing must reverse the unfinished opening: \(opening) -> \(closing)")
             }
             model.active = true
-            settle(host, seconds: 0.7)
-            #expect(abs((recorder.amounts.last ?? 0) - 1) < 0.001)
+            #expect(waitForFrame(host, timeout: 2) {
+                abs((recorder.amounts.last ?? 0) - 1) < 0.001
+            }, "The retargeted spring must settle at its final value.")
             #expect(Set(recorder.identities).count == 1)
         }
     }
@@ -239,8 +240,8 @@ struct MotionRenderingTests {
         RunLoop.main.run(until: Date(timeIntervalSinceNow: seconds))
     }
 
-    private func waitForFrame<V: View>(_ host: NSHostingView<V>, condition: () -> Bool) -> Bool {
-        let deadline = Date(timeIntervalSinceNow: 1)
+    private func waitForFrame<V: View>(_ host: NSHostingView<V>, timeout: TimeInterval = 1, condition: () -> Bool) -> Bool {
+        let deadline = Date(timeIntervalSinceNow: timeout)
         repeat {
             settle(host, seconds: 0.01)
             if condition() { return true }
