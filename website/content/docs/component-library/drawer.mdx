@@ -113,12 +113,14 @@ public struct CNPresentationHost<Content: View>: View {
             .task(id: active) {
                 let target = active.last.map { CNPresentationFocus.panel($0) }
                     ?? lastPresented.map { CNPresentationFocus.trigger($0) }
+                guard let target else { return }
                 if let presented = active.last { lastPresented = presented }
                 // One owner coordinates panel focus and restoration after the enabled scope updates.
                 focus = nil
                 await Task.yield()
                 guard !Task.isCancelled else { return }
                 focus = target
+                if active.isEmpty { lastPresented = nil }
             }
             .transformPreference(CNPresentationRequests.self) { $0 = [] }
             .transformPreference(CNPresentationPresence.self) { $0 = [] }
