@@ -7,9 +7,11 @@ import Testing
 @Suite("Popover pointer interaction", .serialized)
 @MainActor
 struct PopoverInteractionTests {
-    @Test func oversizedPopoverScrollsWithinTheHostAndPreservesItsEditorOnResize() async throws {
+    @Test(arguments: [false, true])
+    func oversizedPopoverScrollsWithinTheHostAndPreservesItsEditorOnResize(rtl: Bool) async throws {
         let model = PopoverViewportModel()
-        let controller = NSHostingController(rootView: PopoverViewportHarness(model: model))
+        let controller = NSHostingController(rootView: PopoverViewportHarness(model: model)
+            .environment(\.layoutDirection, rtl ? .rightToLeft : .leftToRight))
         let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 300, height: 220),
                               styleMask: [.titled, .resizable], backing: .buffered, defer: false)
         controller.view.frame = window.contentLayoutRect
