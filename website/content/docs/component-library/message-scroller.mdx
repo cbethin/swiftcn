@@ -57,7 +57,7 @@ struct MessageScrollerExample: View {
 
 ## Native behavior
 
-A lazy native scroll view uses stable message IDs and scroll targets. Bind position to restore a reading target and retain it when earlier history is prepended. Following defaults to false and no initial bottom jump is forced. Set followNewMessages to true to follow appends and viewport changes; increment scrollRevision when streamed text changes height. Streaming scroll updates disable competing animations. Bind isAtBottom to observe proximity to the end and implement your host policy. The host owns keyboard placement, loading, and following decisions.
+A lazy native scroll view uses stable message IDs and scroll targets. Bind position to restore a reading target and retain it when earlier history is prepended. Following defaults to false and no initial bottom jump is forced. Set followNewMessages to true to follow appends and viewport changes; increment scrollRevision when streamed text changes height. Streaming scroll updates disable competing animations. Bind isAtBottom to observe proximity to the end and implement your host policy. The host owns keyboard placement, loading, and following decisions. On iOS 18 and macOS 15 or later, native scroll geometry reports end-boundary changes. Older systems retain the sentinel fallback. Following resumes after native scroll targets register; stable item IDs and the saved pixel offset preserve paused reading.
 
 ## Style and compose
 
@@ -138,15 +138,12 @@ public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: Vi
                             CNMessageEndGeometry(bottom: $0.frame(in: .scrollView(axis: .vertical)).maxY,
                                                  height: $0.bounds(of: .scrollView(axis: .vertical))?.height ?? viewportHeight)
                         }) { end in
-                            if let bottomState {
-                                let atBottom = end.bottom <= end.height + 24 && end.bottom >= 0
-                                if bottomState.wrappedValue != atBottom { bottomState.wrappedValue = atBottom }
-                            }
-                            if followNewMessages && end.bottom.isFinite && end.bottom > end.height + 1 {
-                                scrollToLatest(proxy)
-                            }
+                            // Newer systems observe the native scroll geometry instead of this sentinel.
+                            if #available(iOS 18, macOS 15, *) { return }
+                            updateEnd(CNMessageEndState(bottom: end.bottom, height: end.height), proxy: proxy)
                         }
                 }
+                .modifier(CNMessageEndObserver { updateEnd($0, proxy: proxy) })
                 .scrollPosition(id: position ?? $localPosition, anchor: followNewMessages ? .bottom : .top)
                 .defaultScrollAnchor(followNewMessages ? .bottom : (position?.wrappedValue == nil ? .top : nil))
                 .tw("scroll-area")
@@ -158,9 +155,9 @@ public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: Vi
                 .task(id: followNewMessages) {
                     // Older SwiftUI versions register scroll targets after appearance.
                     await Task.yield()
-                    guard !Task.isCancelled, readingAnchor.initialRestorationPending else { return }
+                    guard !Task.isCancelled else { return }
                     if followNewMessages { scrollToLatest(proxy) }
-                    else { restoreReadingTarget(proxy, height: viewportHeight) }
+                    else if readingAnchor.initialRestorationPending { restoreReadingTarget(proxy, height: viewportHeight) }
                     readingAnchor.initialRestorationPending = false
                 }
                 .onChange(of: data.first?.id) { _, _ in
@@ -168,12 +165,15 @@ public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: Vi
                     else { restoreReadingTarget(proxy, height: viewportHeight) }
                     readingAnchor.firstID = data.first?.id
                 }
-                .onChange(of: followNewMessages) { _, follow in if follow { scrollToLatest(proxy) } }
                 .onChange(of: scrollRevision) { _, _ in if followNewMessages { scrollToLatest(proxy) } }
                 .onChange(of: data.last?.id) { _, _ in if followNewMessages { scrollToLatest(proxy) } }
                 .onChange(of: viewport.size) { _, _ in if followNewMessages { scrollToLatest(proxy) } }
             }
         }.tw(classes)
+    }
+    private func updateEnd(_ end: CNMessageEndState, proxy: ScrollViewProxy) {
+        if let bottomState, bottomState.wrappedValue != end.isAtBottom { bottomState.wrappedValue = end.isAtBottom }
+        if followNewMessages && end.needsFollowing { scrollToLatest(proxy) }
     }
     private func restoreReadingTarget(_ proxy: ScrollViewProxy, height: CGFloat) {
         guard let target = position?.wrappedValue ?? localPosition else { return }
@@ -206,6 +206,28 @@ private struct CNMessageReadingFrame: Equatable {
 private struct CNMessageEndGeometry: Equatable {
     let bottom: CGFloat
     let height: CGFloat
+}
+// Native geometry emits only boundary changes, rather than every scrolling pixel.
+private struct CNMessageEndState: Equatable {
+    let isAtBottom: Bool
+    let needsFollowing: Bool
+    init(bottom: CGFloat, height: CGFloat) {
+        isAtBottom = bottom <= height + 24 && bottom >= 0
+        needsFollowing = bottom.isFinite && bottom > height + 1
+    }
+}
+private struct CNMessageEndObserver: ViewModifier {
+    let update: (CNMessageEndState) -> Void
+    func body(content: Content) -> some View {
+        if #available(iOS 18, macOS 15, *) {
+            content.onScrollGeometryChange(for: CNMessageEndState.self, of: { geometry in
+                CNMessageEndState(bottom: geometry.contentSize.height + geometry.contentInsets.bottom - geometry.contentOffset.y,
+                                  height: geometry.containerSize.height)
+            }) { _, value in update(value) }
+        } else {
+            content
+        }
+    }
 }
 /// Native scroll paging with a binding to the stable item ID. Size the viewport with classes.
 public struct CNCarousel<Data: RandomAccessCollection, Content: View>: View where Data.Element: Identifiable {

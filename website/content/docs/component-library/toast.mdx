@@ -34,7 +34,7 @@ struct ToastExample: View {
 
 ## Native behavior
 
-Use `CNToastHost(toasts: $toasts)` for a layered deck, or keep `CNToastHost(toast: $toast)` for one notification. Append notifications with unique, stable IDs. The newest sits in front; two earlier cards peek out behind it. The notification count button expands the deck into a bounded native scroll view for individual dismissal. Pass `isExpanded: $expanded` to control expansion from your app. Expansion preserves card identity and pauses all countdowns while reading. Each toast has its own cancellable deadline. Hover, keyboard focus, and accessibility focus pause its countdown without resetting the remaining time. Updating a toast restarts only its deadline. Nil duration requires explicit dismissal. Native accessibility announcements expose notifications without moving editing focus. The caller owns the array and can limit its size or remove a notification by ID.
+Use `CNToastHost(toasts: $toasts)` for a layered deck, or keep `CNToastHost(toast: $toast)` for one notification. Append notifications with unique, stable IDs. The newest sits in front; two earlier cards peek out behind it. The notification count button expands the deck into a bounded native scroll view for individual dismissal. Pass `isExpanded: $expanded` to control expansion from your app. Expansion preserves card identity and pauses all countdowns while reading. Each toast has its own cancellable deadline. Hover, keyboard focus, and accessibility focus pause its countdown without resetting the remaining time. Updating a toast restarts only its deadline. Nil duration requires explicit dismissal. Native accessibility announcements expose notifications without moving editing focus. The caller owns the array and can limit its size or remove a notification by ID. Use `.toastContent { context in ... }` for custom card content and context.action for native action buttons that pause the countdown while focused. See the complete observable-model example in native composition.
 
 ## Style and compose
 
@@ -72,13 +72,9 @@ public struct CNToast: Identifiable, Equatable, Sendable {
 }
 /// Per-window notifications with stable, unique IDs. Append to show a stack, or use one optional toast.
 public struct CNToastHost<Content: View>: View {
-    @Environment(\.layoutDirection) private var direction
     @Binding private var toasts: [CNToast]
     @Binding private var boundExpansion: Bool
     private let usesLocalExpansion: Bool
-    @State private var localExpansion = false
-    @FocusState private var expansionFocused: Bool
-    @AccessibilityFocusState private var expansionAccessible: Bool
     private let classes: TWClasses
     private let content: Content
     public init(toast: Binding<CNToast?>, classes: TWClasses = "", @ViewBuilder content: () -> Content) {
@@ -93,6 +89,31 @@ public struct CNToastHost<Content: View>: View {
         _toasts = toasts; _boundExpansion = isExpanded ?? .constant(false); usesLocalExpansion = isExpanded == nil
         self.classes = classes; self.content = content()
     }
+    public var body: some View {
+        host { context in CNToastMessage(toast: context.toast) }
+    }
+    /// Replace the message content while retaining stacking, dismissal, and deadlines.
+    /// Use context.action for native actions that pause the deadline while focused.
+    public func toastContent<Message: View>(@ViewBuilder _ message: @escaping (CNToastContentContext) -> Message) -> some View {
+        host(message: message)
+    }
+    private func host<Message: View>(@ViewBuilder message: @escaping (CNToastContentContext) -> Message) -> some View {
+        CNToastHostBody(toasts: $toasts, boundExpansion: $boundExpansion, usesLocalExpansion: usesLocalExpansion,
+                        classes: classes, content: content, message: message)
+    }
+}
+
+private struct CNToastHostBody<Content: View, Message: View>: View {
+    @Environment(\.layoutDirection) private var direction
+    @Binding var toasts: [CNToast]
+    @Binding var boundExpansion: Bool
+    let usesLocalExpansion: Bool
+    @State private var localExpansion = false
+    @FocusState private var expansionFocused: Bool
+    @AccessibilityFocusState private var expansionAccessible: Bool
+    let classes: TWClasses
+    let content: Content
+    let message: (CNToastContentContext) -> Message
     private var expansion: Binding<Bool> { usesLocalExpansion ? $localExpansion : $boundExpansion }
     public var body: some View {
         let expanded = expansion.wrappedValue
@@ -107,7 +128,7 @@ public struct CNToastHost<Content: View>: View {
                             ForEach(Array(toasts.enumerated()), id: \.element.id) { index, current in
                                 let depth = toasts.count - index - 1
                                 CNToastCard(toast: current, classes: classes, concealed: !expanded && depth > 0,
-                                            reading: expanded || expansionFocused || expansionAccessible, dismiss: dismiss)
+                                            reading: expanded || expansionFocused || expansionAccessible, dismiss: dismiss, message: message)
                                     .scaleEffect(expanded ? 1 : 1 - CGFloat(min(depth, 2)) * 0.04, anchor: .bottom)
                                     .opacity(expanded || depth < 3 ? 1 : 0)
                                     .allowsHitTesting(expanded || depth == 0)
@@ -198,26 +219,72 @@ struct CNToastLifetime {
 
 private enum CNToastFocus: Hashable { case message, dismiss }
 
-private struct CNToastCard: View {
+/// A toast supplies its current value and a dismissal action to custom content.
+@MainActor public struct CNToastContentContext {
+    public let toast: CNToast
+    public let dismiss: () -> Void
+    /// Custom native controls can share this focus binding using their own stable UUID.
+    public let focus: FocusState<UUID?>.Binding
+    public let accessibilityFocus: AccessibilityFocusState<UUID?>.Binding
+
+    public func action(_ title: LocalizedStringKey, role: ButtonRole? = nil, classes: TWClasses = "",
+                       action: @escaping () -> Void) -> some View {
+        self.action(role: role, classes: classes, action: action) { Text(title) }
+    }
+    /// A native button with automatic keyboard and accessibility lifetime pausing.
+    public func action<Label: View>(role: ButtonRole? = nil, classes: TWClasses = "",
+                                   action: @escaping () -> Void, @ViewBuilder label: () -> Label) -> some View {
+        CNToastAction(role: role, classes: classes, action: action, label: label(),
+                      focus: focus, accessibilityFocus: accessibilityFocus)
+    }
+}
+private struct CNToastAction<Label: View>: View {
+    let role: ButtonRole?
+    let classes: TWClasses
+    let action: () -> Void
+    let label: Label
+    let focus: FocusState<UUID?>.Binding
+    let accessibilityFocus: AccessibilityFocusState<UUID?>.Binding
+    @State private var id = UUID()
+    var body: some View {
+        Button(role: role, action: action) { label }
+            .focusable().focusEffectDisabled().focused(focus, equals: id)
+            .buttonStyle(.tw(cn("button-outline", classes), state: .init(isFocused: focus.wrappedValue == id)))
+            .accessibilityFocused(accessibilityFocus, equals: id)
+    }
+}
+private struct CNToastMessage: View {
+    let toast: CNToast
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(toast.title).tw("text-sm font-semibold")
+            if let message = toast.message { Text(message).tw("text-sm text-mutedForeground") }
+        }.accessibilityElement(children: .combine)
+    }
+}
+
+private struct CNToastCard<Message: View>: View {
     let toast: CNToast
     let classes: TWClasses
     let concealed: Bool
     let reading: Bool
     let dismiss: (CNToast) -> Void
+    let message: (CNToastContentContext) -> Message
     @State private var lifetime = CNToastLifetime()
     @State private var hovered = false
     @FocusState private var closeFocused: Bool
     @AccessibilityFocusState private var accessibleFocus: CNToastFocus?
-    private var paused: Bool { reading || hovered || closeFocused || accessibleFocus != nil }
+    @FocusState private var actionFocused: UUID?
+    @AccessibilityFocusState private var actionAccessible: UUID?
+    private var paused: Bool {
+        reading || hovered || closeFocused || accessibleFocus != nil || actionFocused != nil || actionAccessible != nil
+    }
     var body: some View {
         let deadline = lifetime.deadline
         HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(toast.title).tw("text-sm font-semibold")
-                if let message = toast.message { Text(message).tw("text-sm text-mutedForeground") }
-            }
+            message(CNToastContentContext(toast: toast, dismiss: { dismiss(toast) },
+                                          focus: $actionFocused, accessibilityFocus: $actionAccessible))
             .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityElement(children: .combine)
             .accessibilityFocused($accessibleFocus, equals: .message)
             Button { dismiss(toast) } label: { Image(systemName: "xmark") }
                 .accessibilityLabel("Dismiss notification: \(toast.title)")
@@ -234,7 +301,7 @@ private struct CNToastCard: View {
         .disabled(concealed)
         .onHover { hovered = $0 }
         .onChange(of: concealed) { _, concealed in
-            if concealed { hovered = false; closeFocused = false; accessibleFocus = nil }
+            if concealed { hovered = false; closeFocused = false; accessibleFocus = nil; actionFocused = nil; actionAccessible = nil }
         }
         .onChange(of: toast, initial: true) { _, current in
             lifetime.reset(duration: current.duration, paused: paused, at: .now)

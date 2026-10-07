@@ -21,16 +21,7 @@ public struct CNPresentationHost<Content: View>: View {
                             CNPresentationPanel(request: request, size: geometry.size, placement: placement)
                                 .transformEnvironment(\.self) { values in
                                     // Preserve public appearance without importing private focus dispatch state.
-                                    values.twTheme = request.environment.twTheme
-                                    values.twRules = request.environment.twRules
-                                    values.twFieldInvalid = request.environment.twFieldInvalid
-                                    values.colorScheme = request.environment.colorScheme
-                                    values.dynamicTypeSize = request.environment.dynamicTypeSize
-                                    values.layoutDirection = request.environment.layoutDirection
-                                    values.font = request.environment.font
-                                    values.locale = request.environment.locale
-                                    values.calendar = request.environment.calendar
-                                    values.timeZone = request.environment.timeZone
+                                    values.cnPresentationAppearance(from: request.environment)
                                 }
                         }
                     }.frame(width: geometry.size.width, height: geometry.size.height)

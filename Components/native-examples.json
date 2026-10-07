@@ -28,5 +28,11 @@
     "title": "Native arrangements",
     "example": "NativeArrangementExample.swift",
     "notes": "Use ArrangementView on iOS 27.1 or macOS 27.1 for two related panes. SwiftUI chooses their placement around active divisions. Keep navigation outside the arrangement. Put each pane's scrolling content inside the arrangement. Keep shared state in the screen. Apply .tw to the native content. The example uses AnyLayout on older systems and opens as a complete screen in the gallery. Compile the new API with Xcode 27.1 or later. The package keeps its iOS 17 and macOS 14 deployment targets."
+  },
+  {
+    "slug": "models",
+    "title": "Observable models and custom content",
+    "example": "NativeModelExample.swift",
+    "notes": "Own an @Observable model with @State. Use @Bindable in a child form to pass typed bindings to native controls and swiftcn components. The model controls validation and saving.\n\nCNCommand accepts a query binding and generic itemContent and empty builders. Keep each item builder as a native button label; put additional actions outside that label.\n\nCNToastHost.toastContent changes a card body while the host retains stacking, dismissal, and deadlines. context.action creates a native button that pauses the deadline during keyboard or accessibility focus. Custom controls can use context.focus and context.accessibilityFocus with a stable UUID. context.dismiss removes only the current toast value. Keep plain @State for local component values."
   }
 ]

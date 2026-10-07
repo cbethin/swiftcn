@@ -12,6 +12,9 @@ struct MixedComponentOptions: View {
         VStack {
             CNSelect("Workspace", options: options, selection: $selection)
             SwiftCN.CNCommand(options, selection: $commandSelection) { _ in }
+                .itemContent { option, selected in Text(option.title).bold(selected) }
+            CNCommand(options, selection: $commandSelection)
+                .itemContent { option, _ in Text(option.title) } empty: { Text("No options") }
         }
     }
 }

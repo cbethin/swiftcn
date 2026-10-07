@@ -37,14 +37,8 @@ public struct CNDropdownMenuContext {
         self.focusedID = focusedID; self.dismiss = dismiss; self.navigate = navigate
     }
 }
-private struct CNDropdownMenuContextKey: EnvironmentKey {
-    static var defaultValue: CNDropdownMenuContext { .init() }
-}
 extension EnvironmentValues {
-    public var cnDropdownMenuContext: CNDropdownMenuContext {
-        get { self[CNDropdownMenuContextKey.self] }
-        set { self[CNDropdownMenuContextKey.self] = newValue }
-    }
+    @Entry public var cnDropdownMenuContext: CNDropdownMenuContext = .init()
 }
 
 /// Shared context lets copied sidebar parts compose with the imported root.
@@ -62,17 +56,12 @@ public struct CNSidebarContext {
         self.toggle = toggle; self.dismiss = dismiss
     }
 }
-private struct CNSidebarContextKey: EnvironmentKey {
-    static var defaultValue: CNSidebarContext { .init() }
-}
 extension EnvironmentValues {
-    public var cnSidebarContext: CNSidebarContext {
-        get { self[CNSidebarContextKey.self] }
-        set { self[CNSidebarContextKey.self] = newValue }
-    }
+    @Entry public var cnSidebarContext: CNSidebarContext = .init()
 }
 
 // One shared key keeps copied and imported presentation parts interoperable.
+// A closure-valued entry stays explicit to avoid newer @Entry comparison warnings.
 private struct CNPresentationDismissKey: EnvironmentKey {
     static var defaultValue: (() -> Void)? { nil }
 }

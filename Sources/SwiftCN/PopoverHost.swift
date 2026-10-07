@@ -109,23 +109,9 @@ private struct CNPopoverEnvironmentRoot<Content: View>: View {
     // focus dispatch state. Forwarding the whole environment breaks arrow keys.
     var body: some View {
         content.transformEnvironment(\.self) { values in
-            values.twTheme = environment.twTheme
-            values.twRules = environment.twRules
-            values.twGroups = environment.twGroups
-            values.twFieldInvalid = environment.twFieldInvalid
-            values.colorScheme = environment.colorScheme
-            values.dynamicTypeSize = environment.dynamicTypeSize
-            values.font = environment.font
-            values.locale = environment.locale
-            values.calendar = environment.calendar
-            values.timeZone = environment.timeZone
-            values.layoutDirection = environment.layoutDirection
+            values.cnPresentationAppearance(from: environment)
             values.isEnabled = environment.isEnabled
             values.openURL = environment.openURL
-            values.controlSize = environment.controlSize
-            values.lineLimit = environment.lineLimit
-            values.multilineTextAlignment = environment.multilineTextAlignment
-            values.imageScale = environment.imageScale
             values.cnPopoverHostAvailable = true
         }
     }

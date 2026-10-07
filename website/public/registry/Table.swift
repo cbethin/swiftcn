@@ -14,14 +14,9 @@ public struct CNTable<Content: View>: View {
                 .frame(minWidth: viewportWidth, alignment: .leading)
         }.fixedSize(horizontal: false, vertical: true)
             .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-            .background(GeometryReader { proxy in Color.clear.preference(key: CNTableWidthKey.self, value: proxy.size.width) })
-            .onPreferenceChange(CNTableWidthKey.self) { viewportWidth = $0 }
+            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { viewportWidth = $0 }
             .tw(cn("table", classes)).clipShape(RoundedRectangle(cornerRadius: theme.radius(.lg)))
     }
-}
-private struct CNTableWidthKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 public struct CNTableRow<Content: View>: View {
     private let isSelected: Bool

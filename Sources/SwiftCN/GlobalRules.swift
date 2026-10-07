@@ -34,15 +34,8 @@ public struct TWGlobalRules: Sendable {
     }
 }
 
-private struct TWGlobalRulesKey: EnvironmentKey {
-    static let defaultValue = TWGlobalRules()
-}
-
 extension EnvironmentValues {
-    public var twRules: TWGlobalRules {
-        get { self[TWGlobalRulesKey.self] }
-        set { self[TWGlobalRulesKey.self] = newValue }
-    }
+    @Entry public var twRules: TWGlobalRules = TWGlobalRules()
 }
 
 extension View {

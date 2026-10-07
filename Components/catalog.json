@@ -149,7 +149,7 @@
     "symbol": "CNCommand",
     "source": "Command.swift",
     "example": "CommandExample.swift",
-    "notes": "Search filters titles and details. Disabled options cannot activate. Native search and buttons share one pointer and keyboard highlight. Arrow keys reveal the active result; Return chooses it. The host owns command effects."
+    "notes": "Search filters titles and details. Disabled options cannot activate. Native search and buttons share one pointer and keyboard highlight. Arrow keys reveal the active result; Return chooses it. The host owns command effects. Pass `query: $query` to own the search text. Use `.itemContent { option, selected in ... } empty: { ... }` to customize native button labels and the empty state. The component retains filtering, stable IDs, activation, and keyboard navigation. Avoid interactive controls inside an item label. See the complete observable-model example in native composition."
   },
   {
     "name": "Context Menu",
@@ -309,7 +309,7 @@
     "symbol": "CNMessageScroller",
     "source": "Scrolling.swift",
     "example": "MessageScrollerExample.swift",
-    "notes": "A lazy native scroll view uses stable message IDs and scroll targets. Bind position to restore a reading target and retain it when earlier history is prepended. Following defaults to false and no initial bottom jump is forced. Set followNewMessages to true to follow appends and viewport changes; increment scrollRevision when streamed text changes height. Streaming scroll updates disable competing animations. Bind isAtBottom to observe proximity to the end and implement your host policy. The host owns keyboard placement, loading, and following decisions."
+    "notes": "A lazy native scroll view uses stable message IDs and scroll targets. Bind position to restore a reading target and retain it when earlier history is prepended. Following defaults to false and no initial bottom jump is forced. Set followNewMessages to true to follow appends and viewport changes; increment scrollRevision when streamed text changes height. Streaming scroll updates disable competing animations. Bind isAtBottom to observe proximity to the end and implement your host policy. The host owns keyboard placement, loading, and following decisions. On iOS 18 and macOS 15 or later, native scroll geometry reports end-boundary changes. Older systems retain the sentinel fallback. Following resumes after native scroll targets register; stable item IDs and the saved pixel offset preserve paused reading."
   },
   {
     "name": "Native Select",
@@ -477,7 +477,7 @@
     "symbol": "CNToastHost",
     "source": "Toast.swift",
     "example": "ToastExample.swift",
-    "notes": "Use `CNToastHost(toasts: $toasts)` for a layered deck, or keep `CNToastHost(toast: $toast)` for one notification. Append notifications with unique, stable IDs. The newest sits in front; two earlier cards peek out behind it. The notification count button expands the deck into a bounded native scroll view for individual dismissal. Pass `isExpanded: $expanded` to control expansion from your app. Expansion preserves card identity and pauses all countdowns while reading. Each toast has its own cancellable deadline. Hover, keyboard focus, and accessibility focus pause its countdown without resetting the remaining time. Updating a toast restarts only its deadline. Nil duration requires explicit dismissal. Native accessibility announcements expose notifications without moving editing focus. The caller owns the array and can limit its size or remove a notification by ID."
+    "notes": "Use `CNToastHost(toasts: $toasts)` for a layered deck, or keep `CNToastHost(toast: $toast)` for one notification. Append notifications with unique, stable IDs. The newest sits in front; two earlier cards peek out behind it. The notification count button expands the deck into a bounded native scroll view for individual dismissal. Pass `isExpanded: $expanded` to control expansion from your app. Expansion preserves card identity and pauses all countdowns while reading. Each toast has its own cancellable deadline. Hover, keyboard focus, and accessibility focus pause its countdown without resetting the remaining time. Updating a toast restarts only its deadline. Nil duration requires explicit dismissal. Native accessibility announcements expose notifications without moving editing focus. The caller owns the array and can limit its size or remove a notification by ID. Use `.toastContent { context in ... }` for custom card content and context.action for native action buttons that pause the countdown while focused. See the complete observable-model example in native composition."
   },
   {
     "name": "Toggle",

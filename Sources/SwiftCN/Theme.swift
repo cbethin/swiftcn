@@ -96,15 +96,8 @@ public struct TWTheme: Sendable {
     ]
 }
 
-private struct TWThemeKey: EnvironmentKey {
-    static let defaultValue = TWTheme.standard
-}
-
 extension EnvironmentValues {
-    public var twTheme: TWTheme {
-        get { self[TWThemeKey.self] }
-        set { self[TWThemeKey.self] = newValue }
-    }
+    @Entry public var twTheme: TWTheme = .standard
 }
 
 extension View {

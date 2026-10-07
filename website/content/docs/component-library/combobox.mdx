@@ -95,21 +95,49 @@ public struct CNCommand<ID: Hashable & Sendable>: View {
     @Binding private var selection: ID?
     private let classes: TWClasses
     private let onSelect: (ID) -> Void
-    @State private var query = ""
+    private let query: Binding<String>?
+    public init(_ options: [CNOption<ID>], selection: Binding<ID?>, query: Binding<String>? = nil,
+                classes: TWClasses = "", onSelect: @escaping (ID) -> Void = { _ in }) {
+        self.options = options; _selection = selection; self.query = query
+        self.classes = classes; self.onSelect = onSelect
+    }
+    public var body: some View {
+        itemContent { option, selected in CNCommandLabel(option: option, selected: selected) }
+    }
+    /// Customize native button labels; filtering, highlight, activation, and IDs stay shared.
+    public func itemContent<Item: View>(@ViewBuilder _ item: @escaping (CNOption<ID>, Bool) -> Item) -> some View {
+        itemContent(item, empty: { CNCommandEmpty() })
+    }
+    public func itemContent<Item: View, Empty: View>(
+        @ViewBuilder _ item: @escaping (CNOption<ID>, Bool) -> Item,
+        @ViewBuilder empty: () -> Empty
+    ) -> some View {
+        CNCommandBody(options: options, selection: $selection, boundQuery: query,
+                      classes: classes, onSelect: onSelect, item: item, empty: empty())
+    }
+}
+
+private struct CNCommandBody<ID: Hashable & Sendable, Item: View, Empty: View>: View {
+    let options: [CNOption<ID>]
+    @Binding var selection: ID?
+    let boundQuery: Binding<String>?
+    let classes: TWClasses
+    let onSelect: (ID) -> Void
+    let item: (CNOption<ID>, Bool) -> Item
+    let empty: Empty
+    @State private var localQuery = ""
     @State private var highlighted: ID?
     @State private var pointer = CNCommandPointer()
     @Namespace private var pointerSpace
     @FocusState private var searchFocused: Bool
-    public init(_ options: [CNOption<ID>], selection: Binding<ID?>, classes: TWClasses = "", onSelect: @escaping (ID) -> Void = { _ in }) {
-        self.options = options; _selection = selection; self.classes = classes; self.onSelect = onSelect
-    }
-    private var results: [CNOption<ID>] { CNOptionSearch.filter(options, query: query) }
+    private var query: Binding<String> { boundQuery ?? $localQuery }
+    private var results: [CNOption<ID>] { CNOptionSearch.filter(options, query: query.wrappedValue) }
     public var body: some View {
         let results = self.results
         VStack(alignment: .leading, spacing: 0) {
             CNInputGroup("command-search", focus: $searchFocused) {
                 Image(systemName: "magnifyingglass").tw("text-sm text-mutedForeground").accessibilityHidden(true)
-                CNInputGroupField("Search…", text: $query).accessibilityLabel("Search commands")
+                CNInputGroupField("Search…", text: query).accessibilityLabel("Search commands")
                     .onSubmit(activateHighlighted)
             }
             CNSeparator()
@@ -117,24 +145,11 @@ public struct CNCommand<ID: Hashable & Sendable>: View {
                 ScrollView {
                     LazyVStack(spacing: 2) {
                         if results.isEmpty {
-                            Text("No results found.").tw("w-full py-6 text-sm text-mutedForeground")
+                            empty
                         }
                         ForEach(results) { option in
                             Button { activate(option) } label: {
-                                HStack(spacing: 10) {
-                                    if let symbol = option.systemImage {
-                                        Image(systemName: symbol).tw("w-[20] text-mutedForeground").accessibilityHidden(true)
-                                    }
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        Text(option.title).lineLimit(1)
-                                        if let detail = option.detail {
-                                            Text(detail).tw("text-xs text-mutedForeground").lineLimit(1)
-                                        }
-                                    }
-                                    Spacer(minLength: 8)
-                                    Image(systemName: "checkmark").tw("text-xs text-mutedForeground")
-                                        .opacity(selection == option.id ? 1 : 0).accessibilityHidden(true)
-                                }
+                                item(option, selection == option.id)
                             }
                             .buttonStyle(.tw(cn("command-item w-full", highlighted == option.id ? "bg-accent" : "")))
                             .disabled(option.isDisabled).id(option.id)
@@ -172,6 +187,28 @@ public struct CNCommand<ID: Hashable & Sendable>: View {
         highlighted = CNCommandNavigation.move(results, highlighted: highlighted, direction: direction)
     }
 }
+private struct CNCommandEmpty: View {
+    var body: some View { Text("No results found.").tw("w-full py-6 text-sm text-mutedForeground") }
+}
+private struct CNCommandLabel<ID: Hashable & Sendable>: View {
+    let option: CNOption<ID>
+    let selected: Bool
+    var body: some View {
+        HStack(spacing: 10) {
+            if let symbol = option.systemImage {
+                Image(systemName: symbol).tw("w-[20] text-mutedForeground").accessibilityHidden(true)
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                Text(option.title).lineLimit(1)
+                if let detail = option.detail { Text(detail).tw("text-xs text-mutedForeground").lineLimit(1) }
+            }
+            Spacer(minLength: 8)
+            Image(systemName: "checkmark").tw("text-xs text-mutedForeground")
+                .opacity(selected ? 1 : 0).accessibilityHidden(true)
+        }
+    }
+}
+
 public struct CNCombobox<ID: Hashable & Sendable>: View {
     private let title: String
     private let options: [CNOption<ID>]
