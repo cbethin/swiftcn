@@ -74,8 +74,17 @@ def main():
     parser.add_argument("profile", choices=["local", "ci"], nargs="?", default="local")
     parser.add_argument("--components", action="store_true", help="Capture all 64 component examples")
     parser.add_argument("--duo", action="store_true", help="Capture the actual Duo simulator with the matching SDK runtime")
+    parser.add_argument("--shard", default="0/1", metavar="INDEX/COUNT", help="Split capture-only catalog runs into disjoint jobs")
     parser.add_argument("--only", nargs="+", metavar="SLUG", help="Capture selected component slugs for a focused review")
     args = parser.parse_args()
+    try:
+        shard_index, shard_count = map(int, args.shard.split('/'))
+        if not 0 <= shard_index < shard_count:
+            raise ValueError()
+    except ValueError:
+        parser.error("--shard requires INDEX/COUNT with 0 <= INDEX < COUNT")
+    if args.shard != "0/1" and (args.mode != "capture" or not args.components):
+        parser.error("Sharding requires capture --components; reviewed reference checks always use the full selection")
     if args.duo and (args.mode != "capture" or args.profile != "local" or not args.components):
         parser.error("--duo requires capture local --components; existing reviewed references stay on their pinned simulator")
     if args.duo and tuple(map(int, run(XCRUN, "--sdk", "iphonesimulator", "--show-sdk-version", capture=True).split('.'))) < (27, 1):
@@ -147,7 +156,9 @@ def main():
         if args.components:
             catalog = json.loads((REPO / "Components/catalog.json").read_text())
             narrow = {"field", "input-group", "message", "questionnaire", "empty", "card", "radio-group", "typography", "pagination", "sidebar", "skeleton", "spinner", "table"}
-            for entry in catalog:
+            for index, entry in enumerate(catalog):
+                if index % shard_count != shard_index:
+                    continue
                 if args.only and entry['slug'] not in args.only:
                     continue
                 for dark, large in [(False, False), (True, False)] + ([(False, True)] if entry['slug'] in narrow else []):
@@ -156,7 +167,7 @@ def main():
                     captures.append((flags, name))
                 if args.duo and entry['slug'] in {"calendar", "field", "input-group", "message", "pagination", "resizable", "sidebar", "table", "toast"}:
                     captures.append((["--component", entry['slug'].replace('-', '_'), "--rtl"], f"component-{entry['slug']}-rtl"))
-            if args.duo:
+            if args.duo and shard_index == 0:
                 captures.append((["--arrangement"], "native-arrangement"))
         else:
             for scene in ["controls", "rules"]:

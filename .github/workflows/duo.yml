@@ -13,6 +13,10 @@ concurrency:
 
 jobs:
   duo:
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
     runs-on: xcode-27
     timeout-minutes: 45
     env:
@@ -35,7 +39,7 @@ jobs:
           cp "$DEVELOPER_DIR/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/XCUIAutomation.framework/Headers/XCUIDevice.h" artifacts/duo-sdk/XCUIDevice.h
       - uses: actions/upload-artifact@v7
         with:
-          name: swiftcn-duo-sdk
+          name: swiftcn-duo-sdk-${{ matrix.shard }}
           path: artifacts/duo-sdk/
       - name: Compile the Duo SDK integration
         run: bash Scripts/check-ios.sh
@@ -45,11 +49,11 @@ jobs:
           xcodebuild -downloadPlatform iOS -buildVersion 27.1 -architectureVariant arm64
           xcrun simctl list -j > artifacts/duo-sdk/simulators-with-duo.json
       - name: Capture the entire native catalog
-        run: python3 Scripts/ios-visual-test.py capture local --components --duo
+        run: python3 Scripts/ios-visual-test.py capture local --components --duo --shard ${{ matrix.shard }}/4
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: swiftcn-duo-evidence
+          name: swiftcn-duo-evidence-${{ matrix.shard }}
           path: |
             artifacts/duo-sdk/
             artifacts/duo-components/
