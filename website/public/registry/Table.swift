@@ -102,7 +102,7 @@ public struct CNTableCaption: View {
 
 /// A native column builder supports rich cells and sortable key paths without a dynamic-column OS restriction.
 public struct CNDataTable<Row: Identifiable, Columns: TableColumnContent>: View
-where Columns.TableRowValue == Row, Columns.TableColumnSortComparator == KeyPathComparator<Row> {
+where Row.ID: Sendable, Columns.TableRowValue == Row, Columns.TableColumnSortComparator == KeyPathComparator<Row> {
     private let rows: [Row]
     private let columns: Columns
     @Binding private var selection: Set<Row.ID>
@@ -124,11 +124,12 @@ where Columns.TableRowValue == Row, Columns.TableColumnSortComparator == KeyPath
 }
 
 /// Native selection edits only the visible records. The host owns selections on other pages.
-@MainActor public struct CNTableSelection<ID: Hashable> {
+/// Use stable value IDs, such as UUID, String, or Int, that conform to Sendable.
+public struct CNTableSelection<ID: Hashable & Sendable>: Sendable {
     private let visible: Set<ID>
     public init(_ visible: Set<ID>) { self.visible = visible }
     public func binding(_ selection: Binding<Set<ID>>) -> Binding<Set<ID>> {
-        Binding(get: { @MainActor in selection.wrappedValue.intersection(visible) }, set: { @MainActor replacement in
+        Binding(get: { selection.wrappedValue.intersection(visible) }, set: { replacement in
             selection.wrappedValue = selection.wrappedValue.subtracting(visible).union(replacement.intersection(visible))
         })
     }

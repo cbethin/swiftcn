@@ -165,7 +165,7 @@
     "symbol": "CNDataTable",
     "source": "Table.swift",
     "example": "DataTableExample.swift",
-    "notes": "Native Table preserves selection IDs, sortable columns, and rich cell builders. CNTableRecords prepares filtered and sorted rows when your inputs change; page only slices that snapshot. Pass rowsAreSorted: true to avoid sorting prepared rows again. Keep selection in the host across filtering and pages. The example composes CNInput, CNPagination, and native column visibility (iOS 17.4 or macOS 14.4 and later). Compact native tables display the first column, so the example includes record details there. CNTable is for small intrinsic-width layouts; use CNDataTable or paging for large record sets."
+    "notes": "Native Table preserves selection IDs, sortable columns, and rich cell builders. CNTableRecords prepares filtered and sorted rows when your inputs change; page only slices that snapshot. Pass rowsAreSorted: true to avoid sorting prepared rows again. Use stable Sendable record IDs such as UUID, String, or Int. Native selection edits only visible rows; the host retains selections across filtering and pages. Clear the host selection to clear every page. The example composes CNInput, CNPagination, and native column visibility (iOS 17.4 or macOS 14.4 and later). Compact native tables display the first column, so the example includes record details there. CNTable is for small intrinsic-width layouts; use CNDataTable or paging for large record sets."
   },
   {
     "name": "Date Picker",

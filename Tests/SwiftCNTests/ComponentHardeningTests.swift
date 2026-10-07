@@ -4,6 +4,11 @@ import Testing
 
 @Suite("Prepared table records and hover intent")
 struct ComponentHardeningTests {
+    @Test func nativeSelectionProjectionHasNoMainQueueRequirement() async {
+        let selection = CNTableSelection(Set(1...20)).binding(.constant([1, 21]))
+        let visible = await Task.detached { selection.wrappedValue }.value
+        #expect(visible == [1])
+    }
     @MainActor @Test func visibleSelectionEditsRetainOtherPagesAndRejectUnknownIDs() {
         var selected: Set<Int> = [1, 21]
         let selection = Binding(get: { selected }, set: { selected = $0 })
