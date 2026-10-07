@@ -12,12 +12,14 @@ struct PresentationAndScrollingTests {
         let model = DialogFocusProbeModel()
         model.open[0] = initiallyOpen
         let controller = NSHostingController(rootView: DialogFocusProbe(model: model))
-        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 600, height: 480),
-                              styleMask: [.titled], backing: .buffered, defer: false)
+        // A nonactivating panel gives the SwiftPM process a native key window without foregrounding an app.
+        let window = NSPanel(contentRect: CGRect(x: 0, y: 0, width: 600, height: 480),
+                             styleMask: [.titled, .nonactivatingPanel], backing: .buffered, defer: false)
         controller.view.frame = window.contentLayoutRect
         window.contentViewController = controller; window.makeKeyAndOrderFront(nil)
         defer { window.orderOut(nil); window.contentViewController = nil }
         try await settle(controller.view)
+        try #require(window.isKeyWindow, "The keyboard regression needs an active native key window.")
         var responders: [Int: NSResponder] = [:]
         for index in [0, 1, 0, 1] {
             model.open[index] = true
