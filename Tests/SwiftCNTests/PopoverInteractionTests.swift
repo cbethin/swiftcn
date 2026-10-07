@@ -38,9 +38,11 @@ struct PopoverInteractionTests {
         #expect(scroll.contentSize.width < 624 && scroll.contentSize.height < 704, "Short content keeps its intrinsic size.")
     }
     private func descendants(_ root: NSView) -> [NSView] { root.subviews.flatMap { [$0] + descendants($0) } }
-    @Test func popoverBuilderChildrenHaveSeparateVerticalFrames() async throws {
+    @Test(arguments: [false, true])
+    func popoverBuilderChildrenHaveSeparateVerticalFrames(rtl: Bool) async throws {
         let model = PopoverChildFrameModel()
-        let controller = NSHostingController(rootView: PopoverBuilderHarness(model: model))
+        let controller = NSHostingController(rootView: PopoverBuilderHarness(model: model)
+            .environment(\.layoutDirection, rtl ? .rightToLeft : .leftToRight))
         let host = controller.view
         host.frame = CGRect(x: 0, y: 0, width: 600, height: 400)
         let window = NSWindow(contentRect: host.frame, styleMask: [.titled], backing: .buffered, defer: false)
@@ -51,6 +53,8 @@ struct PopoverInteractionTests {
         let first = try #require(model.frames["Title"])
         let second = try #require(model.frames["Description"])
         #expect(first.maxY < second.minY, "View-builder children must stack instead of overlapping.")
+        let trigger = try #require(model.frames["Details"])
+        #expect(abs(first.midX - trigger.midX) < 25, "The popup must stay near its edge-aligned trigger in either layout direction.")
     }
     @Test(arguments: [false, true])
     func repeatedTriggerClicksReverseAnUnfinishedTransition(nativeContainer: Bool) async throws {
@@ -107,10 +111,10 @@ private struct PopoverBuilderHarness: View {
             .onPreferenceChange(PopoverChildFrames.self) { model.frames.merge($0) { _, new in new } }
     }
     var body: some View {
-        VStack {
-            CNPopover(isPresented: .constant(true)) { row("Title"); row("Description") } label: { Text("Details") }
+        VStack(alignment: .leading) {
+            CNPopover(isPresented: .constant(true)) { row("Title"); row("Description") } label: { row("Details") }
             Spacer()
-        }.frame(width: 600, height: 400).cnPopoverHost()
+        }.frame(width: 600, height: 400, alignment: .topLeading).cnPopoverHost()
     }
 }
 private struct PopoverChildFrames: PreferenceKey {

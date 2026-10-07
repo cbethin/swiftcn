@@ -30,6 +30,7 @@ public struct CNPopoverHost<Content: View>: View {
                                     near: CGPoint(x: anchor.midX, y: anchor.midY))
                                 let edge = request.edge
                                 let placementDirection = direction
+                                let hostWidth = geometry.size.width
                                 if request.isPresented {
                                     // Constrain the native viewport before requesting its ideal size.
                                     // The content keeps one identity as the host resizes.
@@ -38,9 +39,11 @@ public struct CNPopoverHost<Content: View>: View {
                                         .frame(maxWidth: max(0, bounds.width - 16), maxHeight: max(0, bounds.height - 16))
                                         .fixedSize()
                                         .alignmentGuide(.leading) { size in
-                                            -CNPopoverPosition.origin(anchor: anchor,
+                                            let x = CNPopoverPosition.origin(anchor: anchor,
                                                 popup: CGSize(width: size.width, height: size.height),
                                                 bounds: bounds, edge: edge, direction: placementDirection).x
+                                            // Placement bounds are physical; the leading guide is logical.
+                                            return placementDirection == .leftToRight ? -x : x + size.width - hostWidth
                                         }
                                         .alignmentGuide(.top) { size in
                                             -CNPopoverPosition.origin(anchor: anchor,
