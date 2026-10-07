@@ -71,6 +71,14 @@ public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: Vi
                     else { restoreReadingTarget(proxy, height: viewportHeight) }
                     readingAnchor.hasAppeared = true
                 }
+                .task(id: followNewMessages) {
+                    // Older SwiftUI versions register scroll targets after appearance.
+                    await Task.yield()
+                    guard !Task.isCancelled, readingAnchor.initialRestorationPending else { return }
+                    if followNewMessages { scrollToLatest(proxy) }
+                    else { restoreReadingTarget(proxy, height: viewportHeight) }
+                    readingAnchor.initialRestorationPending = false
+                }
                 .onChange(of: data.first?.id) { _, _ in
                     if followNewMessages { scrollToLatest(proxy) }
                     else { restoreReadingTarget(proxy, height: viewportHeight) }
@@ -85,7 +93,7 @@ public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: Vi
     }
     private func restoreReadingTarget(_ proxy: ScrollViewProxy, height: CGFloat) {
         guard let target = position?.wrappedValue ?? localPosition else { return }
-        let frame = readingAnchor.hasAppeared && readingAnchor.targetID == target ? readingAnchor.frame : nil
+        let frame = readingAnchor.hasAppeared && !readingAnchor.initialRestorationPending && readingAnchor.targetID == target ? readingAnchor.frame : nil
         let available = height - (frame?.height ?? 0)
         let anchor = UnitPoint(x: 0.5, y: available > 1 ? (frame?.minY ?? 0) / available : 0)
         var transaction = Transaction(); transaction.disablesAnimations = true
@@ -101,6 +109,7 @@ public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: Vi
 // One visible target stores its pixel offset without invalidating body during scrolling.
 @MainActor private final class CNMessageReadingAnchor<ID> {
     var hasAppeared = false
+    var initialRestorationPending = true
     var firstID: ID?
     var targetID: ID?
     var frame: CGRect?

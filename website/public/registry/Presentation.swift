@@ -393,7 +393,7 @@ struct CNHoverIntent {
         return nil
     }
     mutating func activate(hovering: Bool) {
-        if isPresented { dismiss(hovering: hovering) }
+        if isPresented && pinned { dismiss(hovering: hovering) }
         else { isPresented = true; pinned = true; suppressed = false }
     }
     mutating func dismiss(hovering: Bool) {
