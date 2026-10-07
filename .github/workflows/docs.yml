@@ -16,6 +16,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  duo:
+    if: github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/duo.yml
+
   build:
     runs-on: ubuntu-latest
     env:
