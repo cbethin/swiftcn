@@ -50,12 +50,15 @@ public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: Vi
                     }.scrollTargetLayout()
                     Color.clear.frame(height: 1)
                         .id(bottomID)
-                        .onGeometryChange(for: CGFloat.self, of: { $0.frame(in: .scrollView(axis: .vertical)).maxY }) { bottom in
+                        .onGeometryChange(for: CNMessageEndGeometry.self, of: {
+                            CNMessageEndGeometry(bottom: $0.frame(in: .scrollView(axis: .vertical)).maxY,
+                                                 height: $0.bounds(of: .scrollView(axis: .vertical))?.height ?? viewport.size.height)
+                        }) { end in
                             if let bottomState {
-                                let atBottom = bottom <= viewport.size.height + 24 && bottom >= 0
+                                let atBottom = end.bottom <= end.height + 24 && end.bottom >= 0
                                 if bottomState.wrappedValue != atBottom { bottomState.wrappedValue = atBottom }
                             }
-                            if followNewMessages && bottom.isFinite && bottom > viewport.size.height + 1 {
+                            if followNewMessages && end.bottom.isFinite && end.bottom > end.height + 1 {
                                 scrollToLatest(proxy)
                             }
                         }
@@ -93,6 +96,10 @@ public struct CNMessageScroller<Data: RandomAccessCollection, Content: View>: Vi
     var firstID: ID?
     var targetID: ID?
     var frame: CGRect?
+}
+private struct CNMessageEndGeometry: Equatable {
+    let bottom: CGFloat
+    let height: CGFloat
 }
 /// Native scroll paging with a binding to the stable item ID. Size the viewport with classes.
 public struct CNCarousel<Data: RandomAccessCollection, Content: View>: View where Data.Element: Identifiable {
