@@ -47,7 +47,7 @@ jobs:
           swift test --filter CatalogNativeRenderingTests
           swift test --filter ComposableContentTests
           swift test --filter PopoverInteractionTests
-          swift test --filter PresentationAndScrollingTests
+          bash Scripts/check-presentation.sh
           swift test --filter TouchTargetInteractionTests
           SWIFTCN_GALLERY_APPEARANCE_TESTS=1 swift test --filter GalleryAppearanceTests
           SWIFTCN_ARRANGEMENT_TESTS=1 swift test --filter NativeArrangementTests

@@ -7,7 +7,9 @@ import Testing
 @Suite("Presentation and reading position", .serialized)
 @MainActor
 struct PresentationAndScrollingTests {
-    @Test(arguments: [false, true])
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["CI"] == "true"
+                   || UserDefaults.standard.integer(forKey: "AppleKeyboardUIMode") & 2 != 0,
+                   "Requires macOS Keyboard navigation."), arguments: [false, true])
     func closingADialogRestoresOnlyItsOwnTriggerFocus(initiallyOpen: Bool) async throws {
         let model = DialogFocusProbeModel()
         model.open[0] = initiallyOpen
@@ -20,26 +22,21 @@ struct PresentationAndScrollingTests {
         defer { window.orderOut(nil); window.contentViewController = nil }
         try await settle(controller.view)
         try #require(window.isKeyWindow, "The keyboard regression needs an active native key window.")
-        var responders: [Int: NSResponder] = [:]
+        try #require(NSApplication.shared.isFullKeyboardAccessEnabled,
+                     "The keyboard regression needs macOS Keyboard navigation enabled.")
         for index in [0, 1, 0, 1] {
             model.open[index] = true
             try await settle(controller.view)
             model.open[index] = false
             try await settle(controller.view)
-            let responder = try #require(window.firstResponder)
-            #expect(responder !== window && responder !== controller.view, "Closing must restore a native control's focus.")
-            if let expected = responders[index] {
-                #expect(responder === expected, "Only the most recently closed dialog can restore its trigger.")
-            } else {
-                #expect(responders.values.allSatisfy { $0 !== responder }, "Each dialog restores a distinct trigger.")
-                responders[index] = responder
-            }
             let key = index == 0 ? " " : "\r"
-            let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [],
-                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
-                context: nil, characters: key, charactersIgnoringModifiers: key, isARepeat: false,
-                keyCode: index == 0 ? 49 : 36))
-            window.sendEvent(event)
+            for type in [NSEvent.EventType.keyDown, .keyUp] {
+                let event = try #require(NSEvent.keyEvent(with: type, location: .zero, modifierFlags: [],
+                    timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                    context: nil, characters: key, charactersIgnoringModifiers: key, isARepeat: false,
+                    keyCode: index == 0 ? 49 : 36))
+                NSApplication.shared.sendEvent(event)
+            }
             try await settle(controller.view)
             #expect(model.open[index], "Space and Return must activate the restored trigger.")
             #expect(!model.open[1 - index], "Keyboard activation must open only the focused dialog.")

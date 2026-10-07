@@ -63,10 +63,13 @@ import SwiftCN
 public struct CNPresentationHost<Content: View>: View {
     private let content: Content
     @State private var active: [UUID] = []
+    @State private var lastPresented: UUID?
+    @FocusState private var focus: CNPresentationFocus?
     @Environment(\.layoutDirection) private var direction
     public init(@ViewBuilder content: () -> Content) { self.content = content() }
     public var body: some View {
         content.environment(\.cnPresentationHosted, true)
+            .environment(\.cnPresentationFocus, $focus)
             .disabled(!active.isEmpty).accessibilityHidden(!active.isEmpty)
             .overlayPreferenceValue(CNPresentationRequests.self) { requests in
                 GeometryReader { geometry in
@@ -75,7 +78,7 @@ public struct CNPresentationHost<Content: View>: View {
                             let regions = geometry.cnPlacementRegions(layoutDirection: direction)
                             let placement = CNPlacementRegions.preferred(in: regions,
                                 near: request.kind.preferredPoint(in: geometry.size, direction: direction))
-                            CNPresentationPanel(request: request, size: geometry.size, placement: placement)
+                            CNPresentationPanel(request: request, focus: $focus, size: geometry.size, placement: placement)
                                 .transformEnvironment(\.self) { values in
                                     // Preserve public appearance without importing private focus dispatch state.
                                     values.cnPresentationAppearance(from: request.environment)
@@ -91,6 +94,16 @@ public struct CNPresentationHost<Content: View>: View {
                 }
             }
             .onPreferenceChange(CNPresentationPresence.self) { active = $0 }
+            .task(id: active) {
+                let target = active.last.map { CNPresentationFocus.panel($0) }
+                    ?? lastPresented.map { CNPresentationFocus.trigger($0) }
+                if let presented = active.last { lastPresented = presented }
+                // One owner coordinates panel focus and restoration after the enabled scope updates.
+                focus = nil
+                await Task.yield()
+                guard !Task.isCancelled else { return }
+                focus = target
+            }
             .transformPreference(CNPresentationRequests.self) { $0 = [] }
             .transformPreference(CNPresentationPresence.self) { $0 = [] }
     }
@@ -127,6 +140,17 @@ private enum CNPresentationKind {
     }
 }
 
+private enum CNPresentationFocus: Hashable { case trigger(UUID), panel(UUID) }
+private struct CNPresentationFocusKey: EnvironmentKey {
+    static var defaultValue: FocusState<CNPresentationFocus?>.Binding? { nil }
+}
+extension EnvironmentValues {
+    fileprivate var cnPresentationFocus: FocusState<CNPresentationFocus?>.Binding? {
+        get { self[CNPresentationFocusKey.self] }
+        set { self[CNPresentationFocusKey.self] = newValue }
+    }
+}
+
 private struct CNPresentationTrigger<Label: View, Popup: View>: View {
     @Binding var isPresented: Bool
     let kind: CNPresentationKind
@@ -139,21 +163,24 @@ private struct CNPresentationTrigger<Label: View, Popup: View>: View {
     @Environment(\.isEnabled) private var enabled
     @State private var id = UUID()
     @State private var restoreFocus = false
-    @FocusState private var triggerFocused: Bool
+    @Environment(\.cnPresentationFocus) private var hostedFocus
+    @FocusState private var localFocus: CNPresentationFocus?
+    private var triggerFocus: FocusState<CNPresentationFocus?>.Binding { hostedFocus ?? $localFocus }
+    private var triggerFocused: Bool { triggerFocus.wrappedValue == .trigger(id) }
     var body: some View {
         let trigger = Button(action: { isPresented = true }, label: label)
-            .focusable().focusEffectDisabled().focused($triggerFocused)
+            .focusable().focusEffectDisabled().focused(triggerFocus, equals: .trigger(id))
             .buttonStyle(.tw(cn("button-outline", classes), state: .init(isFocused: triggerFocused)))
             .onKeyPress(keys: [.return, .space]) { _ in isPresented = true; return .handled }
             .onChange(of: isPresented, initial: true) { _, open in
-                if open { restoreFocus = true; triggerFocused = false }
+                if open && !hosted { restoreFocus = true; triggerFocus.wrappedValue = nil }
             }
             .task(id: enabled && restoreFocus && !isPresented) {
-                guard enabled && restoreFocus && !isPresented else { return }
+                guard !hosted, enabled && restoreFocus && !isPresented else { return }
                 // Let the closing panel release focus and the trigger rejoin the enabled focus scope.
                 await Task.yield()
-                guard !Task.isCancelled, enabled, restoreFocus, !isPresented else { return }
-                triggerFocused = true; restoreFocus = false
+                guard !Task.isCancelled, !hosted, enabled, restoreFocus, !isPresented else { return }
+                triggerFocus.wrappedValue = .trigger(id); restoreFocus = false
             }
         if hosted {
             trigger.preference(key: CNPresentationRequests.self, value: [
@@ -196,11 +223,11 @@ extension EnvironmentValues {
 
 private struct CNPresentationPanel: View {
     let request: CNPresentationRequest
+    let focus: FocusState<CNPresentationFocus?>.Binding
     let size: CGSize
     let placement: CGRect
     @State private var mounted = false
     @State private var contentHeight: CGFloat = 240
-    @FocusState private var focused: Bool
     @Environment(\.layoutDirection) private var direction
     private var open: Bool { request.presentation.wrappedValue }
     private func close() { request.presentation.wrappedValue = false }
@@ -246,7 +273,7 @@ private struct CNPresentationPanel: View {
                 .disabled(!open)
                 .accessibilityElement(children: .contain).accessibilityAddTraits(.isModal)
                 .accessibilityAction(.escape, close)
-                .focusable(open).focusEffectDisabled().focused($focused)
+                .focusable(open).focusEffectDisabled().focused(focus, equals: .panel(request.id))
                 .onKeyPress(.escape) { close(); return .handled }
             }
         }
@@ -256,7 +283,6 @@ private struct CNPresentationPanel: View {
         .twAnimation("presentation-motion", value: mounted, tracksHover: false)
         .onChange(of: open, initial: true) { _, open in
             if open { mounted = true }
-            focused = open
         }
     }
     private var entryTransition: AnyTransition {
