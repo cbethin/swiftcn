@@ -477,7 +477,7 @@
     "symbol": "CNToastHost",
     "source": "Toast.swift",
     "example": "ToastExample.swift",
-    "notes": "The host owns one optional toast per window. Replacement cancels the old timeout; identity checks prevent an older task from dismissing a newer toast. Nil duration requires explicit dismissal. Native accessibility announcements expose new notifications without moving editing focus."
+    "notes": "Use `CNToastHost(toasts: $toasts)` for a layered deck, or keep `CNToastHost(toast: $toast)` for one notification. Append notifications with unique, stable IDs. The newest sits in front; two earlier cards peek out behind it. The notification count button expands the deck into a bounded native scroll view for individual dismissal. Pass `isExpanded: $expanded` to control expansion from your app. Expansion preserves card identity and pauses all countdowns while reading. Each toast has its own cancellable deadline. Hover, keyboard focus, and accessibility focus pause its countdown without resetting the remaining time. Updating a toast restarts only its deadline. Nil duration requires explicit dismissal. Native accessibility announcements expose notifications without moving editing focus. The caller owns the array and can limit its size or remove a notification by ID."
   },
   {
     "name": "Toggle",

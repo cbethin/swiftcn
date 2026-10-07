@@ -230,6 +230,95 @@ struct CatalogNativeRenderingTests {
         settle(host)
         #expect(model.toast?.id == replacement.id)
     }
+    @Test func appendingAToastPreservesExistingDeadlinesAndTheEditor() async throws {
+        let model = CatalogControlModel()
+        let first = CNToast(title: "First", duration: 0.9)
+        let persistent = CNToast(title: "Persistent", duration: nil)
+        model.toasts = [first]
+        let (host, window) = host(CNToastHost(toasts: Binding(get: { model.toasts }, set: { model.toasts = $0 })) {
+            CNInput("Draft", text: Binding(get: { model.text }, set: { model.text = $0 }))
+                .frame(height: 180, alignment: .top)
+        })
+        defer { window.contentView = nil }
+        let editor = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
+        #expect(window.makeFirstResponder(editor))
+        let responder = window.firstResponder
+        try await Task.sleep(for: .milliseconds(400))
+        #expect(model.toasts.map(\.id) == [first.id])
+        model.toasts.append(persistent); settle(host)
+        try await Task.sleep(for: .milliseconds(550)); settle(host)
+        #expect(model.toasts.map(\.id) == [persistent.id], "Appending must not restart another toast's lifetime.")
+        #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)
+        #expect(window.firstResponder === responder, "Notifications must not take focus from the editor.")
+        let replacement = CNToast(id: persistent.id, title: "Updated", duration: 0.2)
+        model.toasts = [replacement]; settle(host)
+        try await Task.sleep(for: .milliseconds(300)); settle(host)
+        #expect(model.toasts.isEmpty, "Updating one toast must replace its own deadline.")
+        #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)
+    }
+    @Test func expandingTheToastDeckPausesDeadlinesUntilReadingEnds() async throws {
+        let model = CatalogControlModel()
+        model.toasts = [CNToast(title: "First", duration: 0.2), CNToast(title: "Second", duration: 0.2)]
+        model.toastsExpanded = true
+        let (host, window) = host(CNToastHost(toasts: Binding(get: { model.toasts }, set: { model.toasts = $0 }),
+                                           isExpanded: Binding(get: { model.toastsExpanded }, set: { model.toastsExpanded = $0 })) {
+            Text("Editor").frame(height: 180)
+        })
+        defer { window.contentView = nil }
+        try await Task.sleep(for: .milliseconds(400)); settle(host)
+        #expect(model.toasts.count == 2)
+        model.toastsExpanded = false; settle(host)
+        try await Task.sleep(for: .milliseconds(350)); settle(host)
+        #expect(model.toasts.isEmpty)
+    }
+    @Test(arguments: [false, true], [false, true])
+    func toastStackBoundsItsViewportAndReflowsOnResize(dark: Bool, large: Bool) async throws {
+        let model = CatalogControlModel()
+        model.toasts = (0..<8).map { CNToast(title: "Notification \($0)", message: "A longer message that wraps on small screens.", duration: nil) }
+        let controller = NSHostingController(rootView: CNToastHost(toasts: Binding(get: { model.toasts }, set: { model.toasts = $0 }),
+                                                                 isExpanded: Binding(get: { model.toastsExpanded }, set: { model.toastsExpanded = $0 })) {
+            CNInput("Draft", text: Binding(get: { model.text }, set: { model.text = $0 }))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+        .environment(\.colorScheme, dark ? .dark : .light)
+        .environment(\.dynamicTypeSize, large ? .accessibility3 : .large)
+        .background(TWTheme.standard.color(.background, scheme: dark ? .dark : .light))
+        .transaction { $0.disablesAnimations = true })
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 240, height: 180),
+                              styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+        controller.view.frame = window.contentLayoutRect
+        window.contentViewController = controller
+        defer { window.contentViewController = nil }
+        let host = controller.view
+        settle(host)
+        let scroll = try #require(descendants(host).compactMap { $0 as? NSScrollView }.first)
+        let editor = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
+        let viewport = scroll.convert(scroll.bounds, to: host)
+        #expect(viewport.minX >= -1 && viewport.maxX <= 241)
+        #expect(viewport.minY >= -1 && viewport.maxY <= 181)
+        let document = try #require(scroll.documentView)
+        let deckHeight = document.bounds.height
+        try captureToastStack(host, name: "toast-deck-\(dark ? "dark" : "light")-\(large ? "large" : "standard")")
+        model.toastsExpanded = true; settle(host)
+        #expect(document.bounds.height > scroll.contentSize.height)
+        #expect(document.bounds.height > deckHeight * 2, "The collapsed deck must overlap cards instead of arranging a vertical stack.")
+        scroll.contentView.scroll(to: CGPoint(x: 0, y: document.bounds.maxY - scroll.contentSize.height))
+        scroll.reflectScrolledClipView(scroll.contentView)
+        #expect(abs(scroll.documentVisibleRect.maxY - document.bounds.maxY) < 2)
+        try captureToastStack(host, name: "toast-stack-compact-\(dark ? "dark" : "light")-\(large ? "large" : "standard")")
+        model.toasts.remove(at: 3); settle(host)
+        window.setContentSize(NSSize(width: 480, height: 720)); settle(host)
+        #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)
+        #expect(scroll.bounds.width <= 361)
+        #expect(model.toasts.count == 7)
+        try captureToastStack(host, name: "toast-stack-expanded-\(dark ? "dark" : "light")-\(large ? "large" : "standard")")
+    }
+    private func captureToastStack(_ host: NSView, name: String) throws {
+        guard let path = ProcessInfo.processInfo.environment["SWIFTCN_COMPOSITION_ARTIFACTS"] else { return }
+        let directory = URL(fileURLWithPath: path, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try pixels(host).write(to: directory.appendingPathComponent(name + ".png"))
+    }
     private func host<V: View>(_ view: V) -> (NSHostingView<AnyView>, NSWindow) {
         let host = NSHostingView(rootView: AnyView(view.frame(width: 400)))
         host.setFrameSize(host.fittingSize)
@@ -341,6 +430,8 @@ private struct SidebarDetailControlProbe: View {
     var tab = 0
     var on = false
     var toast: CNToast? = nil
+    var toasts: [CNToast] = []
+    var toastsExpanded = false
 }
 private struct CatalogActionProbe: View {
     let model: CatalogControlModel
