@@ -7,6 +7,33 @@ import Testing
 @Suite("Presentation and reading position", .serialized)
 @MainActor
 struct PresentationAndScrollingTests {
+    @Test(arguments: [false, true])
+    func closingADialogRestoresOnlyItsOwnTriggerFocus(initiallyOpen: Bool) async throws {
+        let model = DialogFocusProbeModel()
+        model.open[0] = initiallyOpen
+        let controller = NSHostingController(rootView: DialogFocusProbe(model: model))
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 600, height: 480),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        controller.view.frame = window.contentLayoutRect
+        window.contentViewController = controller; window.makeKeyAndOrderFront(nil)
+        defer { window.orderOut(nil); window.contentViewController = nil }
+        try await settle(controller.view)
+        var responders: [Int: NSResponder] = [:]
+        for index in [0, 1, 0, 1] {
+            model.open[index] = true
+            try await settle(controller.view)
+            model.open[index] = false
+            try await settle(controller.view)
+            let responder = try #require(window.firstResponder)
+            #expect(responder !== window && responder !== controller.view, "Closing must restore a native control's focus.")
+            if let expected = responders[index] {
+                #expect(responder === expected, "Only the most recently closed dialog can restore its trigger.")
+            } else {
+                #expect(responders.values.allSatisfy { $0 !== responder }, "Each dialog restores a distinct trigger.")
+                responders[index] = responder
+            }
+        }
+    }
     @Test func nativeDrawerDismissalRunsTheCallbackAndPreservesTheCaller() async throws {
         let model = NativeDrawerProbeModel()
         let controller = NSHostingController(rootView: NativeDrawerProbe(model: model))
@@ -201,6 +228,22 @@ struct PresentationAndScrollingTests {
     @ObservationIgnored var animations: [Animation?] = []
     @ObservationIgnored var reduceMotion = false
     @ObservationIgnored var dismiss: (() -> Void)?
+}
+@MainActor @Observable private final class DialogFocusProbeModel {
+    var open = [false, false]
+}
+private struct DialogFocusProbe: View {
+    let model: DialogFocusProbeModel
+    var body: some View {
+        HStack {
+            ForEach(0..<2) { index in
+                CNDialog(isPresented: Binding(get: { model.open[index] }, set: { model.open[index] = $0 })) {
+                    Text("Dialog \(index)")
+                } label: { Text("Open \(index)") }
+            }
+        }.frame(maxWidth: .infinity, maxHeight: .infinity)
+            .cnPresentationHost()
+    }
 }
 private struct PresentationProbe: View {
     let model: PresentationProbeModel

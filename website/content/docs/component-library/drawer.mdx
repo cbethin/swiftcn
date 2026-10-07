@@ -154,17 +154,18 @@ private struct CNPresentationTrigger<Label: View, Popup: View>: View {
     @Environment(\.self) private var environment
     @Environment(\.isEnabled) private var enabled
     @State private var id = UUID()
-    @State private var hasOpened = false
+    @State private var restoreFocus = false
     @FocusState private var triggerFocused: Bool
     var body: some View {
-        let trigger = CNButton(variant: .outline, classes: classes, action: { isPresented = true }, label: label)
-            .focused($triggerFocused)
-            .onChange(of: isPresented) { _, open in
-                if open { hasOpened = true; triggerFocused = false }
-                else if enabled { triggerFocused = true }
+        let trigger = Button(action: { isPresented = true }, label: label)
+            .focusable().focusEffectDisabled().focused($triggerFocused)
+            .buttonStyle(.tw(cn("button-outline", classes), state: .init(isFocused: triggerFocused)))
+            .onChange(of: isPresented, initial: true) { _, open in
+                if open { restoreFocus = true; triggerFocused = false }
+                else if enabled && restoreFocus { triggerFocused = true; restoreFocus = false }
             }
             .onChange(of: enabled) { _, enabled in
-                if enabled && hasOpened && !isPresented { triggerFocused = true }
+                if enabled && restoreFocus && !isPresented { triggerFocused = true; restoreFocus = false }
             }
         if hosted {
             trigger.preference(key: CNPresentationRequests.self, value: [
