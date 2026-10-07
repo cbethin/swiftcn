@@ -349,6 +349,13 @@ struct CatalogNativeRenderingTests {
         let deckHeight = document.bounds.height
         try captureComposition(host, name: "toast-deck-\(dark ? "dark" : "light")-\(large ? "large" : "standard")")
         model.toastsExpanded = true; settle(host)
+        // AppKit can defer the document's new size beyond one run-loop turn.
+        // Wait for the native geometry; a deck that never expands still fails below.
+        let deadline = ContinuousClock.now + .seconds(2)
+        while document.bounds.height <= deckHeight * 2 && ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+            host.layoutSubtreeIfNeeded()
+        }
         #expect(document.bounds.height > scroll.contentSize.height)
         #expect(document.bounds.height > deckHeight * 2, "The collapsed deck must overlap cards instead of arranging a vertical stack.")
         scroll.contentView.scroll(to: CGPoint(x: 0, y: document.bounds.maxY - scroll.contentSize.height))
