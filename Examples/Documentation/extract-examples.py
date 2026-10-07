@@ -13,6 +13,7 @@ expected = {
     "installation": {"Package.swift"},
     "quick-start": {"ContentView.swift", "SwiftCNDemoApp.swift"},
     "native-controls": {"FocusExample.swift"},
+    "native-composition": {entry['example'] for entry in json.loads((repo / 'Components/native-examples.json').read_text())},
     "components": {"ComponentPartsExample.swift"},
     "interpolation": {"TypedInterpolationExample.swift", "InterpolatedListExample.swift"},
     "native-modifiers": {"NativeRegistryExample.swift", "NativeCompositionExample.swift"},

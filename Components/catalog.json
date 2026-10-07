@@ -197,7 +197,7 @@
     "symbol": "CNDrawer",
     "source": "Presentation.swift",
     "example": "DrawerExample.swift",
-    "notes": "CNDrawer presents a native SwiftUI sheet with medium and large detents. SwiftUI owns dragging, resizing, and dismissal; CNDialogClose uses native dismissal. The drawer recipe styles the content through .tw, and contentClasses overrides it. No presentation host is required. The static preview shows shared content; the live gallery shows platform sheet chrome and gestures."
+    "notes": "CNDrawer presents a native SwiftUI sheet. Pass detents, an optional selected-detent binding, and onDismiss for typed sheet configuration. SwiftUI owns dragging, resizing, and dismissal. CNDialogClose uses native dismissal. CNDrawerContent is a standalone styled stack for a caller-owned sheet; it adds no scrolling or presentation hosts. The drawer recipe and contentClasses control appearance. The static preview shows shared content; the live gallery shows native sheet chrome and gestures."
   },
   {
     "name": "Dropdown Menu",

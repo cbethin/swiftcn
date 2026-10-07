@@ -125,6 +125,8 @@ extension TWStyle {
             "table-caption": "pt-2 text-xs text-mutedForeground",
             "tabs": "cn-tint-[primary]",
             "sidebar": "bg-surface text-foreground",
+            "sidebar-list": "bg-surface",
+            "sidebar-item-label": "text-sm font-medium",
             "sidebar-motion": "animate-smooth duration-250",
             "sidebar-scrim": "bg-[#000000] opacity-35",
             "sidebar-header": "p-2 w-full",

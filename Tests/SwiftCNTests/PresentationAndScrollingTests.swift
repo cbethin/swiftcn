@@ -7,6 +7,53 @@ import Testing
 @Suite("Presentation and reading position", .serialized)
 @MainActor
 struct PresentationAndScrollingTests {
+    @Test func nativeDrawerDismissalRunsTheCallbackAndPreservesTheCaller() async throws {
+        let model = NativeDrawerProbeModel()
+        let controller = NSHostingController(rootView: NativeDrawerProbe(model: model))
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 600, height: 480),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        controller.view.frame = window.contentLayoutRect
+        window.contentViewController = controller; window.orderFront(nil)
+        defer { window.orderOut(nil); window.contentViewController = nil }
+        for _ in 0..<2 {
+            model.open = true
+            try await settle(controller.view, seconds: 0.6)
+            let sheet = try #require(window.attachedSheet)
+            let content = try #require(sheet.contentView)
+            let editor = try #require(descendants(content).compactMap { $0 as? NSTextField }.first)
+            #expect(editor.stringValue == model.draft)
+            model.draft = "Persistent caller draft"
+            model.detent = .large
+            try await settle(content)
+            #expect(descendants(content).compactMap { $0 as? NSTextField }.first === editor)
+            #expect(editor.stringValue == model.draft)
+            let close = try #require(model.close)
+            close()
+            try await settle(controller.view, seconds: 0.6)
+            #expect(!model.open && window.attachedSheet == nil)
+        }
+        #expect(model.dismissals == 2)
+    }
+    @Test func nativeFormattedFieldSurvivesRecipeAndEnabledChanges() async throws {
+        let model = NativeFieldProbeModel()
+        let controller = NSHostingController(rootView: NativeFieldProbe(model: model))
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 360, height: 240),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        controller.view.frame = window.contentLayoutRect
+        window.contentViewController = controller; window.orderFront(nil)
+        defer { window.orderOut(nil); window.contentViewController = nil }
+        try await settle(controller.view)
+        let editor = try #require(descendants(controller.view).compactMap { $0 as? NSTextField }.first)
+        #expect(editor.stringValue == "12.5")
+        model.amount = 42.25; model.compact = true; model.disabled = true
+        try await settle(controller.view)
+        #expect(descendants(controller.view).compactMap { $0 as? NSTextField }.first === editor)
+        #expect(editor.stringValue == "42.25" && !editor.isEnabled)
+        model.disabled = false; model.compact = false
+        try await settle(controller.view)
+        #expect(descendants(controller.view).compactMap { $0 as? NSTextField }.first === editor)
+        #expect(editor.isEnabled && model.amount == 42.25)
+    }
     @Test func longDialogContentUsesABoundedNativeViewport() async throws {
         let model = PresentationProbeModel()
         model.open = true; model.longContent = true
@@ -184,6 +231,56 @@ private struct ScrollProbe: View {
                           position: Binding(get: { model.position }, set: { model.position = $0 })) { row in
             Text("Message \(row.id)").frame(height: row.id == model.rows.last?.id ? model.latestHeight : 40)
         }
+    }
+}
+@MainActor @Observable private final class NativeDrawerProbeModel {
+    var open = false
+    var detent = PresentationDetent.medium
+    var draft = "Caller draft"
+    var dismissals = 0
+    @ObservationIgnored var close: (() -> Void)?
+}
+private struct NativeDrawerProbe: View {
+    let model: NativeDrawerProbeModel
+    var body: some View {
+        CNDrawer(isPresented: Binding(get: { model.open }, set: { model.open = $0 }),
+                 detents: [.medium, .large],
+                 selection: Binding(get: { model.detent }, set: { model.detent = $0 }),
+                 onDismiss: { model.dismissals += 1 }) {
+            NativeDrawerDismissProbe(model: model)
+        } label: { Text("Open drawer") }
+    }
+}
+private struct NativeDrawerDismissProbe: View {
+    let model: NativeDrawerProbeModel
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.cnPresentationDismiss) private var customDismiss
+    var body: some View {
+        CNInput("Draft", text: Binding(get: { model.draft }, set: { model.draft = $0 }))
+            .onAppear {
+                model.close = { dismiss() }
+                #expect(customDismiss == nil, "A native sheet must not inherit a custom panel dismissal.")
+            }
+    }
+}
+@MainActor @Observable private final class NativeFieldProbeModel {
+    var amount = 12.5
+    var compact = false
+    var disabled = false
+}
+private struct NativeFieldProbe: View {
+    let model: NativeFieldProbeModel
+    private enum Field: Hashable { case amount }
+    @FocusState private var focused: Field?
+    var body: some View {
+        TextField("Amount", value: Binding(get: { model.amount }, set: { model.amount = $0 }), format: .number)
+            .textFieldStyle(.tw("input", state: .init(isFocused: focused == .amount)))
+            .focused($focused, equals: .amount)
+            .disabled(model.disabled)
+            .twRules {
+                if model.compact { $0.named["input"] = "px-3 py-1 min-h-[44] border rounded-lg bg-surface" }
+            }
+            .environment(\.locale, Locale(identifier: "en_US_POSIX"))
     }
 }
 #endif

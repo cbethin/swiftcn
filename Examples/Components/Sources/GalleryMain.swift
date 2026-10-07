@@ -13,22 +13,36 @@ import AppKit
         #endif
     }
     var body: some Scene {
-        WindowGroup("SwiftCN Component Gallery") { ComponentGalleryView(dark: $dark) }
         #if os(macOS)
+        WindowGroup("SwiftCN Component Gallery") { ComponentGalleryView(dark: $dark) }
             .defaultSize(width: 1040, height: 760)
+        WindowGroup("Native navigation", id: "native-navigation") {
+            NativeNavigationGalleryWindow(dark: dark)
+        }.defaultSize(width: 840, height: 560)
+        #else
+        WindowGroup("SwiftCN Component Gallery") { ComponentGalleryView(dark: $dark) }
         #endif
     }
 }
 
 struct ComponentGalleryView: View {
-    @State private var selection: CNComponentGallery? = .button
+    @State private var selection: CNGallerySelection? = .component(.button)
     @State private var query = ""
     @Binding var dark: Bool
     var body: some View {
         NavigationSplitView {
-            List(CNComponentGallery.allCases.filter { query.isEmpty || $0.title.localizedStandardContains(query) }, selection: $selection) { component in
-                Text(component.title).tag(component)
-            }.searchable(text: $query).navigationTitle("64 native components")
+            List(selection: $selection) {
+                Section("Components") {
+                    ForEach(CNComponentGallery.allCases.filter { query.isEmpty || $0.title.localizedStandardContains(query) }) { component in
+                        NavigationLink(value: CNGallerySelection.component(component)) { Text(component.title) }
+                    }
+                }
+                Section("Native composition") {
+                    ForEach(CNNativeComposition.allCases.filter { query.isEmpty || $0.title.localizedStandardContains(query) }) { composition in
+                        NavigationLink(value: CNGallerySelection.native(composition)) { Text(composition.title) }
+                    }
+                }
+            }.searchable(text: $query).navigationTitle("Swiftcn gallery")
         } detail: {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {

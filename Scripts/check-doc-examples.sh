@@ -46,6 +46,8 @@ for filename in {entry['source'] for entry in catalog}:
     (scratch/'component-copy'/filename).write_bytes(source.read_bytes())
 for entry in catalog:
     (scratch/'component-copy'/entry['example']).write_bytes((scratch/'consumer'/entry['example']).read_bytes())
+for entry in json.loads((repo/'Components/native-examples.json').read_text()):
+    (scratch/'component-copy'/entry['example']).write_bytes((scratch/'consumer'/entry['example']).read_bytes())
 (scratch/'component-copy'/'MixedComponentOptions.swift').write_bytes(
     (repo/'Tests/SourceOwnership/MixedComponentOptions.swift').read_bytes())
 (scratch/'component-copy'/'MixedDropdownParts.swift').write_bytes(

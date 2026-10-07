@@ -10,9 +10,7 @@ struct DrawerExample: View {
     var body: some View {
         if showsInlinePreview {
             // Snapshot the shared content; the live example uses the system sheet.
-            VStack(alignment: .leading, spacing: 12) { drawerContent }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .tw("drawer")
+            CNDrawerContent { drawerContent }
         } else {
             CNDrawer(isPresented: $presented) { drawerContent } label: { Text("Show activity") }
         }

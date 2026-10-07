@@ -26,9 +26,7 @@ struct DrawerExample: View {
     var body: some View {
         if showsInlinePreview {
             // Snapshot the shared content; the live example uses the system sheet.
-            VStack(alignment: .leading, spacing: 12) { drawerContent }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .tw("drawer")
+            CNDrawerContent { drawerContent }
         } else {
             CNDrawer(isPresented: $presented) { drawerContent } label: { Text("Show activity") }
         }
@@ -47,7 +45,11 @@ struct DrawerExample: View {
 
 ## Native behavior
 
-CNDrawer presents a native SwiftUI sheet with medium and large detents. SwiftUI owns dragging, resizing, and dismissal; CNDialogClose uses native dismissal. The drawer recipe styles the content through .tw, and contentClasses overrides it. No presentation host is required. The static preview shows shared content; the live gallery shows platform sheet chrome and gestures.
+CNDrawer presents a native SwiftUI sheet. Pass detents, an optional selected-detent binding, and onDismiss for typed sheet configuration. SwiftUI owns dragging, resizing, and dismissal. CNDialogClose uses native dismissal. CNDrawerContent is a standalone styled stack for a caller-owned sheet; it adds no scrolling or presentation hosts. The drawer recipe and contentClasses control appearance. The static preview shows shared content; the live gallery shows native sheet chrome and gestures.
+## Compose with native SwiftUI
+
+See [complete native composition examples](/docs/native-composition#drawer) for direct native controls, caller-owned sheets, navigation, and desktop split views. The examples use the same editable recipes.
+
 
 ## Style and compose
 
@@ -322,41 +324,67 @@ public struct CNSheet<Label: View, Content: View>: View {
     }
 }
 
-/// A native sheet with medium and large detents. SwiftUI owns dragging and dismissal.
+/// Styled content for a caller-owned sheet. Add scrolling and presentation modifiers at the sheet root.
+public struct CNDrawerContent<Content: View>: View {
+    private let classes: TWClasses
+    private let spacing: CGFloat
+    private let content: Content
+    public init(_ classes: TWClasses = "", spacing: CGFloat = 12, @ViewBuilder content: () -> Content) {
+        self.classes = classes; self.spacing = spacing; self.content = content()
+    }
+    public var body: some View {
+        VStack(alignment: .leading, spacing: spacing) { content }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .tw(cn("drawer", classes))
+    }
+}
+
+/// A native sheet. SwiftUI owns detents, dragging, and dismissal.
 public struct CNDrawer<Label: View, Content: View>: View {
     @Binding private var isPresented: Bool
     private let classes: TWClasses
     private let contentClasses: TWClasses
+    private let detents: Set<PresentationDetent>
+    private let selection: Binding<PresentationDetent>?
+    private let onDismiss: (() -> Void)?
     private let label: Label
     private let content: () -> Content
     @Environment(\.twTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     public init(isPresented: Binding<Bool>, classes: TWClasses = "", contentClasses: TWClasses = "",
-                @ViewBuilder content: @escaping () -> Content, @ViewBuilder label: () -> Label) {
+                detents: Set<PresentationDetent> = [.medium, .large], selection: Binding<PresentationDetent>? = nil,
+                onDismiss: (() -> Void)? = nil, @ViewBuilder content: @escaping () -> Content, @ViewBuilder label: () -> Label) {
+        precondition(!detents.isEmpty, "Provide at least one sheet detent.")
         _isPresented = isPresented; self.classes = classes; self.contentClasses = contentClasses
+        self.detents = detents; self.selection = selection; self.onDismiss = onDismiss
         self.content = content; self.label = label()
     }
     public var body: some View {
         CNButton(variant: .outline, classes: classes, action: { isPresented = true }) { label }
-            .sheet(isPresented: $isPresented) {
-                CNPresentationHost {
-                    CNPopoverHost {
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 12, content: content)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .tw(cn("drawer", contentClasses))
-                        }
-                        .scrollBounceBehavior(.basedOnSize)
-                    }
+            .sheet(isPresented: $isPresented, onDismiss: onDismiss) {
+                if let selection {
+                    sheetContent.presentationDetents(detents, selection: selection)
+                } else {
+                    sheetContent.presentationDetents(detents)
                 }
-                .environment(\.cnPresentationDismiss, nil)
-                #if os(macOS)
-                    .frame(minWidth: 300, idealWidth: 420, minHeight: 240, idealHeight: 320)
-                #endif
-                .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
-                .presentationBackground(theme.color(.surface, scheme: scheme))
-                .preferredColorScheme(scheme)
             }
+    }
+    private var sheetContent: some View {
+        CNPresentationHost {
+            CNPopoverHost {
+                ScrollView {
+                    CNDrawerContent(contentClasses, content: content)
+                }
+                .scrollBounceBehavior(.basedOnSize)
+            }
+        }
+        .environment(\.cnPresentationDismiss, nil)
+        #if os(macOS)
+            .frame(minWidth: 300, idealWidth: 420, minHeight: 240, idealHeight: 320)
+        #endif
+        .presentationDragIndicator(.visible)
+        .presentationBackground(theme.color(.surface, scheme: scheme))
+        .preferredColorScheme(scheme)
     }
 }
 

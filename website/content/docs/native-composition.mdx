@@ -1,0 +1,245 @@
+---
+title: Native composition
+description: Style native SwiftUI controls, sheets, navigation, and split views with editable recipes.
+---
+
+Use SwiftUI to own interaction and state. Use swiftcn to supply appearance and composable content parts.
+These complete examples run in the gallery's **Native composition** section and compile with package imports or copied source.
+
+Bindings, format styles, focus, navigation, and dismissal remain typed Swift APIs. Classes describe appearance and supported motion.
+All paths share `TWGlobalRules.named`, `TWTheme`, and the existing `.tw` engine.
+
+<a id="styles" />
+
+## Native control styles
+
+Use native Button, TextField, Toggle, and Label with our style adapters. Formatting, enum-based focus, roles, keyboard shortcuts, and submission remain SwiftUI APIs. Pass explicit focus state to the style for focus appearance. CNFieldControl decorates native controls that do not have a matching style protocol. Convenience components share the same recipes and styling engine.
+
+```swift title="NativeStylesExample.swift"
+import SwiftUI
+import SwiftCN
+
+struct NativeStylesExample: View {
+    private enum Field: Hashable { case amount }
+    @State private var amount = 12.5
+    @State private var notifications = true
+    @State private var disabled = false
+    @State private var compact = false
+    @State private var saves = 0
+    @FocusState private var focusedField: Field?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            CNField {
+                Label("Amount", systemImage: "number")
+                    .labelStyle(.tw("field-label", base: .titleAndIcon))
+                TextField("Amount", value: $amount, format: .number)
+                    .textFieldStyle(.tw("input", state: .init(isFocused: focusedField == .amount)))
+                    .focused($focusedField, equals: .amount)
+                    .onSubmit(save)
+                    .disabled(disabled)
+                CNFieldDescription("Formatting, selection, and submit handling stay native.")
+            }
+            Toggle("Notifications", isOn: $notifications)
+                .toggleStyle(.tw("switch", base: .switch))
+                .disabled(disabled)
+            CNButtonGroup {
+                Button("Save", action: save)
+                    .buttonStyle(.tw("button-primary"))
+                    .keyboardShortcut("s", modifiers: .command)
+                Button("Edit amount") { focusedField = .amount }
+                    .buttonStyle(.tw("button-outline"))
+            }.disabled(disabled)
+            Text("Saved \(saves) times · Amount: \(amount.formatted(.number))")
+                .tw("text-sm text-mutedForeground")
+            CNCheckbox("Disable controls", isOn: $disabled)
+            CNCheckbox("Compact input recipe", isOn: $compact)
+        }
+        .twRules {
+            if compact {
+                $0.named["input"] = "px-3 py-1 min-h-[44] border rounded-lg bg-surface focus:border-primary disabled:opacity-45"
+            }
+        }
+    }
+    private func save() { saves += 1; focusedField = nil }
+}
+```
+
+<ComponentSourceLinks example="NativeStylesExample.swift" />
+
+<a id="drawer" />
+
+## Native drawer content
+
+CNDrawerContent applies the drawer recipe to a vertical stack. It adds no scrolling, fixed size, or presentation host. Use it inside your own sheet to control detents, drag indicators, interactive dismissal, appearance, and callbacks. Keep the selected detent in the supported set. Detents follow platform behavior; macOS sheets use native window sizing. CNDrawer supplies scrolling, appearance, and nested hosts, with typed detents, selection, and onDismiss arguments. A caller-owned sheet also owns nested hosts and dismissal scope. Use the sheet binding or a native dismiss action to close it; clear cnPresentationDismiss if you reuse CNDialogClose inside a native sheet nested in a custom dialog.
+
+```swift title="NativeDrawerExample.swift"
+import SwiftUI
+import SwiftCN
+
+struct NativeDrawerExample: View {
+    @State private var nativeOpen = false
+    @State private var convenienceOpen = false
+    @State private var detent = PresentationDetent.height(260)
+    @State private var preventDismissal = false
+    @State private var dismissals = 0
+    @Environment(\.twTheme) private var theme
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Button("Open caller-owned sheet") { nativeOpen = true }
+                .buttonStyle(.tw("button-outline"))
+                .sheet(isPresented: $nativeOpen, onDismiss: didDismiss) {
+                    ScrollView {
+                        CNDrawerContent {
+                            CNDialogTitle("Activity")
+                            Text("The content uses a recipe. This sheet owns its configuration.")
+                                .tw("text-sm text-mutedForeground")
+                            Toggle("Prevent swipe dismissal", isOn: $preventDismissal)
+                                .toggleStyle(.tw("switch", base: .switch))
+                            Button("Expand") { withAnimation { detent = .large } }
+                                .buttonStyle(.tw("button-secondary"))
+                            Button("Done") { nativeOpen = false }
+                                .buttonStyle(.tw("button-outline"))
+                        }
+                    }
+                    .presentationDetents([.height(260), .large], selection: $detent)
+                    .presentationDragIndicator(.visible)
+                    .interactiveDismissDisabled(preventDismissal)
+                    .presentationBackground(theme.color(.surface, scheme: scheme))
+                    .preferredColorScheme(scheme)
+                    #if os(macOS)
+                        .frame(minWidth: 360, minHeight: 320)
+                    #endif
+                }
+            CNDrawer(isPresented: $convenienceOpen, detents: [.height(260), .large],
+                     selection: $detent, onDismiss: didDismiss) {
+                CNDialogTitle("Convenience drawer")
+                Text("The same content part, with native scrolling and presentation defaults.")
+                    .tw("text-sm text-mutedForeground")
+                Button("Expand") { withAnimation { detent = .large } }
+                    .buttonStyle(.tw("button-secondary"))
+                CNDialogClose()
+            } label: { Text("Open convenience drawer") }
+            Text("Dismissed \(dismissals) times").tw("text-sm text-mutedForeground")
+        }
+    }
+    private func didDismiss() { dismissals += 1 }
+}
+```
+
+<ComponentSourceLinks example="NativeDrawerExample.swift" />
+
+<a id="navigation" />
+
+## Native navigation
+
+Use NavigationSplitView, List, and NavigationLink directly for app navigation. The sidebar-list and sidebar-item-label recipes supply appearance. SwiftUI owns column visibility, selected-row appearance, keyboard navigation, and compact navigation. Label parts preserve the native link; avoid putting action buttons inside a navigation link. Keep editor state in the caller. CNSidebar remains the separate icon-rail and offcanvas layout. The gallery opens this example as a complete navigation root.
+
+```swift title="NativeNavigationExample.swift"
+import SwiftUI
+import SwiftCN
+
+struct NativeNavigationExample: View {
+    private enum Destination: String, CaseIterable, Identifiable {
+        case inbox = "Inbox", projects = "Projects", archive = "Archive"
+        var id: Self { self }
+    }
+    @State private var selected: Destination? = .projects
+    @State private var visibility: NavigationSplitViewVisibility = .all
+    @State private var draft = "A draft stays in caller-owned state."
+
+    var body: some View {
+        NavigationSplitView(columnVisibility: $visibility) {
+            List(Destination.allCases, selection: $selected) { destination in
+                NavigationLink(value: destination) {
+                    Label(destination.rawValue, systemImage: "folder")
+                        .labelStyle(.tw("sidebar-item-label"))
+                }
+            }
+            .listStyle(.sidebar)
+            .scrollContentBackground(.hidden)
+            .tw("sidebar-list")
+            .navigationTitle("Workspace")
+        } detail: {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(selected?.rawValue ?? "Choose a destination").tw("text-xl font-semibold")
+                CNFieldControl("textarea") {
+                    TextEditor(text: $draft).scrollContentBackground(.hidden)
+                        .accessibilityLabel("Project draft")
+                }
+                Text("SwiftUI owns column visibility, row selection, and compact navigation.")
+                    .tw("text-sm text-mutedForeground")
+            }
+            .tw("p-6 bg-background")
+            .navigationTitle(selected?.rawValue ?? "Workspace")
+        }
+    }
+}
+```
+
+<ComponentSourceLinks example="NativeNavigationExample.swift" />
+
+<a id="split" />
+
+## Native split views
+
+Use HSplitView or VSplitView on macOS and apply .tw to their panes. SwiftUI owns the dividers; native frames or sizing classes define minimum pane sizes. Native split views do not expose a SwiftUI fraction binding. CNResizable supplies that explicit binding and the mobile touch handle. Keep state outside the panes so resizing preserves native editors and controls.
+
+```swift title="NativeSplitExample.swift"
+import SwiftUI
+import SwiftCN
+
+struct NativeSplitExample: View {
+    @State private var fraction = 0.35
+    @State private var draft = "Resize the panes while keeping this draft."
+    @State private var monospaced = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            #if os(macOS)
+            HSplitView {
+                inspector.tw("min-w-[160] bg-surface")
+                editor.tw("min-w-[220] bg-surface")
+            }.tw("border rounded-lg")
+            #else
+            CNResizable(fraction: $fraction) { inspector } second: { editor }
+                .tw("border rounded-lg")
+            #endif
+            Text("Native desktop dividers; an explicit fraction and touch handle on mobile.")
+                .tw("text-sm text-mutedForeground")
+        }.frame(height: 320)
+    }
+    private var inspector: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Inspector").tw("text-lg font-semibold")
+            Toggle("Monospaced font", isOn: $monospaced).toggleStyle(.tw("switch", base: .switch))
+            Spacer()
+        }.tw("p-4")
+    }
+    private var editor: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Editor").tw("text-lg font-semibold")
+            TextEditor(text: $draft).scrollContentBackground(.hidden)
+                .font(monospaced ? .system(.body, design: .monospaced) : .body)
+                .accessibilityLabel("Split editor draft")
+        }.tw("p-4")
+    }
+}
+```
+
+<ComponentSourceLinks example="NativeSplitExample.swift" />
+
+## Shared rules
+
+Override a recipe for a subtree. Imported components and direct native adapters resolve the same rule:
+
+```swift
+.twRules {
+    $0.named["input"] = "px-3 py-2 min-h-[44] border rounded-lg bg-surface focus:border-primary"
+}
+```
+
+Use native `.disabled`, `.focused`, `.onSubmit`, and presentation modifiers for behavior. Supply style state for focus appearance.
+The controls keep their native identity while recipes change.

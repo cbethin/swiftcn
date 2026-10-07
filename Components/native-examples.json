@@ -1,0 +1,26 @@
+[
+  {
+    "slug": "styles",
+    "title": "Native control styles",
+    "example": "NativeStylesExample.swift",
+    "notes": "Use native Button, TextField, Toggle, and Label with our style adapters. Formatting, enum-based focus, roles, keyboard shortcuts, and submission remain SwiftUI APIs. Pass explicit focus state to the style for focus appearance. CNFieldControl decorates native controls that do not have a matching style protocol. Convenience components share the same recipes and styling engine."
+  },
+  {
+    "slug": "drawer",
+    "title": "Native drawer content",
+    "example": "NativeDrawerExample.swift",
+    "notes": "CNDrawerContent applies the drawer recipe to a vertical stack. It adds no scrolling, fixed size, or presentation host. Use it inside your own sheet to control detents, drag indicators, interactive dismissal, appearance, and callbacks. Keep the selected detent in the supported set. Detents follow platform behavior; macOS sheets use native window sizing. CNDrawer supplies scrolling, appearance, and nested hosts, with typed detents, selection, and onDismiss arguments. A caller-owned sheet also owns nested hosts and dismissal scope. Use the sheet binding or a native dismiss action to close it; clear cnPresentationDismiss if you reuse CNDialogClose inside a native sheet nested in a custom dialog."
+  },
+  {
+    "slug": "navigation",
+    "title": "Native navigation",
+    "example": "NativeNavigationExample.swift",
+    "notes": "Use NavigationSplitView, List, and NavigationLink directly for app navigation. The sidebar-list and sidebar-item-label recipes supply appearance. SwiftUI owns column visibility, selected-row appearance, keyboard navigation, and compact navigation. Label parts preserve the native link; avoid putting action buttons inside a navigation link. Keep editor state in the caller. CNSidebar remains the separate icon-rail and offcanvas layout. The gallery opens this example as a complete navigation root."
+  },
+  {
+    "slug": "split",
+    "title": "Native split views",
+    "example": "NativeSplitExample.swift",
+    "notes": "Use HSplitView or VSplitView on macOS and apply .tw to their panes. SwiftUI owns the dividers; native frames or sizing classes define minimum pane sizes. Native split views do not expose a SwiftUI fraction binding. CNResizable supplies that explicit binding and the mobile touch handle. Keep state outside the panes so resizing preserves native editors and controls."
+  }
+]
