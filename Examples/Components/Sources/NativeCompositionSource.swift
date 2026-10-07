@@ -137,6 +137,7 @@ struct NativeNavigationExample: View {
             .listStyle(.sidebar)
             .scrollContentBackground(.hidden)
             .tw("sidebar-list")
+            .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: .infinity)
             .navigationTitle("Workspace")
         } detail: {
             VStack(alignment: .leading, spacing: 16) {
@@ -149,6 +150,7 @@ struct NativeNavigationExample: View {
                     .tw("text-sm text-mutedForeground")
             }
             .tw("p-6 bg-background")
+            .navigationSplitViewColumnWidth(min: 300, ideal: 560, max: .infinity)
             .navigationTitle(selected?.rawValue ?? "Workspace")
         }
     }
@@ -168,8 +170,8 @@ struct NativeSplitExample: View {
         VStack(alignment: .leading, spacing: 12) {
             #if os(macOS)
             HSplitView {
-                inspector.tw("min-w-[160] bg-surface")
-                editor.tw("min-w-[220] bg-surface")
+                inspector.tw("min-w-[160] w-full bg-surface")
+                editor.tw("min-w-[220] w-full bg-surface")
             }.tw("border rounded-lg")
             #else
             CNResizable(fraction: $fraction, axis: .vertical, minimumFraction: 0.35) { inspector } second: { editor }
@@ -184,7 +186,7 @@ struct NativeSplitExample: View {
             Text("Inspector").tw("text-lg font-semibold")
             Toggle("Monospaced font", isOn: $monospaced).toggleStyle(.tw("switch", base: .switch))
             Spacer()
-        }.tw("p-4")
+        }.frame(maxWidth: .infinity, alignment: .leading).tw("p-4")
     }
     private var editor: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -192,7 +194,7 @@ struct NativeSplitExample: View {
             TextEditor(text: $draft).scrollContentBackground(.hidden)
                 .font(monospaced ? .system(.body, design: .monospaced) : .body)
                 .accessibilityLabel("Split editor draft")
-        }.tw("p-4")
+        }.frame(maxWidth: .infinity, alignment: .leading).tw("p-4")
     }
 }
 """### + "\n"

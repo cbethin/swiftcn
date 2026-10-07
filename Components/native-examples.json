@@ -15,13 +15,13 @@
     "slug": "navigation",
     "title": "Native navigation",
     "example": "NativeNavigationExample.swift",
-    "notes": "Use NavigationSplitView, List, and NavigationLink directly for app navigation. The sidebar-list and sidebar-item-label recipes supply appearance. SwiftUI owns column visibility, selected-row appearance, keyboard navigation, and compact navigation. Label parts preserve the native link; avoid putting action buttons inside a navigation link. Keep editor state in the caller. CNSidebar remains the separate icon-rail and offcanvas layout. The gallery opens this example as a complete navigation root."
+    "notes": "Use NavigationSplitView, List, and NavigationLink directly for app navigation. The sidebar-list and sidebar-item-label recipes supply appearance. SwiftUI owns column visibility, selected-row appearance, keyboard navigation, and compact navigation. Label parts preserve the native link; avoid putting action buttons inside a navigation link. Keep editor state in the caller. CNSidebar remains the separate icon-rail and offcanvas layout. The gallery opens this example as a complete navigation root. Set a flexible navigationSplitViewColumnWidth(min:ideal:max:) on each column to choose a useful resize range. The minimum detail width protects the editor. SwiftUI still controls compact presentation and sidebar visibility."
   },
   {
     "slug": "split",
     "title": "Native split views",
     "example": "NativeSplitExample.swift",
-    "notes": "Use HSplitView or VSplitView on macOS and apply .tw to their panes. SwiftUI owns the dividers; native frames or sizing classes define minimum pane sizes. Native split views do not expose a SwiftUI fraction binding. CNResizable supplies that explicit binding and the mobile touch handle. Keep state outside the panes so resizing preserves native editors and controls."
+    "notes": "Use HSplitView or VSplitView on macOS and apply .tw to their panes. SwiftUI owns the dividers; native frames or sizing classes define minimum pane sizes. Native split views do not expose a SwiftUI fraction binding. CNResizable supplies that explicit binding and the mobile touch handle. Keep state outside the panes so resizing preserves native editors and controls. Give each desktop pane a flexible maximum width with w-full as well as a minimum width. A minimum-only frame can pin a pane to its intrinsic width. Use native frame alignment to keep the pane content leading-aligned while it grows."
   },
   {
     "slug": "arrangement",

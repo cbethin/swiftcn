@@ -139,7 +139,7 @@ struct NativeDrawerExample: View {
 
 ## Native navigation
 
-Use NavigationSplitView, List, and NavigationLink directly for app navigation. The sidebar-list and sidebar-item-label recipes supply appearance. SwiftUI owns column visibility, selected-row appearance, keyboard navigation, and compact navigation. Label parts preserve the native link; avoid putting action buttons inside a navigation link. Keep editor state in the caller. CNSidebar remains the separate icon-rail and offcanvas layout. The gallery opens this example as a complete navigation root.
+Use NavigationSplitView, List, and NavigationLink directly for app navigation. The sidebar-list and sidebar-item-label recipes supply appearance. SwiftUI owns column visibility, selected-row appearance, keyboard navigation, and compact navigation. Label parts preserve the native link; avoid putting action buttons inside a navigation link. Keep editor state in the caller. CNSidebar remains the separate icon-rail and offcanvas layout. The gallery opens this example as a complete navigation root. Set a flexible navigationSplitViewColumnWidth(min:ideal:max:) on each column to choose a useful resize range. The minimum detail width protects the editor. SwiftUI still controls compact presentation and sidebar visibility.
 
 ```swift title="NativeNavigationExample.swift"
 import SwiftUI
@@ -165,6 +165,7 @@ struct NativeNavigationExample: View {
             .listStyle(.sidebar)
             .scrollContentBackground(.hidden)
             .tw("sidebar-list")
+            .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: .infinity)
             .navigationTitle("Workspace")
         } detail: {
             VStack(alignment: .leading, spacing: 16) {
@@ -177,6 +178,7 @@ struct NativeNavigationExample: View {
                     .tw("text-sm text-mutedForeground")
             }
             .tw("p-6 bg-background")
+            .navigationSplitViewColumnWidth(min: 300, ideal: 560, max: .infinity)
             .navigationTitle(selected?.rawValue ?? "Workspace")
         }
     }
@@ -189,7 +191,7 @@ struct NativeNavigationExample: View {
 
 ## Native split views
 
-Use HSplitView or VSplitView on macOS and apply .tw to their panes. SwiftUI owns the dividers; native frames or sizing classes define minimum pane sizes. Native split views do not expose a SwiftUI fraction binding. CNResizable supplies that explicit binding and the mobile touch handle. Keep state outside the panes so resizing preserves native editors and controls.
+Use HSplitView or VSplitView on macOS and apply .tw to their panes. SwiftUI owns the dividers; native frames or sizing classes define minimum pane sizes. Native split views do not expose a SwiftUI fraction binding. CNResizable supplies that explicit binding and the mobile touch handle. Keep state outside the panes so resizing preserves native editors and controls. Give each desktop pane a flexible maximum width with w-full as well as a minimum width. A minimum-only frame can pin a pane to its intrinsic width. Use native frame alignment to keep the pane content leading-aligned while it grows.
 
 ```swift title="NativeSplitExample.swift"
 import SwiftUI
@@ -204,8 +206,8 @@ struct NativeSplitExample: View {
         VStack(alignment: .leading, spacing: 12) {
             #if os(macOS)
             HSplitView {
-                inspector.tw("min-w-[160] bg-surface")
-                editor.tw("min-w-[220] bg-surface")
+                inspector.tw("min-w-[160] w-full bg-surface")
+                editor.tw("min-w-[220] w-full bg-surface")
             }.tw("border rounded-lg")
             #else
             CNResizable(fraction: $fraction, axis: .vertical, minimumFraction: 0.35) { inspector } second: { editor }
@@ -220,7 +222,7 @@ struct NativeSplitExample: View {
             Text("Inspector").tw("text-lg font-semibold")
             Toggle("Monospaced font", isOn: $monospaced).toggleStyle(.tw("switch", base: .switch))
             Spacer()
-        }.tw("p-4")
+        }.frame(maxWidth: .infinity, alignment: .leading).tw("p-4")
     }
     private var editor: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -228,7 +230,7 @@ struct NativeSplitExample: View {
             TextEditor(text: $draft).scrollContentBackground(.hidden)
                 .font(monospaced ? .system(.body, design: .monospaced) : .body)
                 .accessibilityLabel("Split editor draft")
-        }.tw("p-4")
+        }.frame(maxWidth: .infinity, alignment: .leading).tw("p-4")
     }
 }
 ```

@@ -45,7 +45,9 @@ struct ComponentGalleryView: View {
                         NavigationLink(value: CNGallerySelection.native(composition)) { Text(composition.title) }
                     }
                 }
-            }.searchable(text: $query).navigationTitle("Swiftcn gallery")
+            }.searchable(text: $query)
+                .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: .infinity)
+                .navigationTitle("Swiftcn gallery")
         } detail: {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {

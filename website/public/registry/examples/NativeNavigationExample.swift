@@ -21,6 +21,7 @@ struct NativeNavigationExample: View {
             .listStyle(.sidebar)
             .scrollContentBackground(.hidden)
             .tw("sidebar-list")
+            .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: .infinity)
             .navigationTitle("Workspace")
         } detail: {
             VStack(alignment: .leading, spacing: 16) {
@@ -33,6 +34,7 @@ struct NativeNavigationExample: View {
                     .tw("text-sm text-mutedForeground")
             }
             .tw("p-6 bg-background")
+            .navigationSplitViewColumnWidth(min: 300, ideal: 560, max: .infinity)
             .navigationTitle(selected?.rawValue ?? "Workspace")
         }
     }
