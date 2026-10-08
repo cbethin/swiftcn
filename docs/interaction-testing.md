@@ -18,6 +18,10 @@ SWIFTCN_UI_DEVICE_FAMILY=iPad bash Scripts/interaction-test.sh ios
 
 The macOS tests control a separate gallery application.
 Keep its windows visible during the run.
+If its runner hangs before connecting, check Developer Tools authentication with `/usr/sbin/DevToolsSecurity -status`.
+Enabling it requires local administrator approval: `sudo /usr/sbin/DevToolsSecurity -enable`.
+The script does not change this permission.
+The generated test schemes launch without an attached debugger; select a debugger in Xcode when needed.
 The iOS script creates, boots, and deletes its own simulator.
 It does not reset your existing simulators.
 

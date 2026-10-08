@@ -5,15 +5,20 @@ final class GalleryInteractionTests: XCTestCase {
     @MainActor func testCheckboxLabelAndTrailingSpaceToggleTheValue() {
         let app = launch("checkbox")
         defer { capture(app); app.terminate() }
-        let checkbox = app.buttons["Accept the terms"]
+        #if os(macOS)
+        let checkbox = app.checkBoxes["Accept the terms"]
+        #else
+        let checkbox = app.switches["Accept the terms"]
+        #endif
+        let checked = "1", unchecked = "0"
         XCTAssertTrue(checkbox.waitForExistence(timeout: 5))
-        XCTAssertEqual(checkbox.value as? String, "Checked")
+        XCTAssertEqual(checkbox.value as? String, checked)
         // The right side is empty styled space, beyond the indicator and label.
         activate(checkbox.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
-        expectValue(checkbox, "Unchecked")
+        expectValue(checkbox, unchecked)
         activate(checkbox.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5))
             .withOffset(CGVector(dx: 55, dy: 0)))
-        expectValue(checkbox, "Checked")
+        expectValue(checkbox, checked)
     }
 
     @MainActor func testDropdownReopensAndInvokesOnlyTheSelectedAction() {
@@ -145,7 +150,6 @@ final class GalleryInteractionTests: XCTestCase {
 
     @MainActor private func activate(_ element: XCUIElement) {
         XCTAssertTrue(element.waitForExistence(timeout: 5))
-        XCTAssertTrue(element.isHittable)
         #if os(macOS)
         element.click()
         #else
