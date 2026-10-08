@@ -57,6 +57,8 @@ Native pointer, touch, and keyboard tests use the component gallery application 
 See [interaction testing](interaction-testing.md) for local commands and CI coverage.
 VoiceOver and physical-device behavior still require separate checks.
 
+The component catalog adds 139 macOS and 141 iOS captures. These cover all 64 entries in both appearances and selected narrow or larger-text layouts.
+
 ## Local workflow
 
 Local references use `artifacts/local-baselines`.

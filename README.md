@@ -237,6 +237,8 @@ Native modifiers retain their order around each surface.
 var theme = TWTheme(spacingUnit: 5)
 theme.colors[.primary] = TWAdaptiveColor(light: .indigo, dark: .mint)
 theme.colors[.onPrimary] = TWAdaptiveColor(light: .white, dark: .black)
+theme.colors[.tint] = theme.colors[.primary]
+theme.colors[.ring] = theme.colors[.primary]
 theme.radii[.lg] = 16
 
 ContentView()
@@ -246,6 +248,8 @@ ContentView()
 Semantic colors resolve through the current color scheme.
 The theme inherits through the SwiftUI environment and supports local overrides.
 Partial theme initializers preserve unspecified defaults.
+Use `muted` for static fills, `accent` for interaction states, `border` for separators, and `input` for field boundaries.
+Native control `tint` and field focus `ring` default to the app accent color. Set them explicitly to share your brand color.
 
 Read theme values for native layouts:
 
@@ -688,7 +692,8 @@ Use strict parsing in tests to catch spelling errors. `.classes()` resolves stri
 
 ## Visual regression tests
 
-The visual suite compares 42 images with exact pixels: 34 macOS views and eight iOS simulator screenshots.
+The core visual suite compares 50 images with exact pixels: 42 macOS views and eight iOS simulator screenshots.
+The catalog adds 280 component captures across light, dark, and selected narrow or larger-text layouts.
 It covers themes, widths, text-size environments, state appearances, native controls, global rules, and right-to-left layout.
 The CI job fails on missing or changed references and uploads difference images.
 See [the visual testing guide](docs/visual-testing.md) for local commands and baseline updates.

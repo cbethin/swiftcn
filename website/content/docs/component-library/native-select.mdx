@@ -95,7 +95,9 @@ public struct CNCheckboxStyle: ToggleStyle {
                 Toggle(configuration).toggleStyle(.checkbox).labelsHidden().fixedSize()
                     .allowsHitTesting(false).focusable(false).accessibilityHidden(true)
                 #else
-                Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square").accessibilityHidden(true)
+                Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
+                    .foregroundStyle(configuration.isOn ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
+                    .accessibilityHidden(true)
                 #endif
                 configuration.label
             }.frame(maxWidth: .infinity, alignment: .leading)
