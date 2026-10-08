@@ -173,7 +173,7 @@
     "symbol": "CNDatePicker",
     "source": "ValueControls.swift",
     "example": "DatePickerExample.swift",
-    "notes": "A native formatted TextField supports locale-aware date editing. The calendar button opens the compact CNCalendar popup; selecting a day preserves the existing time and respects the allowed range. Date-and-time mode also includes a native time control. Time-only mode retains the native compact DatePicker. Locale, calendar, and time zone come from SwiftUI environment values. iPhone day cells keep full touch targets."
+    "notes": "A native formatted TextField supports locale-aware date editing. The calendar button opens the compact CNCalendar popup centered on the full input, with placement clamped to available space; selecting a day preserves the existing time and respects the allowed range. Date-and-time mode also includes a native time control. Time-only mode retains the native compact DatePicker. Locale, calendar, and time zone come from SwiftUI environment values. iPhone day cells keep full touch targets."
   },
   {
     "name": "Dialog",

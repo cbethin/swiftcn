@@ -4,6 +4,23 @@ import Testing
 
 @Suite("Reserved placement regions")
 struct PlacementRegionTests {
+    @Test(arguments: [LayoutDirection.leftToRight, .rightToLeft])
+    func centeredPopoversFollowTheWholeAnchorAndClampToAvailableBounds(direction: LayoutDirection) {
+        let bounds = CGRect(x: 20, y: 30, width: 760, height: 540)
+        let popup = CGSize(width: 288, height: 240)
+        let input = CGRect(x: 240, y: 100, width: 320, height: 36)
+        for edge in [Edge.top, .bottom] {
+            let origin = CNPopoverPosition.origin(anchor: input, popup: popup, bounds: bounds,
+                edge: edge, direction: direction, alignment: .center)
+            #expect(origin.x + popup.width / 2 == input.midX)
+        }
+        for x in [bounds.minX, bounds.maxX - 40] {
+            let anchor = CGRect(x: x, y: 100, width: 40, height: 36)
+            let origin = CNPopoverPosition.origin(anchor: anchor, popup: popup, bounds: bounds,
+                edge: .top, direction: direction, alignment: .center)
+            #expect(origin.x >= bounds.minX + 8 && origin.x + popup.width <= bounds.maxX - 8)
+        }
+    }
     @Test func dividerPlacementRestoresTheSavedFractionAndMirrorsPanes() {
         let size = CGSize(width: 800, height: 600)
         let fold = CGRect(x: 300, y: 0, width: 20, height: 600)

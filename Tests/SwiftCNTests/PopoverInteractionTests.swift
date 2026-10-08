@@ -8,6 +8,44 @@ import Testing
 @MainActor
 struct PopoverInteractionTests {
     @Test(arguments: [false, true])
+    func datePickerCentersItsCalendarOnTheInputAndKeepsTheTriggerClickable(rtl: Bool) async throws {
+        let model = DatePickerPopoverModel()
+        let controller = NSHostingController(rootView: VStack {
+            CNDatePicker("Delivery date", selection: Binding(get: { model.date }, set: { model.date = $0 }))
+                .frame(width: 320)
+                .background { GeometryReader { geometry in
+                    Color.clear.preference(key: PointerTriggerBounds.self,
+                        value: geometry.frame(in: .named("pointer-root")))
+                } }
+            Spacer()
+        }.frame(maxWidth: .infinity, maxHeight: .infinity)
+            .coordinateSpace(name: "pointer-root")
+            .onPreferenceChange(PointerTriggerBounds.self) { model.inputBounds = $0 }
+            .cnPopoverHost().environment(\.layoutDirection, rtl ? .rightToLeft : .leftToRight))
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 800, height: 500),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        controller.view.frame = window.contentLayoutRect
+        window.contentViewController = controller; window.makeKeyAndOrderFront(nil)
+        defer { window.orderOut(nil); window.contentViewController = nil }
+        try await settle(controller.view, seconds: 0.2)
+        let input = try #require(model.inputBounds)
+        let trigger = NSPoint(x: rtl ? input.minX + 28 : input.maxX - 28, y: input.maxY - 18)
+        let point = controller.view.convert(trigger, to: nil)
+        try click(window, at: point)
+        try await settle(controller.view, seconds: 0.3)
+        let scroll = try #require(descendants(controller.view).compactMap { $0 as? NSScrollView }.first)
+        let viewport = scroll.convert(scroll.bounds, to: controller.view)
+        #expect(abs(viewport.midX - input.midX) < 1, "The calendar must center on the whole input, not its icon.")
+        try click(window, at: point)
+        // Wait for native exit rendering instead of assuming a fixed frame deadline.
+        for _ in 0..<20 {
+            if descendants(controller.view).compactMap({ $0 as? NSScrollView }).isEmpty { break }
+            try await settle(controller.view, seconds: 0.05)
+        }
+        #expect(descendants(controller.view).compactMap { $0 as? NSScrollView }.isEmpty,
+                "Anchoring the whole input must keep the calendar button clickable while open.")
+    }
+    @Test(arguments: [false, true])
     func popupShadowEscapesOnlyWhenContentFits(oversized: Bool) async throws {
         let controller = NSHostingController(rootView: VStack {
             CNPopover(isPresented: .constant(true)) {
@@ -137,6 +175,10 @@ struct PopoverInteractionTests {
         host.layoutSubtreeIfNeeded()
         try await Task.sleep(for: .seconds(seconds))
     }
+}
+@MainActor @Observable private final class DatePickerPopoverModel {
+    var date = Date(timeIntervalSince1970: 1_760_054_400)
+    var inputBounds: CGRect?
 }
 @MainActor @Observable private final class PopoverChildFrameModel {
     var frames: [String: CGRect] = [:]

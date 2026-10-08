@@ -31,7 +31,7 @@ struct DatePickerExample: View {
 
 ## Native behavior
 
-A native formatted TextField supports locale-aware date editing. The calendar button opens the compact CNCalendar popup; selecting a day preserves the existing time and respects the allowed range. Date-and-time mode also includes a native time control. Time-only mode retains the native compact DatePicker. Locale, calendar, and time zone come from SwiftUI environment values. iPhone day cells keep full touch targets.
+A native formatted TextField supports locale-aware date editing. The calendar button opens the compact CNCalendar popup centered on the full input, with placement clamped to available space; selecting a day preserves the existing time and respects the allowed range. Date-and-time mode also includes a native time control. Time-only mode retains the native compact DatePicker. Locale, calendar, and time zone come from SwiftUI environment values. iPhone day cells keep full touch targets.
 
 ## Style and compose
 
@@ -136,7 +136,6 @@ public struct CNDatePicker: View {
         .buttonStyle(.tw("button-ghost px-2 py-0 text-mutedForeground"))
         .accessibilityLabel("Choose date")
         .accessibilityValue(calendarPresented ? Text("Expanded") : Text("Collapsed"))
-        .cnPopover(isPresented: $calendarPresented) { calendarContent }
     }
     private var calendarContent: some View {
         VStack(spacing: 8) {
@@ -157,6 +156,7 @@ public struct CNDatePicker: View {
                     field
                     calendarButton
                 }
+                .cnPopover(isPresented: $calendarPresented, alignment: .center) { calendarContent }
             }.tw(cn("date-picker", classes)).cnControlUtilities()
                 .onChange(of: calendarPresented) { _, open in
                     if open { fieldFocused = false }
