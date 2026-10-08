@@ -69,18 +69,26 @@ public struct TWTheme: Sendable {
     }
 
     private static let defaultColors: [TWColor: TWAdaptiveColor] = [
-        .foreground: .init(light: Color(white: 0.09), dark: Color(white: 0.96)),
-        .mutedForeground: .init(light: Color(white: 0.43), dark: Color(white: 0.65)),
-        .background: .init(light: Color(white: 0.98), dark: Color(white: 0.06)),
-        .surface: .init(light: .white, dark: Color(white: 0.10)),
-        .primary: .init(light: Color(white: 0.09), dark: Color(white: 0.96)),
-        .onPrimary: .init(light: .white, dark: Color(white: 0.09)),
-        .accent: .init(light: Color(white: 0.94), dark: Color(white: 0.17)),
-        .onAccent: .init(light: Color(white: 0.09), dark: Color(white: 0.96)),
-        .border: .init(light: Color(white: 0.88), dark: Color(white: 0.24)),
+        .foreground: .init(light: neutral(0.16), dark: neutral(0.91)),
+        .mutedForeground: .init(light: neutral(0.42), dark: neutral(0.68)),
+        .background: .init(light: neutral(0.98), dark: neutral(0.075)),
+        .surface: .init(light: .white, dark: neutral(0.115)),
+        .muted: .init(light: neutral(0.96), dark: neutral(0.145)),
+        .primary: .init(light: neutral(0.18), dark: neutral(0.88)),
+        .onPrimary: .init(light: .white, dark: neutral(0.115)),
+        .accent: .init(light: neutral(0.935), dark: neutral(0.19)),
+        .onAccent: .init(light: neutral(0.16), dark: neutral(0.91)),
+        .border: .init(light: neutral(0.90), dark: neutral(0.22)),
+        .input: .init(light: neutral(0.80), dark: neutral(0.34)),
+        .ring: .init(.accentColor),
+        .tint: .init(.accentColor),
         .destructive: .init(light: Color(red: 0.78, green: 0.12, blue: 0.15), dark: Color(red: 1, green: 0.42, blue: 0.44)),
         .onDestructive: .init(light: .white, dark: Color(white: 0.06))
     ]
+    /// A restrained cool neutral keeps nested surfaces distinct without pure gray slabs.
+    private static func neutral(_ value: Double) -> Color {
+        Color(.sRGB, red: value, green: value, blue: min(1, value + 0.012), opacity: 1)
+    }
     private static let defaultTypography: [TWText: Font] = [
         .xs: .caption, .sm: .subheadline, .base: .body,
         .lg: .title3, .xl: .title2, .xxl: .title, .xxxl: .largeTitle
@@ -90,9 +98,9 @@ public struct TWTheme: Sendable {
     ]
     private static let defaultShadows: [TWShadow: TWShadowValue] = [
         .none: .init(color: .init(.clear), radius: 0),
-        .sm: .init(color: .init(.black.opacity(0.08)), radius: 3, y: 1),
-        .md: .init(color: .init(.black.opacity(0.12)), radius: 8, y: 3),
-        .lg: .init(color: .init(.black.opacity(0.16)), radius: 16, y: 6)
+        .sm: .init(color: .init(light: .black.opacity(0.04), dark: .black.opacity(0.18)), radius: 3, y: 1),
+        .md: .init(color: .init(light: .black.opacity(0.10), dark: .black.opacity(0.28)), radius: 12, y: 4),
+        .lg: .init(color: .init(light: .black.opacity(0.14), dark: .black.opacity(0.36)), radius: 24, y: 8)
     ]
 }
 

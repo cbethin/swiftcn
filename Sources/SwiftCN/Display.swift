@@ -11,7 +11,7 @@ public enum CNTypographyStyle: String, CaseIterable, Sendable {
         case .lead: "text-lg text-mutedForeground"
         case .small: "text-sm font-medium"
         case .muted: "text-sm text-mutedForeground"
-        case .code: "cn-mono text-sm bg-accent rounded-sm px-1"
+        case .code: "cn-mono text-sm bg-muted rounded-sm px-1"
         }
     }
 }

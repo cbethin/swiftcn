@@ -211,7 +211,7 @@ where Row.ID: Sendable, Columns.TableRowValue == Row, Columns.TableColumnSortCom
     }
     public var body: some View {
         Table(rowsAreSorted || sortOrder.isEmpty ? rows : rows.sorted(using: sortOrder),
-              selection: selectionScope.binding($selection), sortOrder: $sortOrder) { columns }.tw(cn("data-table", classes))
+              selection: selectionScope.binding($selection), sortOrder: $sortOrder) { columns }.tw(cn("data-table", classes)).cnControlUtilities()
     }
 }
 

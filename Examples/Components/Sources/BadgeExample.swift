@@ -7,7 +7,7 @@ struct BadgeExample: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 CNBadge("Released")
-                CNBadge("Preview", classes: "bg-accent text-onAccent")
+                CNBadge("Preview", variant: .secondary)
                 CNBadge("Needs attention", classes: "bg-destructive text-onDestructive")
             }
 

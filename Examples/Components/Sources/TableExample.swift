@@ -21,7 +21,7 @@ struct TableExample: View {
                     Text("Recent invoices").tw("text-lg font-semibold")
                     Text("Keep track of your team's payments.").tw("text-sm text-mutedForeground")
                 }
-                CNBadge("4 invoices", classes: "bg-accent text-mutedForeground")
+                CNBadge("4 invoices", variant: .secondary)
             }
             CNTable {
                 CNTableRow {
@@ -52,7 +52,7 @@ struct TableExample: View {
                         CNTableCell("\(invoice.amount)", classes: "cn-mono font-medium", alignment: .trailing).cnTextUtilities()
                     }
                 }
-                CNTableRow(classes: "bg-accent") {
+                CNTableRow(classes: "bg-muted") {
                     CNTableCell("w-[\(selectionWidth)] px-3") { Text("") }
                     CNTableCell("Total", classes: "font-semibold")
                     CNTableCell { Text("") }

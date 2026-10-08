@@ -5,7 +5,7 @@ public enum CNBadgeVariant: Sendable {
     public var classes: TWClasses {
         switch self {
         case .primary: ""
-        case .secondary: "bg-accent text-onAccent"
+        case .secondary: "bg-muted text-foreground"
         case .outline: "bg-[\(Color.clear)] text-foreground border"
         case .destructive: "bg-destructive text-onDestructive"
         }
