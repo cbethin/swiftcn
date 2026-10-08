@@ -82,7 +82,6 @@ public struct CNDatePicker: View {
         .buttonStyle(.tw("button-ghost px-2 py-0 text-mutedForeground"))
         .accessibilityLabel("Choose date")
         .accessibilityValue(calendarPresented ? Text("Expanded") : Text("Collapsed"))
-        .cnPopover(isPresented: $calendarPresented) { calendarContent }
     }
     private var calendarContent: some View {
         VStack(spacing: 8) {
@@ -103,6 +102,7 @@ public struct CNDatePicker: View {
                     field
                     calendarButton
                 }
+                .cnPopover(isPresented: $calendarPresented, alignment: .center) { calendarContent }
             }.tw(cn("date-picker", classes)).cnControlUtilities()
                 .onChange(of: calendarPresented) { _, open in
                     if open { fieldFocused = false }

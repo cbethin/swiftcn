@@ -29,6 +29,7 @@ public struct CNPopoverHost<Content: View>: View {
                                 let bounds = CNPlacementRegions.preferred(in: geometry.cnPlacementRegions(layoutDirection: direction),
                                     near: CGPoint(x: anchor.midX, y: anchor.midY))
                                 let edge = request.edge
+                                let popupAlignment = request.alignment
                                 let placementDirection = direction
                                 let hostWidth = geometry.size.width
                                 if request.isPresented {
@@ -39,14 +40,14 @@ public struct CNPopoverHost<Content: View>: View {
                                         .alignmentGuide(.leading) { size in
                                             let x = CNPopoverPosition.origin(anchor: anchor,
                                                 popup: CGSize(width: size.width, height: size.height),
-                                                bounds: bounds, edge: edge, direction: placementDirection).x
+                                                bounds: bounds, edge: edge, direction: placementDirection, alignment: popupAlignment).x
                                             // Placement bounds are physical; the leading guide is logical.
                                             return placementDirection == .leftToRight ? -x : x + size.width - hostWidth
                                         }
                                         .alignmentGuide(.top) { size in
                                             -CNPopoverPosition.origin(anchor: anchor,
                                                 popup: CGSize(width: size.width, height: size.height),
-                                                bounds: bounds, edge: edge, direction: placementDirection).y
+                                                bounds: bounds, edge: edge, direction: placementDirection, alignment: popupAlignment).y
                                         }
                                         .accessibilityElement(children: .contain)
                                         .accessibilityAction(.escape) { request.presentation.wrappedValue = false }
@@ -172,9 +173,11 @@ extension View {
     public func cnPopoverHost() -> some View { CNPopoverHost { self } }
 
     /// An in-tree popover keeps its trigger clickable during entry and exit.
+    /// Hosted popovers align horizontally with the decorated view; native popovers use system placement.
     public func cnPopover<Popup: View>(isPresented: Binding<Bool>, arrowEdge: Edge = .top,
+                                      alignment: HorizontalAlignment = .leading,
                                       @ViewBuilder content: @escaping () -> Popup) -> some View {
-        modifier(CNAnchoredPopoverModifier(presentation: isPresented, edge: arrowEdge, popup: content))
+        modifier(CNAnchoredPopoverModifier(presentation: isPresented, edge: arrowEdge, alignment: alignment, popup: content))
     }
 }
 private struct CNAnchoredPopoverModifier<Popup: View>: ViewModifier {
@@ -182,10 +185,11 @@ private struct CNAnchoredPopoverModifier<Popup: View>: ViewModifier {
     @State private var id = UUID()
     let presentation: Binding<Bool>
     let edge: Edge
+    let alignment: HorizontalAlignment
     let popup: () -> Popup
     private func anchored(_ content: Content) -> some View {
         content.anchorPreference(key: CNPopoverAnchorPreference.self, value: .bounds) { anchor in
-            [CNPopoverAnchorRequest(id: id, anchor: anchor, edge: edge,
+            [CNPopoverAnchorRequest(id: id, anchor: anchor, edge: edge, alignment: alignment,
                                     isPresented: presentation.wrappedValue, presentation: presentation,
                                     content: AnyView(popup()))]
         }
@@ -209,6 +213,7 @@ private struct CNPopoverAnchorRequest: Identifiable {
     let id: UUID
     let anchor: Anchor<CGRect>
     let edge: Edge
+    let alignment: HorizontalAlignment
     let isPresented: Bool
     let presentation: Binding<Bool>
     let content: AnyView
@@ -235,10 +240,12 @@ private struct CNPopoverBackdrop: Shape {
 // Pure placement also covers small windows and all preferred sides.
 enum CNPopoverPosition {
     static func origin(anchor: CGRect, popup: CGSize, bounds: CGRect, edge: Edge,
-                       direction: LayoutDirection = .leftToRight) -> CGPoint {
+                       direction: LayoutDirection = .leftToRight, alignment: HorizontalAlignment = .leading) -> CGPoint {
         let gap: CGFloat = 6
         let margin: CGFloat = 8
         var x = anchor.minX
+        if alignment == .center { x = anchor.midX - popup.width / 2 }
+        else if (alignment == .trailing) != (direction == .rightToLeft) { x = anchor.maxX - popup.width }
         var y = anchor.maxY + gap
         let physicalEdge: Edge = direction == .rightToLeft ? (edge == .leading ? .trailing : edge == .trailing ? .leading : edge) : edge
         switch physicalEdge {
