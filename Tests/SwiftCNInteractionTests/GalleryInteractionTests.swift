@@ -2,6 +2,32 @@ import XCTest
 import XCUIAutomation
 
 final class GalleryInteractionTests: XCTestCase {
+    @MainActor func testCalendarSelectionUpdatesTheFormattedDateInput() {
+        let app = launch("date_picker")
+        defer { capture(app); app.terminate() }
+        let editor = app.textFields["Delivery date"]
+        let trigger = app.buttons["Choose date"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        #if os(macOS)
+        activate(editor)
+        editor.typeKey("a", modifierFlags: .command)
+        editor.typeText("10/20/2025")
+        #endif
+        activate(trigger)
+        expectValue(trigger, "Expanded")
+        #if os(macOS)
+        expectValue(editor, "10/20/2025")
+        #endif
+        let day = app.buttons.matching(NSPredicate(format: "label CONTAINS 'October' AND label CONTAINS '17' AND label CONTAINS '2025'")).firstMatch
+        XCTAssertTrue(day.waitForExistence(timeout: 5))
+        activate(day)
+        expectValue(trigger, "Collapsed")
+        expectValue(editor, "10/17/2025")
+        activate(trigger)
+        XCTAssertTrue(day.waitForExistence(timeout: 5))
+        activate(trigger)
+        expectValue(trigger, "Collapsed")
+    }
     @MainActor func testCheckboxLabelAndTrailingSpaceToggleTheValue() {
         let app = launch("checkbox")
         defer { capture(app); app.terminate() }
@@ -148,6 +174,7 @@ final class GalleryInteractionTests: XCTestCase {
         #if os(macOS)
         app.launchArguments = ["-AppleKeyboardUIMode", "3"]
         #endif
+        if example == "date_picker" { app.launchArguments += ["-AppleLocale", "en_US"] }
         app.launchEnvironment["SWIFTCN_UI_EXAMPLE"] = example
         app.launch()
         return app

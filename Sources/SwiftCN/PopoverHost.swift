@@ -34,10 +34,8 @@ public struct CNPopoverHost<Content: View>: View {
                                 if request.isPresented {
                                     // Constrain the native viewport before requesting its ideal size.
                                     // The content keeps one identity as the host resizes.
-                                    ScrollView([.horizontal, .vertical]) { request.content.fixedSize() }
-                                        .scrollBounceBehavior(.basedOnSize)
-                                        .frame(maxWidth: max(0, bounds.width - 16), maxHeight: max(0, bounds.height - 16))
-                                        .fixedSize()
+                                    CNPopoverViewport(content: request.content,
+                                        maximumSize: CGSize(width: max(0, bounds.width - 16), height: max(0, bounds.height - 16)))
                                         .alignmentGuide(.leading) { size in
                                             let x = CNPopoverPosition.origin(anchor: anchor,
                                                 popup: CGSize(width: size.width, height: size.height),
@@ -73,6 +71,23 @@ public struct CNPopoverHost<Content: View>: View {
             }
             // Nested hosts consume their own anchors.
             .transformPreference(CNPopoverAnchorPreference.self) { $0 = [] }
+    }
+}
+private struct CNPopoverViewport<Content: View>: View {
+    let content: Content
+    let maximumSize: CGSize
+    @State private var contentSize: CGSize?
+    var body: some View {
+        ScrollView([.horizontal, .vertical]) {
+            content.fixedSize()
+                .onGeometryChange(for: CGSize.self, of: { $0.size }) { contentSize = $0 }
+        }
+        // Preserve rounded shadows when no scrolling is needed. Oversized
+        // content must still clip to its viewport, including after resizing.
+        .scrollClipDisabled(contentSize.map { $0.width <= maximumSize.width && $0.height <= maximumSize.height } ?? false)
+        .scrollBounceBehavior(.basedOnSize)
+        .frame(maxWidth: maximumSize.width, maxHeight: maximumSize.height)
+        .fixedSize()
     }
 }
 #if os(macOS)

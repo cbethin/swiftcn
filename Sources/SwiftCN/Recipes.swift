@@ -78,7 +78,8 @@ extension TWStyle {
             "switch": "text-foreground text-sm cn-tint-[tint] disabled:opacity-45",
             "radio-group": "text-foreground text-sm cn-tint-[tint]",
             "select": "text-foreground text-sm cn-tint-[tint]",
-            "date-picker": "text-foreground cn-tint-[tint]",
+            "date-picker": "text-foreground cn-tint-[tint] max-w-[320]",
+            "date-picker-calendar": "p-2 border-0",
             "calendar": "p-3 bg-surface text-foreground border rounded-lg",
             "calendar-heading": "text-sm font-semibold",
             "calendar-weekday": "text-xs text-mutedForeground",
@@ -156,11 +157,13 @@ extension TWStyle {
         recipes["input-group"] = Self(.px(3), .minH(inputMinimumHeight), .text(.sm), .fg(.foreground), .bg(.surface), .border(.input), .rounded(.md), .focus(.border(.ring, width: 2)), .disabled(.opacity(0.45)), .classes("control-motion"))
         recipes["input-group-field"] = Self(.text(.sm), .py(2), .minH(inputMinimumHeight))
         #if os(iOS)
+        recipes["date-picker-calendar"] = Self(.classes(components["date-picker-calendar"]!), .w(352), .maxW(352))
         if let classes = components["checkbox"] { recipes["checkbox"] = Self(.classes(classes), .minW(44), .minH(44)) }
         for name in ["switch", "command-item", "sidebar-menu-button"] {
             if let classes = components[name] { recipes[name] = Self(.classes(classes), .minH(44)) }
         }
         #else
+        recipes["date-picker-calendar"] = Self(.classes(components["date-picker-calendar"]!), .w(280), .maxW(280))
         for name in ["checkbox", "switch"] {
             if let classes = components[name] { recipes[name] = Self(.classes(classes), .minH(32)) }
         }

@@ -50,6 +50,7 @@ The initial suite checks these workflows on macOS, iPhone, and iPad:
 
 - Click the checkbox label and empty trailing space. Check the resulting value.
 - Repeatedly open and close the dropdown. Invoke one action and reopen it.
+- Open the date picker's calendar, choose a day, and check the formatted input. Reopen and close the popup.
 - Edit a dialog field. Keep Close reachable above the software keyboard. Dismiss and reopen the dialog. Check the retained draft.
 - Drag the custom resize handle in both directions. Check actual handle movement.
 
@@ -57,6 +58,7 @@ The macOS suite also checks native split and navigation dividers.
 It sends pointer drags, checks the resulting pane movement, and edits the retained text view.
 It checks native sidebar hide and show actions.
 The dialog test checks Escape dismissal and keyboard reopening through restored focus.
+The date-picker test also types a date and checks that opening the calendar commits it.
 
 The tests launch real examples through a debug-only `SWIFTCN_UI_EXAMPLE` route.
 This selects an initial gallery screen; it does not replace controls, gestures, or state changes.

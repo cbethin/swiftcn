@@ -8,6 +8,46 @@ import Testing
 @MainActor
 struct PopoverInteractionTests {
     @Test(arguments: [false, true])
+    func popupShadowEscapesOnlyWhenContentFits(oversized: Bool) async throws {
+        let controller = NSHostingController(rootView: VStack {
+            CNPopover(isPresented: .constant(true)) {
+                Color.white.frame(width: oversized ? 520 : 120, height: oversized ? 620 : 60)
+                    .shadow(color: .black.opacity(0.8), radius: 8)
+            } label: { Text("Open") }
+            Spacer()
+        }.frame(maxWidth: .infinity, maxHeight: .infinity).background(Color(red: 1, green: 0, blue: 1))
+            .cnPopoverHost())
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 300, height: 220),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        controller.view.frame = window.contentLayoutRect
+        window.contentViewController = controller; window.orderFront(nil)
+        defer { window.orderOut(nil); window.contentViewController = nil }
+        try await settle(controller.view, seconds: 0.3)
+        let scroll = try #require(descendants(controller.view).compactMap { $0 as? NSScrollView }.first)
+        let viewport = scroll.convert(scroll.bounds, to: controller.view)
+        let sample = CGRect(x: viewport.minX - 3, y: viewport.midY, width: 1, height: 1)
+        let bitmap = try #require(controller.view.bitmapImageRepForCachingDisplay(in: controller.view.bounds))
+        controller.view.cacheDisplay(in: controller.view.bounds, to: bitmap)
+        if let directory = ProcessInfo.processInfo.environment["SWIFTCN_POPOVER_ARTIFACTS"],
+           let png = bitmap.representation(using: .png, properties: [:]) {
+            try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
+            try png.write(to: URL(fileURLWithPath: directory).appendingPathComponent("viewport-\(oversized).png"))
+        }
+        let scale = CGFloat(bitmap.pixelsWide) / controller.view.bounds.width
+        let y = controller.view.isFlipped ? sample.midY : controller.view.bounds.height - sample.midY
+        let color = try #require(bitmap.colorAt(x: Int(sample.midX * scale), y: Int(y * scale))?.usingColorSpace(.sRGB))
+        let canvas = try #require(bitmap.colorAt(x: 0, y: bitmap.pixelsHigh - 1)?.usingColorSpace(.sRGB))
+        if oversized {
+            #expect(abs(color.redComponent - canvas.redComponent) < 0.01 &&
+                    abs(color.greenComponent - canvas.greenComponent) < 0.01 &&
+                    abs(color.blueComponent - canvas.blueComponent) < 0.01,
+                    "Popup content must not paint outside an oversized viewport.")
+        } else {
+            #expect(color.redComponent < canvas.redComponent - 0.015 && color.blueComponent < canvas.blueComponent - 0.015,
+                    "A fitting popup's shadow must extend beyond the rectangular scroll viewport.")
+        }
+    }
+    @Test(arguments: [false, true])
     func oversizedPopoverScrollsWithinTheHostAndPreservesItsEditorOnResize(rtl: Bool) async throws {
         let model = PopoverViewportModel()
         let controller = NSHostingController(rootView: PopoverViewportHarness(model: model)
