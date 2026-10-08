@@ -29,7 +29,18 @@ import AppKit
 }
 
 struct ComponentGalleryView: View {
-    @State private var selection: CNGallerySelection? = .component(.button)
+    @State private var selection: CNGallerySelection? = {
+        #if DEBUG
+        // UI tests start on a real example without changing its controls or interaction.
+        if let route = ProcessInfo.processInfo.environment["SWIFTCN_UI_EXAMPLE"] {
+            if route.hasPrefix("native:"), let example = CNNativeComposition(rawValue: String(route.dropFirst(7))) {
+                return .native(example)
+            }
+            if let example = CNComponentGallery(rawValue: route) { return .component(example) }
+        }
+        #endif
+        return .component(.button)
+    }()
     @State private var query = ""
     @Binding var dark: Bool
     var body: some View {

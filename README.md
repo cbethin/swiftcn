@@ -693,6 +693,10 @@ It covers themes, widths, text-size environments, state appearances, native cont
 The CI job fails on missing or changed references and uploads difference images.
 See [the visual testing guide](docs/visual-testing.md) for local commands and baseline updates.
 
+Native interaction tests launch the actual gallery with XCTest and XCUIAutomation.
+They cover click targets, dropdown reopening, dialog editing, and real divider drags on macOS, iPhone, and iPad.
+See [the interaction testing guide](docs/interaction-testing.md) for commands and result bundles.
+
 ## Documentation site
 
 The searchable documentation site lives in [`website`](website/README.md).

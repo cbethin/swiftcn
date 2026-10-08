@@ -52,7 +52,9 @@ The capture script waits for the host to signal readiness.
 The host captures its native view hierarchy and excludes system status icons and the Dynamic Island.
 The script deletes its own simulator after each run.
 
-Keyboard, touch, and VoiceOver behavior still require an application host.
+Native pointer, touch, and keyboard tests use the component gallery application host.
+See [interaction testing](interaction-testing.md) for local commands and CI coverage.
+VoiceOver and physical-device behavior still require separate checks.
 
 ## Local workflow
 
