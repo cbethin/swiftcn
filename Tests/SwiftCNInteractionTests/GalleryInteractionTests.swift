@@ -12,7 +12,7 @@ final class GalleryInteractionTests: XCTestCase {
         #endif
         let checked = "1", unchecked = "0"
         XCTAssertTrue(checkbox.waitForExistence(timeout: 5))
-        XCTAssertEqual(checkbox.value as? String, checked)
+        XCTAssertEqual(String(describing: checkbox.value ?? ""), checked)
         // The right side is empty styled space, beyond the indicator and label.
         activate(checkbox.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
         expectValue(checkbox, unchecked)
@@ -131,8 +131,8 @@ final class GalleryInteractionTests: XCTestCase {
         XCTAssertGreaterThan(divider.frame.midX, original + 160)
         drag(divider, by: -200)
         XCTAssertLessThan(abs(divider.frame.midX - original), 20)
-        activate(window.buttons["Hide Sidebar"])
-        activate(window.buttons["Show Sidebar"])
+        activate(window.toolbars.buttons["Hide Sidebar"].firstMatch)
+        activate(window.toolbars.buttons["Show Sidebar"].firstMatch)
         XCTAssertEqual(editor.value as? String, "Navigation interaction draft")
     }
     #endif
@@ -151,7 +151,9 @@ final class GalleryInteractionTests: XCTestCase {
     @MainActor private func activate(_ element: XCUIElement) {
         XCTAssertTrue(element.waitForExistence(timeout: 5))
         #if os(macOS)
-        element.click()
+        // AppKit hosting overlays expose visible controls through a scroll view.
+        // Click their physical bounds instead of asking XCTest to scroll that overlay.
+        element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
         #else
         element.tap()
         #endif
@@ -176,7 +178,10 @@ final class GalleryInteractionTests: XCTestCase {
     }
 
     @MainActor private func expectValue(_ element: XCUIElement, _ value: String) {
-        XCTAssertTrue(wait(for: NSPredicate(format: "value == %@", value), on: element))
+        XCTAssertTrue(wait(for: NSPredicate { object, _ in
+            guard let element = object as? XCUIElement else { return false }
+            return String(describing: element.value ?? "") == value
+        }, on: element))
     }
 
     @MainActor private func wait(for predicate: NSPredicate, on element: XCUIElement) -> Bool {
