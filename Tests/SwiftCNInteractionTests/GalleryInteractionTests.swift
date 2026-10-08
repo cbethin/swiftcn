@@ -58,8 +58,13 @@ final class GalleryInteractionTests: XCTestCase {
         editor.typeText("Interaction draft")
         app.typeKey(.escape, modifierFlags: [])
         #else
-        editor.typeText(" draft")
-        activate(app.buttons["Close"])
+        // Digits avoid locale-dependent autocorrection in this persistence test.
+        editor.typeText(" 12345")
+        expectValue(editor, "Design system 12345")
+        let close = app.buttons["Close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 5))
+        XCTAssertTrue(close.isHittable, "The keyboard must not collapse the dialog's viewport.")
+        activate(close)
         #endif
         let closed = NSPredicate(format: "exists == false")
         XCTAssertTrue(wait(for: closed, on: editor))
@@ -73,7 +78,7 @@ final class GalleryInteractionTests: XCTestCase {
         #if os(macOS)
         XCTAssertEqual(editor.value as? String, "Interaction draft")
         #else
-        XCTAssertTrue((editor.value as? String)?.contains("draft") == true)
+        expectValue(editor, "Design system 12345")
         #endif
     }
 
@@ -150,13 +155,9 @@ final class GalleryInteractionTests: XCTestCase {
 
     @MainActor private func activate(_ element: XCUIElement) {
         XCTAssertTrue(element.waitForExistence(timeout: 5))
-        #if os(macOS)
-        // AppKit hosting overlays expose visible controls through a scroll view.
-        // Click their physical bounds instead of asking XCTest to scroll that overlay.
-        element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
-        #else
-        element.tap()
-        #endif
+        // Hosting overlays expose visible controls through native scroll views.
+        // Send physical input to their bounds instead of scrolling the overlay.
+        activate(element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)))
     }
 
     @MainActor private func activate(_ coordinate: XCUICoordinate) {
@@ -178,10 +179,11 @@ final class GalleryInteractionTests: XCTestCase {
     }
 
     @MainActor private func expectValue(_ element: XCUIElement, _ value: String) {
-        XCTAssertTrue(wait(for: NSPredicate { object, _ in
+        let matches = wait(for: NSPredicate { object, _ in
             guard let element = object as? XCUIElement else { return false }
             return String(describing: element.value ?? "") == value
-        }, on: element))
+        }, on: element)
+        XCTAssertTrue(matches, "Expected \(value); received \(String(describing: element.value ?? ""))")
     }
 
     @MainActor private func wait(for predicate: NSPredicate, on element: XCUIElement) -> Bool {

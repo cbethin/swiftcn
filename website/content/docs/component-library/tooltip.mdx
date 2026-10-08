@@ -71,25 +71,28 @@ public struct CNPresentationHost<Content: View>: View {
             .environment(\.cnPresentationFocus, $focus)
             .disabled(!active.isEmpty).accessibilityHidden(!active.isEmpty)
             .overlayPreferenceValue(CNPresentationRequests.self) { requests in
-                GeometryReader { geometry in
-                    ZStack {
-                        ForEach(requests) { request in
-                            let regions = geometry.cnPlacementRegions(layoutDirection: direction)
-                            let placement = CNPlacementRegions.preferred(in: regions,
-                                near: request.kind.preferredPoint(in: geometry.size, direction: direction))
-                            CNPresentationPanel(request: request, focus: $focus, size: geometry.size, placement: placement)
-                                .transformEnvironment(\.self) { values in
-                                    // Preserve public appearance without importing private focus dispatch state.
-                                    values.cnPresentationAppearance(from: request.environment)
-                                }
-                        }
-                    }.frame(width: geometry.size.width, height: geometry.size.height)
-                        .onChange(of: requests.filter { $0.presentation.wrappedValue }.map(\.id)) { old, new in
-                            guard let newest = new.first(where: { !old.contains($0) }) else { return }
-                            for request in requests where request.id != newest && request.presentation.wrappedValue {
-                                request.presentation.wrappedValue = false
+                // Measure system insets before expanding the overlay; placement applies them once.
+                GeometryReader { safeArea in
+                    GeometryReader { geometry in
+                        ZStack {
+                            ForEach(requests) { request in
+                                let regions = geometry.cnPlacementRegions(layoutDirection: direction, insets: safeArea.safeAreaInsets)
+                                let placement = CNPlacementRegions.preferred(in: regions,
+                                    near: request.kind.preferredPoint(in: geometry.size, direction: direction))
+                                CNPresentationPanel(request: request, focus: $focus, size: geometry.size, placement: placement)
+                                    .transformEnvironment(\.self) { values in
+                                        // Preserve public appearance without importing private focus dispatch state.
+                                        values.cnPresentationAppearance(from: request.environment)
+                                    }
                             }
-                        }
+                        }.frame(width: geometry.size.width, height: geometry.size.height)
+                            .onChange(of: requests.filter { $0.presentation.wrappedValue }.map(\.id)) { old, new in
+                                guard let newest = new.first(where: { !old.contains($0) }) else { return }
+                                for request in requests where request.id != newest && request.presentation.wrappedValue {
+                                    request.presentation.wrappedValue = false
+                                }
+                            }
+                    }.ignoresSafeArea()
                 }
             }
             .onPreferenceChange(CNPresentationPresence.self) { active = $0 }
@@ -271,8 +274,8 @@ private struct CNPresentationPanel: View {
                 .frame(width: placement.width, height: placement.height, alignment: request.kind.alignment)
                 .position(x: placement.midX, y: placement.midY)
                 .environment(\.cnPresentationDismiss, close)
-                .disabled(!open)
-                .accessibilityElement(children: .contain).accessibilityAddTraits(.isModal)
+                // Hit testing and accessibility hide closed panels; keep editors enabled to commit on focus restoration.
+                .accessibilityElement(children: .contain).accessibilityAddTraits(open ? .isModal : [])
                 .accessibilityAction(.escape, close)
                 .focusable(open).focusEffectDisabled().focused(focus, equals: .panel(request.id))
                 .onKeyPress(.escape) { close(); return .handled }

@@ -50,7 +50,7 @@ The initial suite checks these workflows on macOS, iPhone, and iPad:
 
 - Click the checkbox label and empty trailing space. Check the resulting value.
 - Repeatedly open and close the dropdown. Invoke one action and reopen it.
-- Edit a dialog field. Dismiss and reopen the dialog. Check the retained draft.
+- Edit a dialog field. Keep Close reachable above the software keyboard. Dismiss and reopen the dialog. Check the retained draft.
 - Drag the custom resize handle in both directions. Check actual handle movement.
 
 The macOS suite also checks native split and navigation dividers.

@@ -67,7 +67,11 @@ extension GeometryProxy {
     }
     /// Query this view's bounds, safe area, and native reserved regions on supported systems.
     public func cnPlacementRegions(layoutDirection: LayoutDirection) -> [CGRect] {
-        let bounds = CNPlacementRegions.safeBounds(size: size, insets: safeAreaInsets, direction: layoutDirection)
+        cnPlacementRegions(layoutDirection: layoutDirection, insets: safeAreaInsets)
+    }
+    /// Use enclosing insets when this reader spans the complete host, including the safe area.
+    public func cnPlacementRegions(layoutDirection: LayoutDirection, insets: EdgeInsets) -> [CGRect] {
+        let bounds = CNPlacementRegions.safeBounds(size: size, insets: insets, direction: layoutDirection)
         // Xcode 27.1 exports these symbols in SwiftUI 8.0.85.27. Older SDKs compile the fallback.
         #if os(iOS) && canImport(SwiftUI, _version: 8.0.85.27)
         if #available(iOS 27.1, *) {
