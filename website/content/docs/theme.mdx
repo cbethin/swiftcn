@@ -7,6 +7,8 @@ description: "Adaptive colors and native typography through the SwiftUI environm
 var theme = TWTheme(spacingUnit: 5)
 theme.colors[.primary] = TWAdaptiveColor(light: .indigo, dark: .mint)
 theme.colors[.onPrimary] = TWAdaptiveColor(light: .white, dark: .black)
+theme.colors[.tint] = theme.colors[.primary]
+theme.colors[.ring] = theme.colors[.primary]
 theme.radii[.lg] = 16
 
 ContentView()
@@ -16,6 +18,47 @@ ContentView()
 Semantic colors resolve through the current color scheme.
 The theme inherits through the SwiftUI environment and supports local overrides.
 Partial theme initializers preserve unspecified defaults.
+
+## Component colors
+
+The default theme uses cool neutral surfaces, quiet separators, and stronger field boundaries.
+Dark surfaces use several levels of charcoal so cards, menus, and sidebars remain distinct.
+Text keeps sufficient contrast on these surfaces. Hover and selection use a separate fill from static decoration.
+
+| Token | Used for |
+| --- | --- |
+| `background` | App canvas |
+| `surface` | Cards, inputs, tables, and presentations |
+| `muted` | Table headers, sidebars, skeletons, and secondary buttons |
+| `accent` / `onAccent` | Hover, selection, and message bubbles |
+| `border` | Quiet surface borders and separators |
+| `input` | Field boundaries |
+| `ring` | Focused field borders |
+| `tint` | Native switches, checkboxes, pickers, progress, tabs, and charts |
+| `primary` / `onPrimary` | Primary actions, selected dates, and badges |
+| `foreground` / `mutedForeground` | Body text and supporting text |
+| `destructive` / `onDestructive` | Errors and destructive actions |
+
+`tint` and `ring` default to SwiftUI's `Color.accentColor`, which uses your app's accent color.
+Set them explicitly in your theme when you want a shared brand color, as in the example above.
+Native [control styles decide how tint appears](https://developer.apple.com/documentation/swiftui/view/tint(_:)). macOS also dims controls in inactive windows.
+Color tokens remain independent. Changing `primary` alone does not change native controls or focus borders.
+When you change a filled background, choose its paired foreground for both appearances too.
+
+The theme inherits into imported components and copied source in the same subtree.
+For a local override, use `classes: "bg-muted"` or `classes: "cn-tint-[primary]"`.
+You can also change any named component recipe in [global rules](/docs/global-rules).
+For example, this changes all secondary buttons in the subtree:
+
+```swift
+ContentView()
+    .twRules {
+        $0.named["button-secondary"] = TWStyle(
+            TWStyle.defaultStyle(for: "button-secondary")!,
+            "bg-accent text-onAccent hover:opacity-90"
+        )
+    }
+```
 
 ## Native layout tokens
 

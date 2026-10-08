@@ -23,15 +23,8 @@ struct TWGroupContext {
     }
 }
 
-private enum TWGroupContextKey: EnvironmentKey {
-    static var defaultValue: TWGroupContext { TWGroupContext() }
-}
-
 extension EnvironmentValues {
-    var twGroups: TWGroupContext {
-        get { self[TWGroupContextKey.self] }
-        set { self[TWGroupContextKey.self] = newValue }
-    }
+    @Entry var twGroups: TWGroupContext = TWGroupContext()
 }
 
 struct TWClassSharedElementModifier: ViewModifier {

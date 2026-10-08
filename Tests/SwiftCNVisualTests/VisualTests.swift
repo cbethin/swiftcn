@@ -56,7 +56,7 @@ struct VisualTests {
     }
 }
 
-private enum VisualScene: String, CaseIterable { case buttons, controls, utilities, globalRules }
+private enum VisualScene: String, CaseIterable { case buttons, controls, utilities, globalRules, themedComponents }
 
 private struct VisualFixture: View {
     let scene: VisualScene
@@ -71,6 +71,7 @@ private struct VisualFixture: View {
             case .controls: controls
             case .utilities: utilities
             case .globalRules: globalRules
+            case .themedComponents: themedComponents
               }
         }
         .foregroundStyle(theme.color(.foreground, scheme: scheme))
@@ -148,6 +149,44 @@ private struct VisualFixture: View {
                 Text("Sibling keeps global card").tw("card w-full")
               }.twTheme(brandTheme).twRules(rules)
         }
+    }
+
+    // Imported components must honor the same theme as plain .tw surfaces.
+    private var themedComponents: some View {
+        let brand = TWAdaptiveColor(light: .indigo, dark: Color(red: 0.64, green: 0.62, blue: 1))
+        let theme = TWTheme(colors: [
+            .primary: brand, .onPrimary: .init(light: .white, dark: Color(white: 0.10)),
+            .tint: brand, .ring: brand,
+            .surface: .init(light: Color(red: 0.995, green: 0.99, blue: 1), dark: Color(red: 0.12, green: 0.105, blue: 0.16)),
+            .foreground: .init(light: Color(red: 0.18, green: 0.16, blue: 0.24), dark: Color(red: 0.91, green: 0.89, blue: 0.98)),
+            .mutedForeground: .init(light: Color(red: 0.42, green: 0.39, blue: 0.50), dark: Color(red: 0.70, green: 0.67, blue: 0.78)),
+            .muted: .init(light: Color(red: 0.96, green: 0.95, blue: 1), dark: Color(red: 0.16, green: 0.15, blue: 0.23)),
+            .accent: .init(light: Color(red: 0.91, green: 0.90, blue: 1), dark: Color(red: 0.23, green: 0.21, blue: 0.34))
+        ])
+        return CNCard {
+            CNCardHeader {
+                CNCardTitle("Your theme, everywhere")
+                CNCardDescription("Shared surfaces, native controls, and quiet interaction states.")
+            }
+            CNCardContent {
+                CNInput("Project name", text: .constant("Design system"))
+                CNInput("Unavailable", text: .constant("Disabled field")).disabled(true)
+                Text("Focused field").tw("input", state: .init(isFocused: true))
+                CNField(isInvalid: true) {
+                    CNInput("Email", text: .constant("Incomplete"))
+                    CNFieldError("Enter a valid email address.")
+                }
+                CNSwitch("Notifications", isOn: .constant(true))
+                CNCheckbox("Share with the team", isOn: .constant(true))
+                CNProgress("Setup progress", value: 0.65)
+                CNCommand([CNOption("design", title: "Design system"), CNOption("app", title: "Mobile app")],
+                          selection: .constant("design"), classes: "h-[180]")
+            }
+            CNCardFooter {
+                CNButton("Cancel", variant: .secondary) {}
+                CNButton("Create project") {}
+            }
+        }.twTheme(theme).environment(\.controlActiveState, .active)
     }
 }
 #endif

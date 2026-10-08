@@ -237,6 +237,8 @@ Native modifiers retain their order around each surface.
 var theme = TWTheme(spacingUnit: 5)
 theme.colors[.primary] = TWAdaptiveColor(light: .indigo, dark: .mint)
 theme.colors[.onPrimary] = TWAdaptiveColor(light: .white, dark: .black)
+theme.colors[.tint] = theme.colors[.primary]
+theme.colors[.ring] = theme.colors[.primary]
 theme.radii[.lg] = 16
 
 ContentView()
@@ -246,6 +248,8 @@ ContentView()
 Semantic colors resolve through the current color scheme.
 The theme inherits through the SwiftUI environment and supports local overrides.
 Partial theme initializers preserve unspecified defaults.
+Use `muted` for static fills, `accent` for interaction states, `border` for separators, and `input` for field boundaries.
+Native control `tint` and field focus `ring` default to the app accent color. Set them explicitly to share your brand color.
 
 Read theme values for native layouts:
 
@@ -688,10 +692,15 @@ Use strict parsing in tests to catch spelling errors. `.classes()` resolves stri
 
 ## Visual regression tests
 
-The visual suite compares 42 images with exact pixels: 34 macOS views and eight iOS simulator screenshots.
+The core visual suite compares 50 images with exact pixels: 42 macOS views and eight iOS simulator screenshots.
+The catalog adds 280 component captures across light, dark, and selected narrow or larger-text layouts.
 It covers themes, widths, text-size environments, state appearances, native controls, global rules, and right-to-left layout.
 The CI job fails on missing or changed references and uploads difference images.
 See [the visual testing guide](docs/visual-testing.md) for local commands and baseline updates.
+
+Native interaction tests launch the actual gallery with XCTest and XCUIAutomation.
+They cover click targets, dropdown reopening, dialog editing, and real divider drags on macOS, iPhone, and iPad.
+See [the interaction testing guide](docs/interaction-testing.md) for commands and result bundles.
 
 ## Documentation site
 
@@ -703,3 +712,63 @@ cd website
 npm ci
 npm run dev
 ```
+
+
+### Native component library
+
+SwiftCN includes 64 native component catalog entries, from buttons and composable card parts to searchable commands, data tables, charts, and questionnaires. Each uses `.tw` class recipes and caller-owned bindings.
+
+Direct native controls use the same recipes through `.buttonStyle(.tw(...))`, `.textFieldStyle(.tw(...))`, `.toggleStyle(.tw(...))`, and `.labelStyle(.tw(...))`. `CNDrawerContent` styles a caller-owned sheet; `CNDrawer` adds native defaults with typed detents, selection, and dismissal callbacks. Native navigation and desktop split examples use SwiftUI containers directly. The gallery's **Native composition** section includes all four complete, copyable examples. See the [native composition documentation source](website/content/docs/native-composition.mdx).
+
+```swift
+import SwiftUI
+import SwiftCN
+
+struct WorkspaceForm: View {
+    @State private var name = ""
+    @State private var notifications = true
+
+    var body: some View {
+        CNCard {
+            CNCardHeader { CNCardTitle("Workspace"); CNCardDescription("Keep native controls and own the source.") }
+            CNCardContent {
+                CNField(isInvalid: name.isEmpty) {
+                    CNFieldLabel("Name")
+                    CNInput("Workspace name", text: $name)
+                    if name.isEmpty { CNFieldError("Enter a name.") }
+                }
+                CNSwitch("Notifications", isOn: $notifications)
+            }
+            CNCardFooter { CNButton("Save", classes: "rounded-full", action: {}) }
+        }
+    }
+}
+```
+
+Run all complete documentation examples in the searchable native gallery:
+
+```bash
+swift run SwiftCNComponentGallery
+```
+
+Each gallery screen includes the complete example, `import SwiftCN`, and a copy button. Run the same interactive gallery on an iPhone simulator:
+
+```bash
+python3 Scripts/run-ios-component-gallery.py
+```
+
+The script creates a dedicated simulator. Open `swiftcn-component-gallery` in Xcode Device Hub or Simulator after launch.
+
+The [component documentation](https://cbethin.github.io/swiftcn/docs/component-library/) provides actual Swift source, runnable examples, platform notes, and a licensed source bundle. Imported and locally copied components can coexist. To own the engine too, add the full source bundle to your app target.
+
+Generate docs and downloads after editing component source:
+
+```bash
+python3 Scripts/generate-components.py
+python3 Scripts/generate-components.py --check
+bash Scripts/check-doc-examples.sh
+bash Scripts/component-visual-test.sh record local
+bash Scripts/component-visual-test.sh verify local
+```
+
+Native system alerts, menus, pickers, tabs, and sheets retain their platform presentation. Classes style component surfaces and control tint; native layout, roles, bindings, accessibility, presentation APIs, and Swift Charts marks stay native.

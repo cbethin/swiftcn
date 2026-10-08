@@ -48,6 +48,38 @@ struct MotionRenderingTests {
         }
     }
 
+    @Test(arguments: [true, false]) func motionRecipeRetargetsBeforeOpeningOrClosingFinishes(tracksHover: Bool) {
+        let model = MotionModel()
+        let recorder = ContentRecorder()
+        withHost(RetargetMotionHarness(model: model, recorder: recorder, tracksHover: tracksHover)) { host in
+            model.active = true
+            if recorder.reduceMotion != true {
+                #expect(waitForFrame(host) {
+                    guard let amount = recorder.amounts.last else { return false }
+                    return amount > 0.1 && amount < 0.9
+                }, "Opening must render an intermediate frame before reversal.")
+            } else { settle(host, seconds: 0.12) }
+            let opening = recorder.amounts.last ?? 0
+            model.active = false
+            if recorder.reduceMotion != true {
+                #expect(waitForFrame(host) {
+                    guard let amount = recorder.amounts.last else { return false }
+                    return amount > 0 && amount < opening
+                }, "Closing must render an intermediate frame below the unfinished opening.")
+            } else { settle(host, seconds: 0.12) }
+            let closing = recorder.amounts.last ?? 1
+            if recorder.reduceMotion != true {
+                #expect(opening > 0 && opening < 1)
+                #expect(closing < opening, "Closing must reverse the unfinished opening: \(opening) -> \(closing)")
+            }
+            model.active = true
+            #expect(waitForFrame(host, timeout: 2) {
+                abs((recorder.amounts.last ?? 0) - 1) < 0.001
+            }, "The retargeted spring must settle at its final value.")
+            #expect(Set(recorder.identities).count == 1)
+        }
+    }
+
     @Test func valueAnimationHonorsDisabledTransactionsAndPreservesUnrelatedUpdates() {
         let samples = MotionSamples()
         let model = MotionModel()
@@ -208,6 +240,15 @@ struct MotionRenderingTests {
         RunLoop.main.run(until: Date(timeIntervalSinceNow: seconds))
     }
 
+    private func waitForFrame<V: View>(_ host: NSHostingView<V>, timeout: TimeInterval = 1, condition: () -> Bool) -> Bool {
+        let deadline = Date(timeIntervalSinceNow: timeout)
+        repeat {
+            settle(host, seconds: 0.01)
+            if condition() { return true }
+        } while Date() < deadline
+        return false
+    }
+
     private func expectMotion(_ samples: MotionSamples, reduceMotion: Bool?) {
         if reduceMotion == true {
             #expect(samples.times.isEmpty)
@@ -245,6 +286,31 @@ private struct MotionProbeAnimation: CustomAnimation {
     var animations: [Animation?] = []
     var identities: [UUID] = []
     var reduceMotion: Bool?
+    var amounts: [Double] = []
+}
+
+private struct RetargetMotionHarness: View {
+    @ObservedObject var model: MotionModel
+    let recorder: ContentRecorder
+    let tracksHover: Bool
+    var body: some View {
+        MotionContent(recorder: recorder, active: model.active)
+            .modifier(RetargetMotionProbe(amount: model.active ? 1 : 0, recorder: recorder))
+            .modifier(TWValueAnimationModifier(style: .classes("popover-motion duration-400"),
+                value: model.active, tracksHover: tracksHover))
+    }
+}
+private struct RetargetMotionProbe: ViewModifier, Animatable {
+    var amount: Double
+    let recorder: ContentRecorder
+    nonisolated var animatableData: Double {
+        get { amount }
+        set { amount = newValue }
+    }
+    func body(content: Content) -> some View {
+        recorder.amounts.append(amount)
+        return content.opacity(amount)
+    }
 }
 
 private struct MotionHarness: View {

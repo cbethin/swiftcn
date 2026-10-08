@@ -1,0 +1,77 @@
+name: SwiftCNInteractions
+options:
+  minimumXcodeGenVersion: 2.44.0
+  deploymentTarget:
+    macOS: "14.0"
+    iOS: "17.0"
+packages:
+  SwiftCN:
+    path: ../..
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    GENERATE_INFOPLIST_FILE: YES
+    CODE_SIGNING_ALLOWED: NO
+targetTemplates:
+  Gallery:
+    type: application
+    sources: [Sources]
+    dependencies:
+      - package: SwiftCN
+        product: SwiftCN
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.swiftcn.interactions.${target_name}
+  InteractionTests:
+    type: bundle.ui-testing
+    sources: [../../Tests/SwiftCNInteractionTests]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.swiftcn.interactions.${target_name}
+targets:
+  GalleryMac:
+    templates: [Gallery]
+    platform: macOS
+    settings:
+      base:
+        ENABLE_APP_SANDBOX: NO
+        CODE_SIGNING_ALLOWED: YES
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+  GalleryIOS:
+    templates: [Gallery]
+    platform: iOS
+    settings:
+      base:
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+  InteractionTestsMac:
+    templates: [InteractionTests]
+    platform: macOS
+    dependencies:
+      - target: GalleryMac
+    settings:
+      base:
+        CODE_SIGNING_ALLOWED: YES
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+  InteractionTestsIOS:
+    templates: [InteractionTests]
+    platform: iOS
+    dependencies:
+      - target: GalleryIOS
+schemes:
+  SwiftCNInteractionsMac:
+    build:
+      targets:
+        GalleryMac: all
+    test:
+      targets: [InteractionTestsMac]
+      debugEnabled: false
+  SwiftCNInteractionsIOS:
+    build:
+      targets:
+        GalleryIOS: all
+    test:
+      targets: [InteractionTestsIOS]
+      debugEnabled: false

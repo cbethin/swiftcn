@@ -1,32 +1,28 @@
 import SwiftUI
 
-private struct TWFieldInvalidKey: EnvironmentKey {
-    static let defaultValue = false
-}
-
-extension EnvironmentValues {
-    var twFieldInvalid: Bool {
-        get { self[TWFieldInvalidKey.self] }
-        set { self[TWFieldInvalidKey.self] = newValue }
-    }
-}
-
 /// Group native controls and their descriptions without replacing their accessibility elements.
 public struct CNField<Content: View>: View {
     private let isInvalid: Bool
     private let classes: TWClasses
     private let spacing: CGFloat
+    private let axis: Axis
     private let content: Content
 
-    public init(isInvalid: Bool = false, classes: TWClasses = "", spacing: CGFloat = 6, @ViewBuilder content: () -> Content) {
+    /// Group the control and supporting text in one child when the label sits beside them.
+    /// Changing the axis keeps the same child views and their native control state.
+    public init(isInvalid: Bool = false, classes: TWClasses = "", spacing: CGFloat = 6, axis: Axis = .vertical, @ViewBuilder content: () -> Content) {
         self.isInvalid = isInvalid
         self.classes = classes
         self.spacing = spacing
+        self.axis = axis
         self.content = content()
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: spacing) { content }
+        let layout = axis == .horizontal
+            ? AnyLayout(HStackLayout(alignment: .top, spacing: spacing))
+            : AnyLayout(VStackLayout(alignment: .leading, spacing: spacing))
+        layout { content }
             .frame(maxWidth: .infinity, alignment: .leading)
             .tw(cn("field", classes))
             .environment(\.twFieldInvalid, isInvalid)
@@ -71,16 +67,6 @@ public struct CNFieldControl<Content: View>: View {
     }
 
     public var body: some View { content.modifier(TWFieldControlModifier(style: style, state: state)) }
-}
-
-struct TWFieldControlModifier: ViewModifier {
-    let style: TWStyle
-    let state: TWState
-    @Environment(\.twFieldInvalid) private var isInvalid
-
-    func body(content: Content) -> some View {
-        content.modifier(TWModifier(style: TWStyle(style, isInvalid ? .classes("field-invalid") : TWStyle()), state: state))
-    }
 }
 
 /// A field part that accepts either localized text or custom native content.

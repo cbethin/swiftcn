@@ -1,0 +1,51 @@
+name: Native interactions
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swiftcn-interactions-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  interactions:
+    name: interactions (${{ matrix.name }})
+    runs-on: macos-15
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS
+            platform: macos
+            family: iPhone
+          - name: iPhone
+            platform: ios
+            family: iPhone
+          - name: iPad
+            platform: ios
+            family: iPad
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      SWIFTCN_UI_DEVICE_FAMILY: ${{ matrix.family }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
+          xcodegen --version
+      - name: Exercise native input
+        run: bash Scripts/interaction-test.sh "${{ matrix.platform }}"
+      - name: Upload interaction results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: swiftcn-interactions-${{ matrix.name }}
+          path: artifacts/interactions/

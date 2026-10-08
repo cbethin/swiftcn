@@ -138,3 +138,26 @@ Check the runner version before accepting a new reference after an unexpected fa
 The recording workflow records candidates and verifies them in a second test process.
 It never commits or approves candidate images automatically.
 You can also start that workflow manually for a selected branch.
+
+## Component library coverage
+
+The component suite records every catalog example in light and dark appearances on iOS. The macOS suite covers 63 entries in both appearances. Both suites also check eight representative examples at narrow widths with large text. CI pins macOS 15 with Xcode 16.4 and iOS 18.5 on iPhone 16. Verification fails on a missing or changed reference; CI never updates references automatically.
+
+AppKit bitmap capture cannot composite the native TabView strip correctly, including an unstyled SwiftUI TabView. The macOS tab test checks native selection and item identity instead. The running gallery also supports manual keyboard and pointer review. The Tabs documentation uses native iOS captures, where the complete control renders correctly.
+
+The command screenshot ends editing before capture. This excludes the blinking caret and keyboard inset timing from static comparisons. The interactive gallery retains native autofocus and keyboard activation.
+
+The macOS carousel capture pins native scroller geometry before page layout. This prevents a late scrollbar-style change from shifting the centered content. The running gallery follows system scroll preferences.
+
+Static iOS captures stop native indeterminate indicators and select the first frame of native animated images. This keeps the same indicator frame across runs. The interactive gallery retains native spinner animation.
+
+```bash
+bash Scripts/component-visual-test.sh verify ci
+python3 Scripts/ios-visual-test.py verify ci --components
+```
+
+For a focused iOS design pass, append `--only` with catalog slugs, such as `--only aspect-ratio chart`. This captures and compares only those entries. Normal CI verification uses the complete catalog.
+
+The manual `Record visual baselines` workflow also accepts optional space-separated `ios_component` slugs. It records those components and verifies them in a second capture run. Download and review the candidate images before updating references.
+
+After accepting component references, run `python3 Scripts/generate-components.py`. This updates each documentation preview from its reviewed native reference.

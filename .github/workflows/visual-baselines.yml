@@ -2,6 +2,15 @@ name: Record visual baselines
 
 on:
   workflow_dispatch:
+    inputs:
+      mac_component:
+        description: 'Optional space-separated macOS component slugs for focused candidate review; blank records the complete suite.'
+        type: string
+        default: ''
+      ios_component:
+        description: 'Optional space-separated iOS component slugs for focused candidate review; blank records the complete suite.'
+        type: string
+        default: ''
   push:
     branches: ['visual-baselines/**']
 
@@ -22,15 +31,65 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
       - name: Native tests
-        run: swift test --skip SwiftCNVisualTests
+        timeout-minutes: 15
+        if: inputs.ios_component == ''
+        run: |
+          swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests|ComponentRenderingTests|CompositionRenderingTests|CatalogNativeRenderingTests|ComposableContentTests|PopoverInteractionTests|MotionRenderingTests|TouchTargetInteractionTests|PresentationAndScrollingTests'
+          swift test --filter MotionRenderingTests
+          swift test --filter CompositionRenderingTests
+          swift test --filter ComponentRenderingTests
+          swift test --filter CatalogNativeRenderingTests
+          swift test --filter ComposableContentTests
+          swift test --filter PopoverInteractionTests
+          bash Scripts/check-presentation.sh
+          swift test --filter TouchTargetInteractionTests
+          SWIFTCN_GALLERY_APPEARANCE_TESTS=1 swift test --filter GalleryAppearanceTests
+          swift test --filter NativeUtilityRenderingTests
       - name: Record candidates
+        if: inputs.ios_component == ''
         run: bash Scripts/visual-test.sh record ci
       - name: Verify candidates
+        if: inputs.ios_component == ''
         run: bash Scripts/visual-test.sh verify ci
       - name: Record iOS candidates
+        if: inputs.ios_component == ''
         run: python3 Scripts/ios-visual-test.py record ci
       - name: Verify iOS candidates
+        if: inputs.ios_component == ''
         run: python3 Scripts/ios-visual-test.py verify ci
+      - name: Record component candidates
+        if: inputs.ios_component == '' || inputs.mac_component != ''
+        env:
+          SWIFTCN_COMPONENT_VISUAL_ONLY: ${{ inputs.mac_component }}
+        run: bash Scripts/component-visual-test.sh record ci
+      - name: Check message reading and presentation behavior
+        if: inputs.ios_component != '' && contains(inputs.mac_component, 'message-scroller')
+        run: bash Scripts/check-presentation.sh
+      - name: Verify component candidates
+        if: inputs.ios_component == '' || inputs.mac_component != ''
+        env:
+          SWIFTCN_COMPONENT_VISUAL_ONLY: ${{ inputs.mac_component }}
+        run: bash Scripts/component-visual-test.sh verify ci
+      - name: Record iOS component candidates
+        env:
+          SWIFTCN_REVIEW_COMPONENT: ${{ inputs.ios_component }}
+        run: |
+          args=()
+          if [[ -n "$SWIFTCN_REVIEW_COMPONENT" ]]; then
+            read -r -a components <<< "$SWIFTCN_REVIEW_COMPONENT"
+            args=(--only "${components[@]}")
+          fi
+          python3 Scripts/ios-visual-test.py record ci --components "${args[@]}"
+      - name: Verify iOS component candidates
+        env:
+          SWIFTCN_REVIEW_COMPONENT: ${{ inputs.ios_component }}
+        run: |
+          args=()
+          if [[ -n "$SWIFTCN_REVIEW_COMPONENT" ]]; then
+            read -r -a components <<< "$SWIFTCN_REVIEW_COMPONENT"
+            args=(--only "${components[@]}")
+          fi
+          python3 Scripts/ios-visual-test.py verify ci --components "${args[@]}"
       - name: Upload candidates for review
         if: always()
         uses: actions/upload-artifact@v7
@@ -39,4 +98,7 @@ jobs:
           path: |
             Tests/SwiftCNVisualTests/__Snapshots__/macos-15-xcode-16.4/
             Tests/SwiftCNVisualTests/__Snapshots__/ios-18.5-iphone-16/
+            Tests/SwiftCNVisualTests/__Snapshots__/components-macos-15-xcode-16.4/
+            Tests/SwiftCNVisualTests/__Snapshots__/components-ios-18.5-iphone-16/
             artifacts/visual-diffs/
+            artifacts/ios-components/*-launch.log

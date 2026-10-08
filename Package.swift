@@ -10,9 +10,10 @@ let package = Package(
     ],
     targets: [
         .target(name: "SwiftCN"),
+        .executableTarget(name: "SwiftCNComponentGallery", dependencies: ["SwiftCN"], path: "Examples/Components/Sources"),
         .testTarget(name: "SwiftCNTests", dependencies: ["SwiftCN"]),
         .testTarget(name: "SwiftCNVisualTests", dependencies: [
-            "SwiftCN", .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
+            "SwiftCN", "SwiftCNComponentGallery", .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
         ], exclude: ["__Snapshots__"])
     ]
 )

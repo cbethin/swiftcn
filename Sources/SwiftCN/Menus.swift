@@ -1,0 +1,241 @@
+import SwiftUI
+
+/// A styled SwiftUI action surface presented in an anchored SwiftUI popover.
+public struct CNDropdownMenu<Label: View, Content: View>: View {
+    @State private var presented = false
+    @FocusState private var triggerFocused: Bool
+    private let externalPresentation: Binding<Bool>?
+    private let classes: TWClasses
+    private let contentClasses: TWClasses
+    private let edge: Edge
+    private let label: Label
+    private let content: () -> Content
+    public init(_ classes: TWClasses = "", isPresented: Binding<Bool>? = nil,
+                contentClasses: TWClasses = "", arrowEdge: Edge = .top,
+                @ViewBuilder content: @escaping () -> Content, @ViewBuilder label: () -> Label) {
+        self.classes = classes; self.externalPresentation = isPresented
+        self.contentClasses = contentClasses; self.edge = arrowEdge
+        self.content = content; self.label = label()
+    }
+    public init(_ title: LocalizedStringKey, classes: TWClasses = "", isPresented: Binding<Bool>? = nil,
+                contentClasses: TWClasses = "", arrowEdge: Edge = .top,
+                @ViewBuilder content: @escaping () -> Content) where Label == Text {
+        self.init(classes, isPresented: isPresented, contentClasses: contentClasses,
+                  arrowEdge: arrowEdge, content: content) { Text(title) }
+    }
+    private var presentation: Binding<Bool> { externalPresentation ?? $presented }
+    public var body: some View {
+        Button(action: { presentation.wrappedValue.toggle() }) { label }
+            .focusable().focusEffectDisabled().focused($triggerFocused)
+            .buttonStyle(.tw(cn("button-outline", classes), state: .init(isFocused: triggerFocused)))
+            .accessibilityValue(presentation.wrappedValue ? Text("Expanded") : Text("Collapsed"))
+            .onKeyPress(keys: [.return, .space, .downArrow]) { key in
+                if key.key == .downArrow { presentation.wrappedValue = true }
+                else { presentation.wrappedValue.toggle() }
+                return .handled
+            }
+            .cnPopover(isPresented: presentation, arrowEdge: edge) {
+                CNDropdownMenuContent(contentClasses, isPresented: presentation,
+                                      onDismiss: { presentation.wrappedValue = false }, content: content)
+            }
+            .onChange(of: presentation.wrappedValue) { _, value in if !value { triggerFocused = true } }
+    }
+}
+
+/// Also usable as an inline surface for previews or application-owned presentation.
+public struct CNDropdownMenuContent<Content: View>: View {
+    @FocusState private var focusedID: UUID?
+    @Namespace private var focusScope
+    @Binding private var isPresented: Bool
+    @State private var itemIDs: [UUID] = []
+    private let classes: TWClasses
+    private let onDismiss: () -> Void
+    private let autofocus: Bool
+    private let content: Content
+    public init(_ classes: TWClasses = "", autofocus: Bool = true, isPresented: Binding<Bool>? = nil,
+                onDismiss: @escaping () -> Void = {}, @ViewBuilder content: () -> Content) {
+        _isPresented = isPresented ?? .constant(true)
+        self.classes = classes; self.autofocus = autofocus; self.onDismiss = onDismiss; self.content = content()
+    }
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 2) { content }
+            .tw(cn("dropdown-content", classes))
+            .environment(\.cnDropdownMenuContext, .init(focusedID: $focusedID, dismiss: onDismiss, navigate: navigate))
+            .onPreferenceChange(CNMenuItemIDs.self) { ids in
+                itemIDs = ids
+                if autofocus && !ids.contains(where: { $0 == focusedID }) { focusedID = ids.first }
+            }
+            .defaultFocus($focusedID, autofocus ? itemIDs.first : nil)
+            #if os(macOS)
+            .focusScope(focusScope)
+            #endif
+            .task(id: isPresented) {
+                guard autofocus else { return }
+                focusedID = nil
+                guard isPresented else { return }
+                // Let the focusable rows attach before entering this scope.
+                // Presentation changes cancel this request, including reversals.
+                await Task.yield()
+                guard !Task.isCancelled, isPresented else { return }
+                focusedID = itemIDs.first
+            }
+            .onKeyPress(keys: [.upArrow, .downArrow, .home, .end, .escape]) { key in
+                navigate(key.key)
+            }
+    }
+    private func navigate(_ key: KeyEquivalent) -> KeyPress.Result {
+        switch key {
+        case .escape: onDismiss()
+        case .home: focusedID = itemIDs.first
+        case .end: focusedID = itemIDs.last
+        case .upArrow: focusedID = CNMenuNavigation.next(itemIDs, current: focusedID, step: -1)
+        case .downArrow: focusedID = CNMenuNavigation.next(itemIDs, current: focusedID, step: 1)
+        default: return .ignored
+        }
+        return .handled
+    }
+}
+
+public struct CNDropdownMenuItem<Label: View>: View {
+    @Environment(\.cnDropdownMenuContext) private var context
+    @Environment(\.isEnabled) private var isEnabled
+    @FocusState private var localFocus: UUID?
+    @State private var id = UUID()
+    private let role: ButtonRole?
+    private let dismissOnSelect: Bool
+    private let classes: TWClasses
+    private let action: () -> Void
+    private let label: Label
+    public init(role: ButtonRole? = nil, dismissOnSelect: Bool = true, classes: TWClasses = "",
+                action: @escaping () -> Void, @ViewBuilder label: () -> Label) {
+        self.role = role; self.dismissOnSelect = dismissOnSelect; self.classes = classes
+        self.action = action; self.label = label()
+    }
+    public init(_ title: LocalizedStringKey, role: ButtonRole? = nil, dismissOnSelect: Bool = true,
+                classes: TWClasses = "", action: @escaping () -> Void) where Label == Text {
+        self.init(role: role, dismissOnSelect: dismissOnSelect, classes: classes, action: action) { Text(title) }
+    }
+    private var focus: FocusState<UUID?>.Binding { context.focusedID ?? $localFocus }
+    private var focused: Bool { focus.wrappedValue == id }
+    private var minimumHeight: TWClasses {
+        #if os(iOS)
+        "min-h-[44]"
+        #else
+        "min-h-[32]"
+        #endif
+    }
+    private func activate() {
+        guard isEnabled else { return }
+        if dismissOnSelect { context.dismiss() }
+        action()
+    }
+    public var body: some View {
+        Button(role: role, action: activate) {
+            HStack(spacing: 8) { label }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+        }
+        .focusable().focusEffectDisabled().focused(focus, equals: id)
+        .buttonStyle(.tw(cn("dropdown-item", minimumHeight, role == .destructive ? "text-destructive" : "", classes),
+                          state: .init(isFocused: focused)))
+        .preference(key: CNMenuItemIDs.self, value: isEnabled ? [id] : [])
+        .onHover { hovering in
+            guard hovering, isEnabled, !focused else { return }
+            // Pointer focus must move with the highlight, without inheriting
+            // the popup's entry animation or cross-fading two active rows.
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { focus.wrappedValue = id }
+        }
+        .onKeyPress(keys: [.return, .space]) { _ in activate(); return .handled }
+        .onKeyPress(keys: [.upArrow, .downArrow, .home, .end, .escape]) { context.navigate($0.key) }
+    }
+}
+public struct CNDropdownMenuLink<Label: View>: View {
+    @Environment(\.openURL) private var openURL
+    private let destination: URL
+    private let classes: TWClasses
+    private let label: Label
+    public init(destination: URL, classes: TWClasses = "", @ViewBuilder label: () -> Label) {
+        self.destination = destination; self.classes = classes; self.label = label()
+    }
+    public init(_ title: LocalizedStringKey, destination: URL, classes: TWClasses = "") where Label == Text {
+        self.init(destination: destination, classes: classes) { Text(title) }
+    }
+    public var body: some View {
+        CNDropdownMenuItem(classes: classes, action: { openURL(destination) }) { label }
+            .accessibilityAddTraits(.isLink)
+    }
+}
+public struct CNDropdownMenuLabel<Content: View>: View {
+    private let classes: TWClasses
+    private let content: Content
+    public init(_ classes: TWClasses = "", @ViewBuilder content: () -> Content) { self.classes = classes; self.content = content() }
+    public init(_ title: LocalizedStringKey, classes: TWClasses = "") where Content == Text {
+        self.init(classes) { Text(title) }
+    }
+    public var body: some View { content.tw(cn("dropdown-label", classes)).accessibilityAddTraits(.isHeader) }
+}
+public struct CNDropdownMenuSeparator: View {
+    private let classes: TWClasses
+    public init(_ classes: TWClasses = "") { self.classes = classes }
+    public var body: some View { Color.clear.tw(cn("h-[1] w-full bg-border", classes)).tw("py-1").accessibilityHidden(true) }
+}
+public struct CNDropdownMenuShortcut: View {
+    private let text: String
+    public init(_ text: String) { self.text = text }
+    public var body: some View { Text(text).tw("text-xs text-mutedForeground").accessibilityHidden(true) }
+}
+public struct CNDropdownMenuCheckboxItem<Label: View>: View {
+    @Binding private var isOn: Bool
+    private let classes: TWClasses
+    private let label: Label
+    public init(isOn: Binding<Bool>, classes: TWClasses = "", @ViewBuilder label: () -> Label) {
+        _isOn = isOn; self.classes = classes; self.label = label()
+    }
+    public var body: some View {
+        CNDropdownMenuItem(dismissOnSelect: false, classes: classes, action: { isOn.toggle() }) {
+            Image(systemName: "checkmark").tw("w-4 text-xs").opacity(isOn ? 1 : 0).accessibilityHidden(true)
+            label
+        }.accessibilityValue(isOn ? Text("On") : Text("Off"))
+            .accessibilityAddTraits(isOn ? [.isSelected] : [])
+    }
+}
+private struct CNMenuItemIDs: PreferenceKey {
+    static let defaultValue: [UUID] = []
+    static func reduce(value: inout [UUID], nextValue: () -> [UUID]) { value += nextValue() }
+}
+// Pure ordering logic also covers disabled-item removal and focus loss.
+enum CNMenuNavigation {
+    static func next<ID: Equatable>(_ ids: [ID], current: ID?, step: Int) -> ID? {
+        guard !ids.isEmpty else { return nil }
+        guard let current, let index = ids.firstIndex(of: current) else { return step < 0 ? ids.last : ids.first }
+        return ids[(index + (step < 0 ? -1 : 1) + ids.count) % ids.count]
+    }
+}
+
+/// Compose native links, navigation links, and submenu controls without owning the application's navigation path.
+public struct CNNavigationMenu<Content: View>: View {
+    private let classes: TWClasses
+    private let content: Content
+    public init(_ classes: TWClasses = "", @ViewBuilder content: () -> Content) { self.classes = classes; self.content = content() }
+    public var body: some View {
+        ScrollView(.horizontal) { HStack(spacing: 12) { content } }.tw(cn("menu", classes))
+    }
+}
+/// In-window menu strip. For application menu-bar commands, use SwiftUI Scene.commands instead.
+public struct CNMenubar<Content: View>: View {
+    private let classes: TWClasses
+    private let content: Content
+    public init(_ classes: TWClasses = "", @ViewBuilder content: () -> Content) { self.classes = classes; self.content = content() }
+    public var body: some View { HStack(spacing: 8) { content }.tw(cn("menu p-1 bg-surface border rounded-md", classes)) }
+}
+
+/// Attach native contextual actions to any content, including rows and images.
+public struct CNContextMenu<Content: View, MenuItems: View>: View {
+    private let classes: TWClasses
+    private let content: Content
+    private let menuItems: () -> MenuItems
+    public init(_ classes: TWClasses = "", @ViewBuilder menuItems: @escaping () -> MenuItems, @ViewBuilder content: () -> Content) {
+        self.classes = classes; self.menuItems = menuItems; self.content = content()
+    }
+    public var body: some View { content.tw(classes).contextMenu(menuItems: menuItems) }
+}

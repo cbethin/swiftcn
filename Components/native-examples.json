@@ -1,0 +1,38 @@
+[
+  {
+    "slug": "styles",
+    "title": "Native control styles",
+    "example": "NativeStylesExample.swift",
+    "notes": "Use native Button, TextField, Toggle, and Label with our style adapters. Formatting, enum-based focus, roles, keyboard shortcuts, and submission remain SwiftUI APIs. Pass explicit focus state to the style for focus appearance. CNFieldControl decorates native controls that do not have a matching style protocol. Convenience components share the same recipes and styling engine. Change CNField.axis to move the label above or beside the same control group. AnyLayout preserves the children; .tw(\"feedback-motion\", value: horizontal) supplies motion. Group the editor and supporting text so they remain together in both orientations."
+  },
+  {
+    "slug": "drawer",
+    "title": "Native drawer content",
+    "example": "NativeDrawerExample.swift",
+    "notes": "CNDrawerContent applies the drawer recipe to a vertical stack. It adds no scrolling, fixed size, or presentation host. Use it inside your own sheet to control detents, drag indicators, interactive dismissal, appearance, and callbacks. Keep the selected detent in the supported set. Detents follow platform behavior; macOS sheets use native window sizing. CNDrawer supplies scrolling, appearance, and nested hosts, with typed detents, selection, and onDismiss arguments. A caller-owned sheet also owns nested hosts and dismissal scope. Use the sheet binding or a native dismiss action to close it; clear cnPresentationDismiss if you reuse CNDialogClose inside a native sheet nested in a custom dialog."
+  },
+  {
+    "slug": "navigation",
+    "title": "Native navigation",
+    "example": "NativeNavigationExample.swift",
+    "notes": "Use NavigationSplitView, List, and NavigationLink directly for app navigation. The sidebar-list and sidebar-item-label recipes supply appearance. SwiftUI owns column visibility, selected-row appearance, keyboard navigation, and compact navigation. Label parts preserve the native link; avoid putting action buttons inside a navigation link. Keep editor state in the caller. CNSidebar remains the separate icon-rail and offcanvas layout. The gallery opens this example as a complete navigation root. Set a flexible navigationSplitViewColumnWidth(min:ideal:max:) on each column to choose a useful resize range. The minimum detail width protects the editor. SwiftUI still controls compact presentation and sidebar visibility."
+  },
+  {
+    "slug": "split",
+    "title": "Native split views",
+    "example": "NativeSplitExample.swift",
+    "notes": "Use HSplitView or VSplitView on macOS and apply .tw to their panes. SwiftUI owns the dividers; native frames or sizing classes define minimum pane sizes. Native split views do not expose a SwiftUI fraction binding. CNResizable supplies that explicit binding and the mobile touch handle. Keep state outside the panes so resizing preserves native editors and controls. Give each desktop pane a flexible maximum width with w-full as well as a minimum width. A minimum-only frame can pin a pane to its intrinsic width. Use native frame alignment to keep the pane content leading-aligned while it grows."
+  },
+  {
+    "slug": "arrangement",
+    "title": "Native arrangements",
+    "example": "NativeArrangementExample.swift",
+    "notes": "Use ArrangementView on iOS 27.1 or macOS 27.1 for two related panes. SwiftUI chooses their placement around active divisions. Keep navigation outside the arrangement. Put each pane's scrolling content inside the arrangement. Keep shared state in the screen. Apply .tw to the native content. The example uses AnyLayout on older systems and opens as a complete screen in the gallery. Compile the new API with Xcode 27.1 or later. The package keeps its iOS 17 and macOS 14 deployment targets."
+  },
+  {
+    "slug": "models",
+    "title": "Observable models and custom content",
+    "example": "NativeModelExample.swift",
+    "notes": "Own an @Observable model with @State. Use @Bindable in a child form to pass typed bindings to native controls and swiftcn components. The model controls validation and saving.\n\nCNCommand accepts a query binding and generic itemContent and empty builders. Keep each item builder as a native button label; put additional actions outside that label.\n\nCNToastHost.toastContent changes a card body while the host retains stacking, dismissal, and deadlines. context.action creates a native button that pauses the deadline during keyboard or accessibility focus. Custom controls can use context.focus and context.accessibilityFocus with a stable UUID. context.dismiss removes only the current toast value. Keep plain @State for local component values."
+  }
+]

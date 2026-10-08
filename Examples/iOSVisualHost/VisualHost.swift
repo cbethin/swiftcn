@@ -8,6 +8,10 @@ struct SwiftCNVisualHost: App {
     private var dark: Bool { arguments.contains("--dark") }
     private var large: Bool { arguments.contains("--large-text") }
     private var rulesScene: Bool { arguments.contains("--rules") }
+    private var component: CNComponentGallery? {
+        guard let index = arguments.firstIndex(of: "--component"), arguments.indices.contains(index + 1) else { return nil }
+        return CNComponentGallery(rawValue: arguments[index + 1])
+    }
     private var captureID: String {
         guard let index = arguments.firstIndex(of: "--capture-id"), arguments.indices.contains(index + 1) else { return "manual" }
         return arguments[index + 1]
@@ -15,10 +19,25 @@ struct SwiftCNVisualHost: App {
 
     var body: some Scene {
         WindowGroup {
-            IOSFixture(rulesScene: rulesScene)
+            Group {
+                if let component {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text(component.title).tw("text-xl font-semibold")
+                            component.previewExample
+                        }.tw("p-5 w-full")
+                    }.tw("bg-background")
+                } else if arguments.contains("--arrangement") {
+                    NativeArrangementExample()
+                } else { IOSFixture(rulesScene: rulesScene) }
+            }
                 .preferredColorScheme(dark ? .dark : .light)
                 .environment(\.dynamicTypeSize, large ? .accessibility3 : .large)
+                .environment(\.layoutDirection, arguments.contains("--rtl") ? .rightToLeft : .leftToRight)
                 .environment(\.locale, Locale(identifier: "en_US_POSIX"))
+                .environment(\.calendar, Calendar(identifier: .gregorian))
+                .environment(\.timeZone, TimeZone(secondsFromGMT: 0)!)
+                .cnLoadingPhase(0.35)
                 .transaction { $0.animation = nil }
                 .task {
                     // Signal only after the native controls settle. The capture script polls this file.
@@ -27,6 +46,18 @@ struct SwiftCNVisualHost: App {
                     guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first,
                           let window = scene.windows.first(where: \.isKeyWindow),
                           let view = window.rootViewController?.view else { return }
+                    if component == .command {
+                        // Static references exclude caret blinking and keyboard inset timing.
+                        // The component still focuses normally in the interactive gallery.
+                        window.endEditing(true)
+                        try? await Task.sleep(for: .milliseconds(500))
+                        view.layoutIfNeeded()
+                    }
+                    if component != nil {
+                        stopIndicators(view)
+                        view.layoutIfNeeded()
+                        CATransaction.flush()
+                    }
                     let format = UIGraphicsImageRendererFormat()
                     format.scale = view.traitCollection.displayScale
                     format.preferredRange = .standard
@@ -35,11 +66,48 @@ struct SwiftCNVisualHost: App {
                     }
                     do {
                         try image.write(to: directory.appendingPathComponent("visual-snapshot.png"))
+                        let metrics: [String: Any] = [
+                            "width": view.bounds.width, "height": view.bounds.height,
+                            "scale": view.traitCollection.displayScale,
+                            "horizontalSizeClass": view.traitCollection.horizontalSizeClass.rawValue,
+                            "verticalSizeClass": view.traitCollection.verticalSizeClass.rawValue,
+                            "safeArea": ["top": view.safeAreaInsets.top, "left": view.safeAreaInsets.left,
+                                         "bottom": view.safeAreaInsets.bottom, "right": view.safeAreaInsets.right]
+                        ]
+                        try JSONSerialization.data(withJSONObject: metrics, options: [.sortedKeys])
+                            .write(to: directory.appendingPathComponent("visual-metrics.json"), options: .atomic)
                         try Data(captureID.utf8).write(to: directory.appendingPathComponent("visual-ready"), options: .atomic)
                     } catch { print("Visual capture failed: \(error)") }
                 }
         }
     }
+}
+
+@MainActor private func stopIndicators(_ view: UIView) {
+    if let image = view as? UIImageView,
+       let first = image.animationImages?.first ?? image.image?.images?.first {
+        // SwiftUI's circular progress view uses native animated image frames.
+        image.stopAnimating()
+        image.animationImages = nil
+        image.highlightedAnimationImages = nil
+        image.image = first
+        image.layer.removeAllAnimations()
+    }
+    if let indicator = view as? UIActivityIndicatorView {
+        indicator.hidesWhenStopped = false
+        indicator.stopAnimating()
+        freezeIndicatorLayers(indicator.layer)
+    }
+    for child in view.subviews { stopIndicators(child) }
+}
+
+@MainActor private func freezeIndicatorLayers(_ layer: CALayer) {
+    // UIKit can leave a presentation frame behind after stopAnimating().
+    // Read the native model layers at a fixed clock for static comparisons.
+    layer.removeAllAnimations()
+    layer.speed = 0
+    layer.timeOffset = 0
+    for child in layer.sublayers ?? [] { freezeIndicatorLayers(child) }
 }
 
 private struct IOSFixture: View {

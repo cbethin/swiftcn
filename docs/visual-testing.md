@@ -6,9 +6,9 @@ The library has no runtime dependency on SnapshotTesting.
 
 ## Coverage
 
-The macOS suite compares 34 reference images:
+The macOS suite compares 42 reference images:
 
-- Four scenes: buttons, native controls, utilities, and global rules.
+- Five scenes: buttons, native controls, utilities, global rules, and themed components.
 - Two themes: light and dark.
 - Two widths: 320 and 720 points.
 - Two text-size environments: large and accessibility3.
@@ -17,6 +17,7 @@ The macOS suite compares 34 reference images:
 Button scenes cover rest, hover, focus, press, and disabled appearances.
 The state previews use explicit state values for repeatable rendering.
 Native buttons also cover typed styles, string styles, and the disabled environment.
+The themed component scene covers imported cards, fields, validation, native controls, commands, and buttons with one custom palette.
 Global scenes cover custom tokens, named classes, local overrides, subtree overrides, and sibling isolation.
 Animation classes appear in native buttons, state previews, and custom global rules on both platforms.
 These images check their static appearances against the existing references.
@@ -52,7 +53,11 @@ The capture script waits for the host to signal readiness.
 The host captures its native view hierarchy and excludes system status icons and the Dynamic Island.
 The script deletes its own simulator after each run.
 
-Keyboard, touch, and VoiceOver behavior still require an application host.
+Native pointer, touch, and keyboard tests use the component gallery application host.
+See [interaction testing](interaction-testing.md) for local commands and CI coverage.
+VoiceOver and physical-device behavior still require separate checks.
+
+The component catalog adds 139 macOS and 141 iOS captures. These cover all 64 entries in both appearances and selected narrow or larger-text layouts.
 
 ## Local workflow
 
