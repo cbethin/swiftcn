@@ -28,9 +28,14 @@ runtime = next((item for item in runtime_list if item.get('isAvailable') and ite
 if runtime is None:
     raise SystemExit('Install the iOS 27.1 Duo runtime and select a Duo-capable Xcode with DEVELOPER_DIR.' if args.duo else f'Install the iOS {sdk_version} runtime.')
 types = json.loads(run('xcrun', 'simctl', 'list', 'devicetypes', '-j', capture=True))['devicetypes']
-device_type = 'com.apple.CoreSimulator.SimDeviceType.' + ('iPhone-Duo' if args.duo else 'iPad-Pro-11-inch-M4' if args.ipad else 'iPhone-16')
+device_type = 'com.apple.CoreSimulator.SimDeviceType.' + ('iPhone-Duo' if args.duo else 'iPhone-16')
+if args.ipad:
+    tablet = next((item for item in runtime.get('supportedDeviceTypes', []) if item['name'] == 'iPad Pro 11-inch (M4)'), None)
+    if tablet is None:
+        raise SystemExit(f'The iOS {runtime["version"]} runtime does not include an iPad Pro 11-inch (M4).')
+    device_type = tablet['identifier']
 if not any(item['identifier'] == device_type for item in types):
-    raise SystemExit('The selected Xcode does not include the iPhone Duo device type. Select a Duo-capable Xcode with DEVELOPER_DIR.')
+    raise SystemExit(f'The selected Xcode does not include {device_type}. Select a compatible Xcode with DEVELOPER_DIR.')
 name = 'swiftcn-showcase-duo' if args.duo else 'swiftcn-showcase-ipad' if args.ipad else 'swiftcn-showcase-iphone'
 devices = json.loads(run('xcrun', 'simctl', 'list', 'devices', 'available', '-j', capture=True))['devices']
 device = next((item for item in devices.get(runtime['identifier'], []) if item['name'] == name and item['deviceTypeIdentifier'] == device_type), None)
