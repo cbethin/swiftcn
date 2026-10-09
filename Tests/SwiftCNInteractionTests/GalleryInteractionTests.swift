@@ -135,7 +135,9 @@ final class GalleryInteractionTests: XCTestCase {
         let note = app.textFields["Write a note"]
         XCTAssertTrue(note.waitForExistence(timeout: 5))
         activate(note)
-        note.typeText("Glass 12345")
+        // Return ends the edit session. Without it, plain SwiftUI sheets on the iOS 27 simulator can drop the
+        // final synthesized keystroke from the binding when Done dismisses the sheet immediately.
+        note.typeText("Glass 12345\n")
         expectValue(note, "Glass 12345")
         activate(app.buttons["Done"])
         XCTAssertTrue(wait(for: NSPredicate(format: "exists == false"), on: note))
