@@ -759,6 +759,16 @@ python3 Scripts/run-ios-component-gallery.py
 
 The script creates a dedicated simulator. Open `swiftcn-component-gallery` in Xcode Device Hub or Simulator after launch.
 
+For complete app examples, run the [four-app showcase](Examples/Showcase/README.md):
+
+```bash
+python3 Scripts/run-showcase.py
+# Select Xcode 27.1 and install its iOS 27.1 runtime:
+python3 Scripts/run-showcase.py --duo --test
+```
+
+Daylight, Ledger, Fieldnotes, and Roam include native navigation, themed components, and local persistence.
+
 The [component documentation](https://cbethin.github.io/swiftcn/docs/component-library/) provides actual Swift source, runnable examples, platform notes, and a licensed source bundle. Imported and locally copied components can coexist. To own the engine too, add the full source bundle to your app target.
 
 Generate docs and downloads after editing component source:

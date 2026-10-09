@@ -11,3 +11,5 @@ website/.source/
 website/out/
 website/*.tsbuildinfo
 Examples/Components/SwiftCNInteractions.xcodeproj/
+
+Examples/Showcase/SwiftCNShowcase.xcodeproj/
