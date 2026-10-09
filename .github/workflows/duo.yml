@@ -48,6 +48,11 @@ jobs:
         run: |
           xcodebuild -downloadPlatform iOS -buildVersion 27.1 -architectureVariant arm64
           xcrun simctl list -j > artifacts/duo-sdk/simulators-with-duo.json
+      - name: Exercise showcase workflows on Duo
+        if: matrix.shard == 0
+        run: |
+          if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
+          python3 Scripts/run-showcase.py --duo --test --no-open
       - name: Capture the entire native catalog
         run: python3 Scripts/ios-visual-test.py capture local --components --duo --shard ${{ matrix.shard }}/4
       - uses: actions/upload-artifact@v7
@@ -57,3 +62,6 @@ jobs:
           path: |
             artifacts/duo-sdk/
             artifacts/duo-components/
+            artifacts/showcase/*.log
+            artifacts/showcase/*.json
+            artifacts/showcase/*.xcresult/

@@ -1,0 +1,47 @@
+name: SwiftCNShowcase
+options:
+  minimumXcodeGenVersion: 2.44.0
+  deploymentTarget:
+    iOS: "17.0"
+packages:
+  SwiftCN:
+    path: ../..
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    GENERATE_INFOPLIST_FILE: YES
+    CODE_SIGNING_ALLOWED: NO
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+targets:
+  SwiftCNShowcase:
+    type: application
+    platform: iOS
+    sources: [Sources, Resources]
+    dependencies:
+      - package: SwiftCN
+        product: SwiftCN
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.swiftcn.showcase
+        INFOPLIST_KEY_CFBundleDisplayName: SwiftCN
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+  ShowcaseUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: SwiftCNShowcase
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.swiftcn.showcase.tests
+schemes:
+  SwiftCNShowcase:
+    build:
+      targets:
+        SwiftCNShowcase: all
+    test:
+      targets: [ShowcaseUITests]
+      debugEnabled: false
