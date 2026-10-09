@@ -38,7 +38,7 @@ The wider layout selects an initial item when no item is selected.
 No device model checks, screen dimensions, or custom navigation router are required.
 
 Editors attach `sourceSheet` to the trigger button. `DemoRoot` installs `sheetSourceSpace` once.
-On iOS 27, the helper uses the trigger's window position and native `.presentationPlacement` to choose its side.
+With the iOS 27.1 SDK on iOS 27 or later, the helper uses the trigger's window position and native `.presentationPlacement` to choose its side.
 The active vertical fold defines the boundary. Otherwise, the window midpoint defines it.
 SwiftUI still owns sheet dragging, keyboard avoidance, dismissal, and compact layouts.
 Older systems use automatic native placement. `SourceSheet.swift` contains the helper.
@@ -62,6 +62,10 @@ Add `--test` to run native workflow tests before launch:
 ```sh
 DEVELOPER_DIR=/path/to/Xcode.app/Contents/Developer python3 Scripts/run-showcase.py --duo --test
 ```
+
+Use `--ipad --test` to check regular-width navigation. Use `--no-open` to run without opening a viewer.
+CI runs the workflows on iPhone, iPad, and Duo. The sheet-position test requires iOS 27 and two visible panes.
+The Duo CI simulator uses its default pose. Fold transitions also need a manual check in DeviceHub.
 
 Apple lists Xcode 27.1 as the supported Duo toolchain. Xcode 27.2 beta still directs Duo work to Xcode 27.1.
 See [Apple’s release notes](https://developer.apple.com/documentation/xcode-release-notes/xcode-27_2-release-notes).

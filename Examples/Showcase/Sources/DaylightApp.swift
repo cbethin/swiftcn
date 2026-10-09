@@ -65,7 +65,7 @@ struct DaylightApp: View {
                             SectionHeading(title: "Your next steps", detail: "\(store.data.tasks.filter { $0.project == name }.count) tasks")
                             ForEach(store.data.tasks.filter { $0.project == name }) { task in taskRow(task) }
                             CNButton("Add task", variant: .outline) { projectEditor = true }
-                                .sourceSheet(isPresented: $projectEditor) { TaskEditor(store: store) }
+                                .sourceSheet(isPresented: $projectEditor) { TaskEditor(store: store, project: name) }
                         }
                     } else { EmptyMessage(symbol: "square.stack.3d.up", title: "Choose a chapter", message: "Keep your personal plans and studio work in their own space.") }
                 }.navigationTitle(selectedProject ?? "Projects").navigationBarTitleDisplayMode(.inline)
@@ -115,6 +115,10 @@ private struct TaskEditor: View {
     @State private var title = ""
     @State private var project = "Personal"
     @State private var date = Date()
+    init(store: ShowcaseStore, project: String = "Personal") {
+        self.store = store
+        _project = State(initialValue: project)
+    }
     var body: some View {
         EditorSheet(title: "A new task", canSave: !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
             let name = title.trimmingCharacters(in: .whitespacesAndNewlines)

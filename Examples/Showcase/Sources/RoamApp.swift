@@ -31,7 +31,8 @@ struct RoamApp: View {
                     }.collectionRow().accessibilityIdentifier("trip-\(trip.id)")
                 }
                 if store.data.trips.isEmpty { EmptyMessage(symbol: "map", title: "Where next?", message: "Your next little adventure starts with a name.").collectionRow() }
-            }.collectionStyle().modifier(DemoToolbar(app: .roam, exit: exit))
+            }.collectionStyle().accessibilityIdentifier("journey-collection")
+                .modifier(DemoToolbar(app: .roam, exit: exit))
         } detail: {
             if let selected { TripDetail(store: store, id: selected) { self.selected = nil }.id(selected) }
             else { Page { EmptyMessage(symbol: "map", title: "Room for an adventure", message: "Choose a journey to plan your stops and pack the essentials.") } }

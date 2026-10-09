@@ -8,8 +8,11 @@ import subprocess
 
 REPO = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--duo', action='store_true', help='Use the actual iPhone Duo device and iOS 27.1 runtime')
-parser.add_argument('--test', action='store_true', help='Run the four native workflow tests before opening the app')
+family = parser.add_mutually_exclusive_group()
+family.add_argument('--duo', action='store_true', help='Use the actual iPhone Duo device and iOS 27.1 runtime')
+family.add_argument('--ipad', action='store_true', help='Use an iPad to exercise regular-width split views')
+parser.add_argument('--test', action='store_true', help='Run native workflows and applicable sheet-placement tests before opening the app')
+parser.add_argument('--no-open', action='store_true', help='Build and launch without opening a viewer, for CI')
 parser.add_argument('--viewer', type=Path, help='Open a specific DeviceHub.app when using a different viewer from the build toolchain')
 args = parser.parse_args()
 
@@ -25,10 +28,10 @@ runtime = next((item for item in runtime_list if item.get('isAvailable') and ite
 if runtime is None:
     raise SystemExit('Install the iOS 27.1 Duo runtime and select a Duo-capable Xcode with DEVELOPER_DIR.' if args.duo else f'Install the iOS {sdk_version} runtime.')
 types = json.loads(run('xcrun', 'simctl', 'list', 'devicetypes', '-j', capture=True))['devicetypes']
-device_type = 'com.apple.CoreSimulator.SimDeviceType.iPhone-Duo' if args.duo else 'com.apple.CoreSimulator.SimDeviceType.iPhone-16'
+device_type = 'com.apple.CoreSimulator.SimDeviceType.' + ('iPhone-Duo' if args.duo else 'iPad-Pro-11-inch-M4' if args.ipad else 'iPhone-16')
 if not any(item['identifier'] == device_type for item in types):
     raise SystemExit('The selected Xcode does not include the iPhone Duo device type. Select a Duo-capable Xcode with DEVELOPER_DIR.')
-name = 'swiftcn-showcase-duo' if args.duo else 'swiftcn-showcase-iphone'
+name = 'swiftcn-showcase-duo' if args.duo else 'swiftcn-showcase-ipad' if args.ipad else 'swiftcn-showcase-iphone'
 devices = json.loads(run('xcrun', 'simctl', 'list', 'devices', 'available', '-j', capture=True))['devices']
 device = next((item for item in devices.get(runtime['identifier'], []) if item['name'] == name and item['deviceTypeIdentifier'] == device_type), None)
 if device is None:
@@ -57,11 +60,12 @@ if args.test:
 app = artifacts / 'build' / 'Build' / 'Products' / 'Debug-iphonesimulator' / 'SwiftCNShowcase.app'
 run('xcrun', 'simctl', 'install', udid, str(app))
 run('xcrun', 'simctl', 'launch', '--terminate-running-process', udid, 'dev.swiftcn.showcase')
-developer = os.environ.get('DEVELOPER_DIR') or run('xcode-select', '-p', capture=True)
-simulator = args.viewer or next((path for path in [Path(developer).parent / 'Applications' / 'DeviceHub.app', Path(developer) / 'Applications' / 'Simulator.app'] if path.exists()), None)
-if simulator is None:
-    raise SystemExit('The app is running, but this Xcode has no Device Hub or Simulator application.')
-if not simulator.is_dir():
-    raise SystemExit(f'The app is running, but the viewer does not exist: {simulator}')
-run('open', '-a', str(simulator), '--args', '-CurrentDeviceUDID', udid)
+if not args.no_open:
+    developer = os.environ.get('DEVELOPER_DIR') or run('xcode-select', '-p', capture=True)
+    simulator = args.viewer or next((path for path in [Path(developer).parent / 'Applications' / 'DeviceHub.app', Path(developer) / 'Applications' / 'Simulator.app'] if path.exists()), None)
+    if simulator is None:
+        raise SystemExit('The app is running, but this Xcode has no Device Hub or Simulator application.')
+    if not simulator.is_dir():
+        raise SystemExit(f'The app is running, but the viewer does not exist: {simulator}')
+    run('open', '-a', str(simulator), '--args', '-CurrentDeviceUDID', udid)
 print(f'SwiftCN Showcase is running on {name} ({udid}). Your local app data is preserved.')

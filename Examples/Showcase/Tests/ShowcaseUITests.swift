@@ -25,11 +25,11 @@ final class ShowcaseUITests: XCTestCase {
         for character in text { field.typeText(String(character)) }
         XCTAssertEqual(field.value as? String, text, "The native editor must contain the full draft before Save", file: file, line: line)
     }
-    @MainActor private func tap(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+    @MainActor private func tap(_ element: XCUIElement, scrolling scrollView: XCUIElement? = nil, file: StaticString = #filePath, line: UInt = #line) {
         _ = element.waitForExistence(timeout: 2)
         for _ in 0..<6 {
             if element.exists && element.isHittable { break }
-            runningApp?.swipeUp()
+            if let scrollView { scrollView.swipeUp() } else { runningApp?.swipeUp() }
             _ = element.waitForExistence(timeout: 1)
         }
         XCTAssertTrue(element.exists && element.isHittable, file: file, line: line)
@@ -88,6 +88,17 @@ final class ShowcaseUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Flowers"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["$1,823.55"].exists)
     }
+    @MainActor func testProjectTaskKeepsItsProject() {
+        let app = launch()
+        tap(app.buttons["launch-daylight"])
+        tap(app.tabBars.buttons["Projects"])
+        tap(app.buttons.containing(.staticText, identifier: "Studio").firstMatch)
+        tap(app.buttons["Add task"])
+        XCTAssertTrue(app.segmentedControls.buttons["Studio"].isSelected)
+        enter("Studio draft", into: app.textFields["task-title"])
+        tap(app.buttons["save-editor"])
+        XCTAssertTrue(app.staticTexts["Studio draft"].waitForExistence(timeout: 5))
+    }
     @MainActor func testJournalCreationAndReading() {
         let app = launch()
         tap(app.buttons["launch-fieldnotes"])
@@ -96,8 +107,8 @@ final class ShowcaseUITests: XCTestCase {
         enter("A new morning", into: app.textFields["entry-title"])
         enter("The garden was quiet and full of light.", into: app.textViews["entry-body"])
         tap(app.buttons["save-editor"])
-        app.swipeUp()
-        tap(app.buttons.containing(.staticText, identifier: "A new morning").firstMatch)
+        let notebook = app.descendants(matching: .any)["notebook-collection"].firstMatch
+        tap(app.buttons.containing(.staticText, identifier: "A new morning").firstMatch, scrolling: notebook)
         XCTAssertTrue(app.staticTexts["The garden was quiet and full of light."].waitForExistence(timeout: 5))
         tap(app.buttons["Keep this"])
         XCTAssertTrue(app.buttons["Starred"].exists)
@@ -106,17 +117,18 @@ final class ShowcaseUITests: XCTestCase {
         let app = launch()
         tap(app.buttons["launch-roam"])
         capture(app, "Roam")
-        app.swipeUp()
-        tap(app.buttons["new-trip"])
+        let journeys = app.descendants(matching: .any)["journey-collection"].firstMatch
+        tap(app.buttons["new-trip"], scrolling: journeys)
         enter("A mountain weekend", into: app.textFields["trip-title"])
         tap(app.buttons["save-editor"])
-        app.swipeDown()
-        app.swipeDown()
-        tap(app.buttons.containing(.staticText, identifier: "A mountain weekend").firstMatch)
+        journeys.swipeDown()
+        journeys.swipeDown()
+        tap(app.buttons.containing(.staticText, identifier: "A mountain weekend").firstMatch, scrolling: journeys)
         tap(app.segmentedControls.buttons["Packing"])
         tap(app.descendants(matching: .any)["packing-Passport"].firstMatch)
         XCTAssertTrue(app.staticTexts["1/3 packed"].exists)
-        tap(app.navigationBars.buttons.element(boundBy: 0))
+        // Wide split views already expose the collection toolbar. Only compact navigation needs Back.
+        if !app.buttons["all-apps"].isHittable { tap(app.navigationBars.buttons.element(boundBy: 0)) }
         tap(app.buttons["all-apps"])
         XCTAssertTrue(app.buttons["launch-daylight"].waitForExistence(timeout: 5))
     }

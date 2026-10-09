@@ -44,7 +44,8 @@ struct FieldnotesApp: View {
                     }.collectionRow().accessibilityIdentifier("entry-\(entry.id)")
                 }
                 if entries.isEmpty { EmptyMessage(symbol: "book", title: "A fresh page", message: "Write something new, or try a different search.").collectionRow() }
-            }.collectionStyle().modifier(DemoToolbar(app: .fieldnotes, exit: exit))
+            }.collectionStyle().accessibilityIdentifier("notebook-collection")
+                .modifier(DemoToolbar(app: .fieldnotes, exit: exit))
         } detail: {
             if let selected {
                 JournalDetail(store: store, id: selected) { self.selected = nil }.id(selected)
