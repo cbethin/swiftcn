@@ -29,6 +29,8 @@ This repository contains the initial implementation. The API can change before a
 
 ## Install
 
+Build with Xcode 26 or later. Apps deploy to iOS 17 or macOS 14 and later.
+
 Add this repository in Xcode with **File → Add Package Dependencies**.
 Select the `main` branch and add the `SwiftCN` product.
 
@@ -197,7 +199,7 @@ Exact named classes take precedence over factories. A registered prefix override
 Factory output can contain named classes and state variants. Recursive output fails validation.
 Factories generate the styling properties that `TWStyle` supports.
 Use `TWGlobalRules.modifiers` to register actual SwiftUI modifiers as tags and bracket utilities.
-Compose them with `cn("card glass", selected ? "tilt-[8]" : nil)`.
+Compose them with `cn("card frosted", selected ? "tilt-[8]" : nil)`.
 See [native modifier plugins](website/content/docs/native-modifiers.mdx) for a complete example, inactive values, ordering, and animation.
 
 Register `phase: .content`, `.layout`, `.decoration`, or `.effects` to place a modifier around built-in styling.
@@ -278,6 +280,30 @@ Text("Brand").tw(.fg(.brand)).twTheme(theme)
 
 Register custom colors in the theme before using them.
 Unregistered colors fall back to SwiftUI's semantic primary foreground.
+
+## Adaptive surfaces and Liquid Glass
+
+State a surface's role. swiftcn picks the best native appearance for the running system and keeps availability checks inside the library.
+
+```swift
+Button("Continue") {}
+    .buttonStyle(.twNative("glass-prominent px-4"))
+
+TWSurfaceGroup(spacing: 12) {
+    HStack { tools }.tw("px-3 py-2 surface-floating glass-interactive")
+}
+
+ContentView()
+    .twAppearance(.automatic) // or .glass, .solid
+```
+
+`surface-floating` uses Liquid Glass on iOS 26 and macOS 26, a material with a themed edge on earlier systems, and a solid themed surface under Reduce Transparency.
+`surface-solid` always uses the theme, and `glass` asks for glass explicitly with the same fallbacks.
+Each surface resolves to one fill; `bg-*` never stacks under glass or a material.
+`.twNative` keeps a native `Button` and selects `.glass` or `.glassProminent` where available, `.bordered` or `.borderedProminent` otherwise.
+`twPresentationSurface()` keeps the system sheet where it uses glass.
+Accessibility and policy changes keep editors, bindings, and focus. Surface classes never install gestures.
+See [adaptive surfaces](website/content/docs/adaptive-surfaces.mdx).
 
 ## Composable components and controls
 

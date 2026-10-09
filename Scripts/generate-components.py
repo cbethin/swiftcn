@@ -29,7 +29,7 @@ for item in catalog:
         if platform == 'iOS':
             reference = repo / 'Tests/SwiftCNVisualTests/__Snapshots__/components-ios-18.5-iphone-16' / f'ios.component-{slug}-{appearance}-standard.png'
         else:
-            reference = repo / 'Tests/SwiftCNVisualTests/__Snapshots__/components-macos-15-xcode-16.4' / f'component.{slug.replace("-", "_")}-{appearance}-720-standard.png'
+            reference = repo / 'Tests/SwiftCNVisualTests/__Snapshots__/components-macos-15-xcode-26.3' / f'component.{slug.replace("-", "_")}-{appearance}-720-standard.png'
         put(f'website/public/native/components/{slug}-{appearance}.png', reference.read_bytes())
     put('website/public/registry/' + filename, consumer_source)
     put('website/public/registry/examples/' + item['example'], example)

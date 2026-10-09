@@ -299,13 +299,15 @@ public struct CNDrawerContent<Content: View>: View {
     private let classes: TWClasses
     private let spacing: CGFloat
     private let content: Content
+    @Environment(\.twSystemPresentation) private var systemPresentation
     public init(_ classes: TWClasses = "", spacing: CGFloat = 12, @ViewBuilder content: () -> Content) {
         self.classes = classes; self.spacing = spacing; self.content = content()
     }
     public var body: some View {
+        // Inside a system sheet, the recipe fill would cover the native sheet material.
         VStack(alignment: .leading, spacing: spacing) { content }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .tw(cn("drawer", classes))
+            .tw(.classes("drawer"), systemPresentation ? .bgColor(.clear) : TWStyle(), .classes(classes))
     }
 }
 
@@ -319,7 +321,6 @@ public struct CNDrawer<Label: View, Content: View>: View {
     private let onDismiss: (() -> Void)?
     private let label: Label
     private let content: () -> Content
-    @Environment(\.twTheme) private var theme
     @Environment(\.colorScheme) private var scheme
     public init(isPresented: Binding<Bool>, classes: TWClasses = "", contentClasses: TWClasses = "",
                 detents: Set<PresentationDetent> = [.medium, .large], selection: Binding<PresentationDetent>? = nil,
@@ -353,7 +354,7 @@ public struct CNDrawer<Label: View, Content: View>: View {
             .frame(minWidth: 300, idealWidth: 420, minHeight: 240, idealHeight: 320)
         #endif
         .presentationDragIndicator(.visible)
-        .presentationBackground(theme.color(.surface, scheme: scheme))
+        .twPresentationSurface()
         .preferredColorScheme(scheme)
     }
 }

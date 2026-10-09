@@ -108,6 +108,42 @@ final class GalleryInteractionTests: XCTestCase {
         #endif
     }
 
+    @MainActor func testAdaptiveSurfacesKeepTapsTransitionsAndSheetTyping() {
+        let app = launch("native:surfaces")
+        defer { capture(app); app.terminate() }
+        let share = app.buttons["Share"]
+        for _ in 0..<8 { activate(share) }
+        XCTAssertTrue(text(app, containing: "Shared 8 times").waitForExistence(timeout: 5))
+        // Interrupt the glass morph repeatedly; the group must settle on the final state.
+        let toggle = app.buttons.matching(NSPredicate(format: "label IN {'More tools', 'Fewer tools'}")).firstMatch
+        for _ in 0..<5 { activate(toggle) }
+        let reset = app.buttons["Reset tool"]
+        XCTAssertTrue(reset.waitForExistence(timeout: 5))
+        activate(app.buttons["Eraser"])
+        XCTAssertTrue(text(app, containing: "Tool: eraser").waitForExistence(timeout: 5))
+        activate(reset)
+        XCTAssertTrue(text(app, containing: "Tool: pencil").waitForExistence(timeout: 5))
+        for policy in ["Solid", "Glass", "Automatic"] {
+            #if os(macOS)
+            activate(app.radioButtons[policy])
+            #else
+            activate(app.buttons[policy])
+            #endif
+        }
+        XCTAssertTrue(reset.exists, "Changing the appearance policy must not change the controls.")
+        activate(app.buttons["Open note"])
+        let note = app.textFields["Write a note"]
+        XCTAssertTrue(note.waitForExistence(timeout: 5))
+        activate(note)
+        note.typeText("Glass 12345")
+        expectValue(note, "Glass 12345")
+        activate(app.buttons["Done"])
+        XCTAssertTrue(wait(for: NSPredicate(format: "exists == false"), on: note))
+        activate(app.buttons["Open note"])
+        XCTAssertTrue(note.waitForExistence(timeout: 5))
+        expectValue(note, "Glass 12345")
+    }
+
     @MainActor func testCustomResizeHandleTracksRealDraggingInBothDirections() {
         let app = launch("resizable")
         defer { capture(app); app.terminate() }
@@ -178,6 +214,11 @@ final class GalleryInteractionTests: XCTestCase {
         app.launchEnvironment["SWIFTCN_UI_EXAMPLE"] = example
         app.launch()
         return app
+    }
+
+    /// macOS exposes Text as a value; iOS exposes it as a label.
+    @MainActor private func text(_ app: XCUIApplication, containing value: String) -> XCUIElement {
+        app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", value, value)).firstMatch
     }
 
     @MainActor private func activate(_ element: XCUIElement) {

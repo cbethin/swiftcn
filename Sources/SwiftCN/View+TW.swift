@@ -31,6 +31,8 @@ struct TWModifier: ViewModifier {
     let style: TWStyle
     var state: TWState
     var isButton = false
+    /// Native control adapters draw their own surface; the label receives only content and layout.
+    var decorates = true
     var text: Text? = nil
     var image: Image? = nil
     var shape: AnyShape? = nil
@@ -52,8 +54,13 @@ struct TWModifier: ViewModifier {
         activeState.isDisabled = activeState.isDisabled || !isEnabled
         activeState.isHovered = activeState.isHovered || isHovered
         let combined = TWStyle(rules.view, isButton ? rules.button : TWStyle(), style)
-        let appearance = TWStyleResolver.resolve(combined, theme: theme, scheme: scheme, state: activeState,
+        var appearance = TWStyleResolver.resolve(combined, theme: theme, scheme: scheme, state: activeState,
             globalRules: rules, groupStates: groups.states, target: target)
+        if !decorates {
+            appearance.background = nil; appearance.border = nil; appearance.borderWidth = 0
+            appearance.shadow = nil; appearance.surface = nil
+            appearance.foreground = nil; appearance.inheritsForeground = true
+        }
         return source(content, appearance: appearance)
             .transaction { transaction in
                 if (animationScope == .content || animationScope == .all),
@@ -144,8 +151,20 @@ struct TWTextAttributesModifier: ViewModifier {
             .transformEnvironment(\.lineLimit) { inherited in
                 if let value = appearance.lineLimit { inherited = value }
             }
+            .modifier(TWForegroundModifier(appearance: appearance))
+    }
+}
+
+struct TWForegroundModifier: ViewModifier {
+    let appearance: TWResolvedStyle
+    func body(content: Content) -> some View {
+        if appearance.inheritsForeground {
+            // The native control adapter applies the label color outside this modifier.
+            content
+        } else {
             // Hierarchical primary is relative to the parent's style, including gradients.
-            .foregroundStyle(appearance.foreground.map(AnyShapeStyle.init) ?? AnyShapeStyle(HierarchicalShapeStyle.primary))
+            content.foregroundStyle(appearance.foreground.map(AnyShapeStyle.init) ?? AnyShapeStyle(HierarchicalShapeStyle.primary))
+        }
     }
 }
 
@@ -238,7 +257,14 @@ struct TWPhaseModifier: ViewModifier {
         case .layout:
             view.modifier(TWClassSharedElementModifier(appearance: appearance, groups: groups))
                 .modifier(TWLayoutModifier(appearance: appearance))
-        case .decoration: view.modifier(TWDecorationModifier(appearance: appearance, scheme: scheme))
+        case .decoration:
+            // A surface role is part of the view's design, so it selects a structure once.
+            // Policy, system, and accessibility changes then alter values inside that structure.
+            if let role = appearance.surface {
+                view.modifier(TWSurfaceModifier(appearance: appearance, role: role, theme: theme, scheme: scheme))
+            } else {
+                view.modifier(TWDecorationModifier(appearance: appearance, scheme: scheme))
+            }
         case .effects: view.modifier(TWEffectsModifier(appearance: appearance))
         }
     }

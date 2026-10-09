@@ -25,17 +25,18 @@ jobs:
   record:
     runs-on: macos-15
     env:
-      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
     steps:
       - uses: actions/checkout@v7
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+        run: sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
       - name: Native tests
         timeout-minutes: 15
         if: inputs.ios_component == ''
         run: |
-          swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests|ComponentRenderingTests|CompositionRenderingTests|CatalogNativeRenderingTests|ComposableContentTests|PopoverInteractionTests|MotionRenderingTests|TouchTargetInteractionTests|PresentationAndScrollingTests'
+          swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests|ComponentRenderingTests|CompositionRenderingTests|CatalogNativeRenderingTests|ComposableContentTests|PopoverInteractionTests|MotionRenderingTests|TouchTargetInteractionTests|PresentationAndScrollingTests|AdaptiveSurfaceRenderingTests'
           swift test --filter MotionRenderingTests
+          swift test --filter AdaptiveSurfaceRenderingTests
           swift test --filter CompositionRenderingTests
           swift test --filter ComponentRenderingTests
           swift test --filter CatalogNativeRenderingTests
@@ -96,9 +97,9 @@ jobs:
         with:
           name: swiftcn-baseline-candidates
           path: |
-            Tests/SwiftCNVisualTests/__Snapshots__/macos-15-xcode-16.4/
+            Tests/SwiftCNVisualTests/__Snapshots__/macos-15-xcode-26.3/
             Tests/SwiftCNVisualTests/__Snapshots__/ios-18.5-iphone-16/
-            Tests/SwiftCNVisualTests/__Snapshots__/components-macos-15-xcode-16.4/
+            Tests/SwiftCNVisualTests/__Snapshots__/components-macos-15-xcode-26.3/
             Tests/SwiftCNVisualTests/__Snapshots__/components-ios-18.5-iphone-16/
             artifacts/visual-diffs/
             artifacts/ios-components/*-launch.log

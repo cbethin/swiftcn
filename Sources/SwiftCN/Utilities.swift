@@ -50,6 +50,18 @@ extension TWStyle {
         return property(.minimumHeight(points))
     }
     public static var fullWidth: Self { property(.fullWidth) }
+    /// A floating surface. The appearance policy and the system choose glass, a material, or a solid fill.
+    public static var surfaceFloating: Self { property(.surface(.floating)) }
+    /// A themed solid surface on every system.
+    public static var surfaceSolid: Self { property(.surface(.solid)) }
+    /// Liquid Glass where available. Earlier systems use a material, or a solid fill under Reduce Transparency.
+    public static var glass: Self { property(.surface(.glass)) }
+    /// Glass with a prominent native button style. Views draw it as glass.
+    public static var glassProminent: Self { Self(property(.surface(.glass)), property(.prominent(true))) }
+    /// Apple's touch and pointer feedback for glass. It installs no gesture.
+    public static var glassInteractive: Self { property(.glassInteractive(true)) }
+    public static func glassTint(_ token: TWColor) -> Self { property(.glassTint(.token(token))) }
+    public static func glassTintColor(_ color: Color) -> Self { property(.glassTint(.color(color))) }
     public static func minW(_ points: CGFloat) -> Self {
         precondition(points.isFinite && points >= 0)
         return property(.minimumWidth(points))

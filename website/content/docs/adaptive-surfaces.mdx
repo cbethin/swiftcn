@@ -1,0 +1,117 @@
+---
+title: "Adaptive surfaces"
+description: "Liquid Glass where the system provides it, with native fallbacks chosen by role."
+---
+
+Describe what a surface is for. swiftcn chooses the best native appearance for the running system.
+Availability checks stay inside the library, so your views contain no `#available` branches.
+
+```swift title="AdaptiveSurfacesExample.swift"
+import SwiftUI
+import SwiftCN
+
+struct AdaptiveSurfacesExample: View {
+    @State private var expanded = false
+    @Namespace private var surfaces
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Button("Continue") {}
+                .buttonStyle(.twNative("glass-prominent px-4 font-semibold"))
+            TWSurfaceGroup(spacing: 12) {
+                HStack(spacing: 12) {
+                    Button("Tools") { withAnimation(.smooth) { expanded.toggle() } }
+                        .buttonStyle(.plain)
+                        .tw("px-4 py-2 surface-floating glass-interactive")
+                        .twSurfaceID("tools", in: surfaces)
+                    if expanded {
+                        Text("Draw").tw("px-4 py-2 surface-floating")
+                            .twSurfaceID("draw", in: surfaces)
+                    }
+                }
+            }
+            Text("Settings").tw("p-4 surface-solid rounded-lg")
+        }
+        .twAppearance(.automatic)
+    }
+}
+```
+
+## Surface roles
+
+| Class | Liquid Glass systems | Earlier systems | Reduce Transparency |
+| --- | --- | --- | --- |
+| `surface-floating` | Liquid Glass | Regular material with a themed edge | Themed solid surface |
+| `glass` | Liquid Glass | Regular material with a themed edge | Themed solid surface |
+| `surface-solid` | Themed solid surface | Themed solid surface | Themed solid surface |
+
+Liquid Glass systems are iOS 26 and macOS 26 and later.
+Native glass adapts to Reduce Transparency and Increase Contrast itself, so swiftcn keeps it.
+The material fallback becomes solid under Reduce Transparency. Increase Contrast strengthens the fallback edge.
+
+Every surface resolves to exactly one fill. `bg-*` selects the color of a solid surface; it never stacks under glass or a material.
+Explicit `border-*` classes replace the fallback edge, and `rounded-*` replaces the default capsule shape.
+Shadows apply to solid and material fills. Glass supplies its own depth.
+
+Variants work with the same conflict rules as other classes:
+
+- `glass-interactive` turns on Apple's touch and pointer feedback for the glass. It installs no gesture.
+- `glass-tint-primary`, or any theme color, tints the glass. `glass-tint-[\(color)]` accepts a native `Color`.
+- `glass-prominent` selects the prominent native button style. On other views it draws as `glass`.
+
+## Appearance policy
+
+The theme keeps colors, spacing, type, and radii. `.twAppearance` decides how floating surfaces look:
+
+| Policy | `surface-floating` | Native sheets with `twPresentationSurface()` |
+| --- | --- | --- |
+| `.automatic` (default) | Glass where the system draws glass | System sheet where the system draws glass; themed surface otherwise |
+| `.glass` | Glass whenever available | System sheet whenever glass is available |
+| `.solid` | Themed solid surface | Themed surface |
+
+Local classes override the policy: `glass` stays glass under `.solid`, and `surface-solid` stays solid under `.glass`.
+Global defaults from `TWGlobalRules.view` are overridden by local classes in the usual way.
+
+If your app sets `UIDesignRequiresCompatibility` in its Info.plist, `.automatic` follows it and uses the earlier appearance.
+Use `.twAppearance(.glass)` or the `glass` class to opt specific surfaces back in.
+
+## Native buttons
+
+`.buttonStyle(.twNative("glass"))` keeps the native `Button`.
+It selects `.glass` or `.glassProminent` on Liquid Glass systems, and `.bordered` or `.borderedProminent` otherwise.
+`surface-solid` always selects the bordered styles.
+Classes add spacing and typography to the label. Background, border, and shadow classes are ignored so nothing paints over the native control.
+Use `glass-tint-*` or the native `.tint` modifier for color.
+
+Accessibility settings never change the selected style type, so a button keeps its identity, focus, and pending activation.
+
+## Groups and morphing
+
+`TWSurfaceGroup` wraps `GlassEffectContainer`, so nearby glass shapes blend and morph together.
+`twSurfaceID(_:in:)` wraps `glassEffectID`. Apply it after the surface's `.tw` classes.
+Earlier systems show the content unchanged and ignore the identifier. Use native transitions for those.
+
+## Native sheets
+
+Apply `twPresentationSurface()` at the root of a sheet. It keeps the system sheet where the system draws glass, and applies the theme's `surface` color otherwise.
+Inside such a sheet, `twSystemPresentation` is true and `CNDrawerContent` omits its recipe fill. `CNDrawer` applies this for you.
+Native toolbars, navigation bars, and tab bars already use the system appearance; swiftcn does not restyle them.
+
+## Stable content
+
+Policy, system, and accessibility changes alter values inside a fixed view structure.
+Editors keep their text, bindings, and focus when Reduce Transparency, Increase Contrast, or the policy changes.
+
+Keep a view's surface role constant.
+Switching a view between a surface class and no surface class rebuilds its content.
+Switch between `surface-floating`, `glass`, and `surface-solid` instead, or change the policy.
+
+## Interaction stays explicit
+
+Surface classes describe appearance only.
+`.tw` never installs gestures, and Automatic never changes a component's interaction model between system versions.
+Custom drag, sheet-versus-swipe arbitration, scroll handoff, and keyboard clearance stay in component interaction code.
+
+## Toolchain
+
+Build with Xcode 26 or later. The package keeps its iOS 17 and macOS 14 deployment targets and checks availability at run time.

@@ -2,12 +2,13 @@ import SwiftUI
 import SwiftCN
 
 enum CNNativeComposition: String, CaseIterable, Identifiable {
-    case styles, drawer, navigation, split, arrangement, models
+    case styles, drawer, surfaces, navigation, split, arrangement, models
     var id: Self { self }
     var title: String {
         switch self {
         case .styles: "Native control styles"
         case .drawer: "Native drawer content"
+        case .surfaces: "Adaptive surfaces and Liquid Glass"
         case .navigation: "Native navigation"
         case .split: "Native split views"
         case .arrangement: "Native arrangements"
@@ -18,6 +19,7 @@ enum CNNativeComposition: String, CaseIterable, Identifiable {
         switch self {
         case .styles: AnyView(NativeStylesExample())
         case .drawer: AnyView(NativeDrawerExample())
+        case .surfaces: AnyView(NativeSurfacesExample())
         case .navigation: AnyView(NativeNavigationLauncher())
         case .split: AnyView(NativeSplitExample())
         case .arrangement: AnyView(NativeArrangementLauncher())

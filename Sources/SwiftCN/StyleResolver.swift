@@ -8,9 +8,16 @@ struct TWResolvedStyle {
     var foreground: Color?
     var background: Color?
     var radius: CGFloat = 0
+    var hasRadius = false
     var border: Color?
     var borderWidth: CGFloat = 0
     var shadow: TWShadowValue?
+    var surface: TWSurfaceRole?
+    var glassInteractive = false
+    var glassTint: Color?
+    var prominent = false
+    /// Native control labels receive their color from the control adapter.
+    var inheritsForeground = false
     var opacity: Double = 1
     var tracking: CGFloat?
     var lineSpacing: CGFloat?
@@ -92,6 +99,7 @@ enum TWStyleResolver {
             case .foreground(let source): result.foreground = color(source, theme: theme, scheme: scheme)
             case .background(let source): result.background = color(source, theme: theme, scheme: scheme)
             case .radius(let source):
+                result.hasRadius = true
                 switch source {
                 case .token(let token): result.radius = theme.radius(token)
                 case .points(let points): result.radius = points
@@ -102,6 +110,10 @@ enum TWStyleResolver {
             case .borderColor(let source): result.border = color(source, theme: theme, scheme: scheme)
             case .borderWidth(let width): result.borderWidth = width
             case .shadow(let token): result.shadow = theme.shadow(token)
+            case .surface(let role): result.surface = role
+            case .glassInteractive(let value): result.glassInteractive = value
+            case .glassTint(let source): result.glassTint = color(source, theme: theme, scheme: scheme)
+            case .prominent(let value): result.prominent = value
             case .opacity(let opacity): result.opacity = opacity
             case .tracking(let value): result.tracking = value
             case .lineSpacing(let value): result.lineSpacing = value

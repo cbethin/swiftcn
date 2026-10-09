@@ -40,7 +40,7 @@ if [[ -z "$destination" ]]; then
 import json, os, subprocess
 def run(*args):
     return subprocess.check_output(['xcrun', *args], text=True).strip()
-version = run('--sdk', 'iphonesimulator', '--show-sdk-version')
+version = os.environ.get('SWIFTCN_UI_IOS_VERSION') or run('--sdk', 'iphonesimulator', '--show-sdk-version')
 runtimes = json.loads(run('simctl', 'list', 'runtimes', '-j'))['runtimes']
 runtime = next((r for r in runtimes if r.get('isAvailable') and r['name'].startswith('iOS ') and r['version'] == version), None)
 if runtime is None:
