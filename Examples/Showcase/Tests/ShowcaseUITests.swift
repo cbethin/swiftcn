@@ -99,7 +99,8 @@ final class ShowcaseUITests: XCTestCase {
         // iPad uses the tab's SF Symbol as its identifier. Match its visible label explicitly.
         let projects = app.buttons.matching(NSPredicate(format: "label == %@", "Projects")).firstMatch
         tap(projects)
-        tap(app.buttons.containing(.staticText, identifier: "Studio").firstMatch)
+        let projectsList = app.collectionViews["project-collection"]
+        tap(projectsList.staticTexts["Studio"], scrolling: projectsList)
         tap(app.buttons["Add task"])
         XCTAssertTrue(app.segmentedControls.buttons["Studio"].isSelected)
         enter("Studio draft", into: app.textFields["task-title"])
@@ -138,7 +139,11 @@ final class ShowcaseUITests: XCTestCase {
         tap(app.descendants(matching: .any)["packing-Passport"].firstMatch)
         XCTAssertTrue(app.staticTexts["1/3 packed"].exists)
         // Wide split views already expose the collection toolbar. Only compact navigation needs Back.
-        if !app.buttons["all-apps"].isHittable { tap(app.navigationBars.buttons.element(boundBy: 0)) }
+        if !app.buttons["all-apps"].isHittable {
+            let back = app.buttons["BackButton"]
+            if back.exists { tap(back) }
+            else { tap(app.navigationBars.buttons.matching(NSPredicate(format: "label == %@ OR label == %@", "Roam", "Back")).firstMatch) }
+        }
         tap(app.buttons["all-apps"])
         XCTAssertTrue(app.buttons["launch-daylight"].waitForExistence(timeout: 5))
     }

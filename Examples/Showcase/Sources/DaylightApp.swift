@@ -56,7 +56,8 @@ struct DaylightApp: View {
                             }.tw("p-5 w-full bg-surface rounded-[24] border")
                         }.collectionRow()
                     }
-                }.collectionStyle().modifier(DemoToolbar(app: .daylight, exit: exit))
+                }.collectionStyle().accessibilityIdentifier("project-collection")
+                    .modifier(DemoToolbar(app: .daylight, exit: exit))
             } detail: {
                 Page {
                     if let name = selectedProject {
