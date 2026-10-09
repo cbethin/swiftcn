@@ -36,7 +36,7 @@ final class ShowcaseUITests: XCTestCase {
             (scrollView ?? runningApp?.scrollViews.firstMatch)?.swipeUp()
             _ = element.waitForExistence(timeout: 1)
         }
-        XCTAssertTrue(element.exists && element.isHittable, file: file, line: line)
+        XCTAssertTrue(element.exists && element.isHittable, runningApp?.debugDescription ?? "Missing interaction target", file: file, line: line)
         element.tap()
     }
     // Run this test on Duo in its book pose. It checks both directions, not a fixed sheet position.
@@ -96,9 +96,9 @@ final class ShowcaseUITests: XCTestCase {
     @MainActor func testProjectTaskKeepsItsProject() {
         let app = launch()
         tap(app.buttons["launch-daylight"])
-        // iPad's floating tab bar exposes its label separately from the tab button.
-        let projects = app.buttons["Projects"]
-        tap(projects.isHittable ? projects : app.staticTexts["Projects"].firstMatch)
+        // iPad uses the tab's SF Symbol as its identifier. Match its visible label explicitly.
+        let projects = app.buttons.matching(NSPredicate(format: "label == %@", "Projects")).firstMatch
+        tap(projects)
         tap(app.buttons.containing(.staticText, identifier: "Studio").firstMatch)
         tap(app.buttons["Add task"])
         XCTAssertTrue(app.segmentedControls.buttons["Studio"].isSelected)
