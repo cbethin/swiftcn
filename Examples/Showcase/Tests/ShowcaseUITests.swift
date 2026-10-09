@@ -96,7 +96,9 @@ final class ShowcaseUITests: XCTestCase {
     @MainActor func testProjectTaskKeepsItsProject() {
         let app = launch()
         tap(app.buttons["launch-daylight"])
-        tap(app.buttons["Projects"])
+        // iPad's floating tab bar exposes its label separately from the tab button.
+        let projects = app.buttons["Projects"]
+        tap(projects.isHittable ? projects : app.staticTexts["Projects"].firstMatch)
         tap(app.buttons.containing(.staticText, identifier: "Studio").firstMatch)
         tap(app.buttons["Add task"])
         XCTAssertTrue(app.segmentedControls.buttons["Studio"].isSelected)
@@ -114,7 +116,9 @@ final class ShowcaseUITests: XCTestCase {
         XCTAssertEqual(app.textFields["entry-title"].value as? String, "A new morning", "The title draft must survive keyboard changes")
         tap(app.buttons["save-editor"])
         let notebook = app.collectionViews["notebook-collection"]
-        tap(app.buttons.containing(.staticText, identifier: "A new morning").firstMatch, scrolling: notebook)
+        // Sidebar cells can include an offscreen native swipe-action area in their button frame.
+        // The visible title remains a valid target for the same NavigationLink.
+        tap(notebook.staticTexts["A new morning"], scrolling: notebook)
         XCTAssertTrue(app.staticTexts["The garden was quiet and full of light."].waitForExistence(timeout: 5))
         tap(app.buttons["Keep this"])
         XCTAssertTrue(app.buttons["Starred"].exists)
