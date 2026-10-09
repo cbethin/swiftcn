@@ -64,7 +64,7 @@ DEVELOPER_DIR=/path/to/Xcode.app/Contents/Developer python3 Scripts/run-showcase
 ```
 
 Use `--ipad --test` to check regular-width navigation. Use `--no-open` to run without opening a viewer.
-CI runs the workflows on iPhone, iPad, and Duo. The sheet-position test requires iOS 27 and two visible panes.
+CI runs the workflows on iPhone, landscape iPad, and Duo. The sheet-position test requires iOS 27 and two visible panes.
 The Duo CI simulator uses its default pose. Fold transitions also need a manual check in DeviceHub.
 
 Apple lists Xcode 27.1 as the supported Duo toolchain. Xcode 27.2 beta still directs Duo work to Xcode 27.1.

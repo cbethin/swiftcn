@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftCN
 
 private struct SheetSourceSpace: Equatable {
-    var bounds: CGRect = .null
+    var midX: CGFloat?
     var divisionX: CGFloat?
 }
 
@@ -19,7 +19,8 @@ private struct SheetSourceHost: ViewModifier {
             .onGeometryChange(for: SheetSourceSpace.self) { proxy in
                 let bounds = proxy.frame(in: .global)
                 let division = proxy.cnDivisionRegions.first { $0.height > $0.width }
-                return SheetSourceSpace(bounds: bounds, divisionX: division.map { bounds.minX + $0.midX })
+                // Keyboard height and vertical scrolling do not change a sheet's side.
+                return SheetSourceSpace(midX: bounds.midX, divisionX: division.map { bounds.minX + $0.midX })
             } action: { space = $0 }
     }
 }
@@ -43,15 +44,15 @@ private struct SheetSourceAnchor<Trigger: View, Presentation: View>: View {
     let presentation: (Trigger, SheetSide) -> Presentation
     @Environment(\.sheetSourceSpace) private var space
     @Environment(\.layoutDirection) private var direction
-    @State private var frame = CGRect.null
+    @State private var midX: CGFloat?
     private var side: SheetSide {
-        guard !space.bounds.isNull, !frame.isNull else { return .automatic }
-        let left = frame.midX < (space.divisionX ?? space.bounds.midX)
+        guard let midX, let windowMidX = space.midX else { return .automatic }
+        let left = midX < (space.divisionX ?? windowMidX)
         return left == (direction == .leftToRight) ? .leading : .trailing
     }
     var body: some View {
         presentation(trigger, side)
-            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame = $0 }
+            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).midX } action: { midX = $0 }
     }
 }
 

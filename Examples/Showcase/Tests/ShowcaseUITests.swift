@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 
 final class ShowcaseUITests: XCTestCase {
     override func setUp() {
@@ -7,6 +8,8 @@ final class ShowcaseUITests: XCTestCase {
     }
     @MainActor private var runningApp: XCUIApplication?
     @MainActor private func launch(reset: Bool = true) -> XCUIApplication {
+        // Exercise iPad's two-pane layout, rather than its default portrait sidebar overlay.
+        if UIDevice.current.userInterfaceIdiom == .pad { XCUIDevice.shared.orientation = .landscapeLeft }
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"] + (reset ? ["--reset-test-data"] : [])
         app.launch()
@@ -29,7 +32,8 @@ final class ShowcaseUITests: XCTestCase {
         _ = element.waitForExistence(timeout: 2)
         for _ in 0..<6 {
             if element.exists && element.isHittable { break }
-            if let scrollView { scrollView.swipeUp() } else { runningApp?.swipeUp() }
+            // Target the native scroll container. Duo's application frame can refer to its outer display.
+            (scrollView ?? runningApp?.scrollViews.firstMatch)?.swipeUp()
             _ = element.waitForExistence(timeout: 1)
         }
         XCTAssertTrue(element.exists && element.isHittable, file: file, line: line)
@@ -42,8 +46,9 @@ final class ShowcaseUITests: XCTestCase {
         tap(app.buttons["launch-fieldnotes"])
         let create = app.buttons["new-entry"]
         let edit = app.buttons["Edit"]
-        XCTAssertTrue(create.waitForExistence(timeout: 5))
-        try XCTSkipUnless(edit.waitForExistence(timeout: 3), "Requires a two-pane layout")
+        _ = create.waitForExistence(timeout: 5)
+        _ = edit.waitForExistence(timeout: 3)
+        try XCTSkipUnless(create.isHittable && edit.isHittable, "Requires two visible panes")
         // Duo reports the application frame in its display coordinate space. Compare visible triggers instead.
         let boundary = (create.frame.midX + edit.frame.midX) / 2
         XCTAssertGreaterThan(edit.frame.midX - create.frame.midX, 150)
@@ -80,7 +85,7 @@ final class ShowcaseUITests: XCTestCase {
         let app = launch()
         tap(app.buttons["launch-ledger"])
         capture(app, "Ledger")
-        app.swipeUp()
+        app.scrollViews.firstMatch.swipeUp()
         tap(app.buttons["add-expense"])
         enter("Flowers", into: app.textFields["expense-title"])
         enter("15.25", into: app.textFields["expense-amount"])
@@ -91,7 +96,7 @@ final class ShowcaseUITests: XCTestCase {
     @MainActor func testProjectTaskKeepsItsProject() {
         let app = launch()
         tap(app.buttons["launch-daylight"])
-        tap(app.tabBars.buttons["Projects"])
+        tap(app.buttons["Projects"])
         tap(app.buttons.containing(.staticText, identifier: "Studio").firstMatch)
         tap(app.buttons["Add task"])
         XCTAssertTrue(app.segmentedControls.buttons["Studio"].isSelected)
@@ -106,8 +111,9 @@ final class ShowcaseUITests: XCTestCase {
         tap(app.buttons["new-entry"])
         enter("A new morning", into: app.textFields["entry-title"])
         enter("The garden was quiet and full of light.", into: app.textViews["entry-body"])
+        XCTAssertEqual(app.textFields["entry-title"].value as? String, "A new morning", "The title draft must survive keyboard changes")
         tap(app.buttons["save-editor"])
-        let notebook = app.descendants(matching: .any)["notebook-collection"].firstMatch
+        let notebook = app.collectionViews["notebook-collection"]
         tap(app.buttons.containing(.staticText, identifier: "A new morning").firstMatch, scrolling: notebook)
         XCTAssertTrue(app.staticTexts["The garden was quiet and full of light."].waitForExistence(timeout: 5))
         tap(app.buttons["Keep this"])
@@ -117,7 +123,7 @@ final class ShowcaseUITests: XCTestCase {
         let app = launch()
         tap(app.buttons["launch-roam"])
         capture(app, "Roam")
-        let journeys = app.descendants(matching: .any)["journey-collection"].firstMatch
+        let journeys = app.collectionViews["journey-collection"]
         tap(app.buttons["new-trip"], scrolling: journeys)
         enter("A mountain weekend", into: app.textFields["trip-title"])
         tap(app.buttons["save-editor"])
