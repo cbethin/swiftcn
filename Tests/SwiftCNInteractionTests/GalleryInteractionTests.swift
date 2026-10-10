@@ -206,9 +206,46 @@ final class GalleryInteractionTests: XCTestCase {
     }
     #endif
 
-    @MainActor private func launch(_ example: String) -> XCUIApplication {
+    #if os(iOS)
+    @MainActor func testNativeProminentButtonsKeepTheirLabelColorUnderStyledAncestors() throws {
+        // AppKit draws macOS button labels itself; iOS button styles adopt any explicit ancestor foreground.
+        let app = launch("button", probe: "native-button-labels")
+        defer { capture(app); app.terminate() }
+        for label in ["Bordered label", "Glass label", "Nested label"] {
+            let button = app.buttons[label]
+            XCTAssertTrue(button.waitForExistence(timeout: 5))
+            XCTAssertGreaterThan(try lightLabelCoverage(button), 0.02, "\(label) lost its native light label color.")
+        }
+        XCTAssertLessThan(try lightLabelCoverage(app.buttons["Explicit label"]), 0.002,
+                          "An explicit text-* class must still reach the native label.")
+    }
+
+    /// The share of near-white pixels across the label band, away from the rounded edges.
+    @MainActor private func lightLabelCoverage(_ element: XCUIElement) throws -> Double {
+        let image = try XCTUnwrap(element.screenshot().image.cgImage)
+        let width = image.width, height = image.height
+        let context = try XCTUnwrap(CGContext(
+            data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        let bytes = try XCTUnwrap(context.data).assumingMemoryBound(to: UInt8.self)
+        var light = 0, total = 0
+        for y in (height * 3 / 10)..<(height * 7 / 10) {
+            for x in (width * 15 / 100)..<(width * 85 / 100) {
+                let index = (y * width + x) * 4
+                if min(bytes[index], bytes[index + 1], bytes[index + 2]) > 215 { light += 1 }
+                total += 1
+            }
+        }
+        return Double(light) / Double(max(total, 1))
+    }
+    #endif
+
+    @MainActor private func launch(_ example: String, probe: String? = nil) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
+        app.launchEnvironment["SWIFTCN_UI_PROBE"] = probe
         #if os(macOS)
         app.launchArguments = ["-AppleKeyboardUIMode", "3"]
         #endif

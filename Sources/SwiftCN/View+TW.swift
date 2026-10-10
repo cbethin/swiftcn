@@ -48,6 +48,8 @@ struct TWModifier: ViewModifier {
     @Environment(\.twGroups) private var groups
     @Namespace private var groupNamespace
     @State private var isHovered = false
+    /// Once a text color installs the foreground modifier, it stays, so removing the color keeps child identity.
+    @State private var installsForeground = false
 
     func body(content: Content) -> some View {
         var activeState = state
@@ -56,6 +58,8 @@ struct TWModifier: ViewModifier {
         let combined = TWStyle(rules.view, isButton ? rules.button : TWStyle(), style)
         var appearance = TWStyleResolver.resolve(combined, theme: theme, scheme: scheme, state: activeState,
             globalRules: rules, groupStates: groups.states, target: target)
+        let declaresForeground = !appearance.inheritsForeground
+        if installsForeground { appearance.inheritsForeground = false }
         if !decorates {
             appearance.background = nil; appearance.border = nil; appearance.borderWidth = 0
             appearance.shadow = nil; appearance.surface = nil
@@ -89,6 +93,9 @@ struct TWModifier: ViewModifier {
                 transaction[TWCallerAnimationKey.self] = TWCallerAnimation(animation: transaction.animation)
             }
             .onHover { isHovered = $0 }
+            .onChange(of: declaresForeground, initial: true) { _, declares in
+                if declares { installsForeground = true }
+            }
             .transformEnvironment(\.twGroups) { inherited in
                 if let name = appearance.group {
                     inherited.scopes.append(TWGroupScope(name: name, namespace: groupNamespace, state: activeState))
@@ -159,10 +166,10 @@ struct TWForegroundModifier: ViewModifier {
     let appearance: TWResolvedStyle
     func body(content: Content) -> some View {
         if appearance.inheritsForeground {
-            // The native control adapter applies the label color outside this modifier.
+            // An explicit style, even hierarchical primary, would override native control label colors.
             content
         } else {
-            // Hierarchical primary is relative to the parent's style, including gradients.
+            // Inactive variants and removed colors use hierarchical primary, relative to the parent's style.
             content.foregroundStyle(appearance.foreground.map(AnyShapeStyle.init) ?? AnyShapeStyle(HierarchicalShapeStyle.primary))
         }
     }

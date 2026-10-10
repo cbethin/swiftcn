@@ -16,7 +16,8 @@ struct TWResolvedStyle {
     var glassInteractive = false
     var glassTint: Color?
     var prominent = false
-    /// Native control labels receive their color from the control adapter.
+    /// Leaves the inherited foreground untouched: no rule in any state sets one,
+    /// or a native control adapter supplies the label color.
     var inheritsForeground = false
     var opacity: Double = 1
     var tracking: CGFloat?
@@ -72,6 +73,10 @@ enum TWStyleResolver {
                 return lhs.offset < rhs.offset
             }
         var result = TWResolvedStyle()
+        // Decided before state filtering, so hover or focus variants never add or remove the modifier.
+        result.inheritsForeground = !expanded.rules.contains {
+            if case .foreground = $0.property { true } else { false }
+        }
         var selectedNative: [String: (name: String, argument: TWArgument?)] = [:]
         for entry in rules {
             switch entry.element.property {

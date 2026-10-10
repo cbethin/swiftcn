@@ -257,7 +257,7 @@ private struct TWNativeButtonBody: View {
                                                  state: state, globalRules: rules)
         let glass = inputs.context.usesGlass(appearance.surface ?? .floating)
         let prominent = appearance.prominent
-        // Every .tw ancestor sets an explicit foreground, which native styles would otherwise adopt.
+        // A text color class on any ancestor, such as a card, sets an explicit foreground that native styles would adopt.
         let foreground = appearance.foreground.map(AnyShapeStyle.init) ?? (prominent ? AnyShapeStyle(Color.white)
             : glass ? AnyShapeStyle(HierarchicalShapeStyle.primary) : AnyShapeStyle(TintShapeStyle()))
         let button = Button(role: configuration.role, action: configuration.trigger) {

@@ -562,6 +562,9 @@ The renderer uses a stable content structure when state patches change values.
 It applies typography and foreground, then padding, dimensions, background, border, and opacity.
 The background owns the surface shadow.
 Unspecified fonts and foreground colors inherit from the surrounding view.
+A surface sets no foreground until one of its classes, in any state, sets a text color, so native controls such as prominent buttons keep their own label colors.
+After that, removing the color restores the inherited one without rebuilding content.
+A surface that gains its first text color by changing classes rebuilds its content once; put a color in its base classes if it will need one.
 Corners affect the background and border without clipping content.
 Decorative borders do not intercept input.
 
