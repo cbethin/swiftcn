@@ -7,10 +7,10 @@ if [[ "$mode" != verify && "$mode" != record ]]; then exit 2; fi
 case "$profile" in
     local) reference_dir="$repo_dir/artifacts/component-baselines" ;;
     ci)
-        if [[ "$(sw_vers -productVersion)" != 15.* || "$(/usr/bin/xcodebuild -version)" != *'Xcode 16.4'* ]]; then
-            echo 'CI component baselines require macOS 15 and Xcode 16.4.' >&2; exit 2
+        if [[ "$(sw_vers -productVersion)" != 15.* || "$(/usr/bin/xcodebuild -version)" != *'Xcode 26.3'* ]]; then
+            echo 'CI component baselines require macOS 15 and Xcode 26.3.' >&2; exit 2
         fi
-        reference_dir="$repo_dir/Tests/SwiftCNVisualTests/__Snapshots__/components-macos-15-xcode-16.4"
+        reference_dir="$repo_dir/Tests/SwiftCNVisualTests/__Snapshots__/components-macos-15-xcode-26.3"
         ;;
     *) exit 2 ;;
 esac

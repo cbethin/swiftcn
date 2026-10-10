@@ -73,7 +73,9 @@ It contains the build log, `results.xcresult`, and a JSON test summary when avai
 Open the result bundle in Xcode to inspect screenshots and the action trace.
 Screenshot attachments remain available for successful tests too.
 
-CI runs separate macOS, iPhone, and iPad jobs on Xcode 16.4.
+CI runs separate macOS, iPhone, and iPad jobs on Xcode 26.3.
+The iPhone and iPad jobs use iOS 18.5; a second iPhone job uses iOS 26.2 to exercise Liquid Glass.
+Set `SWIFTCN_UI_IOS_VERSION` to choose a runtime locally. It defaults to the SDK version.
 Each job uploads its result directory even after failure.
 The UI suite does not change screenshot references or retry failures until they pass.
 

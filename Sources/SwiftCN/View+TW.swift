@@ -31,6 +31,8 @@ struct TWModifier: ViewModifier {
     let style: TWStyle
     var state: TWState
     var isButton = false
+    /// Native control adapters draw their own surface; the label receives only content and layout.
+    var decorates = true
     var text: Text? = nil
     var image: Image? = nil
     var shape: AnyShape? = nil
@@ -46,14 +48,23 @@ struct TWModifier: ViewModifier {
     @Environment(\.twGroups) private var groups
     @Namespace private var groupNamespace
     @State private var isHovered = false
+    /// Once a text color installs the foreground modifier, it stays, so removing the color keeps child identity.
+    @State private var installsForeground = false
 
     func body(content: Content) -> some View {
         var activeState = state
         activeState.isDisabled = activeState.isDisabled || !isEnabled
         activeState.isHovered = activeState.isHovered || isHovered
         let combined = TWStyle(rules.view, isButton ? rules.button : TWStyle(), style)
-        let appearance = TWStyleResolver.resolve(combined, theme: theme, scheme: scheme, state: activeState,
+        var appearance = TWStyleResolver.resolve(combined, theme: theme, scheme: scheme, state: activeState,
             globalRules: rules, groupStates: groups.states, target: target)
+        let declaresForeground = !appearance.inheritsForeground
+        if installsForeground { appearance.inheritsForeground = false }
+        if !decorates {
+            appearance.background = nil; appearance.border = nil; appearance.borderWidth = 0
+            appearance.shadow = nil; appearance.surface = nil
+            appearance.foreground = nil; appearance.inheritsForeground = true
+        }
         return source(content, appearance: appearance)
             .transaction { transaction in
                 if (animationScope == .content || animationScope == .all),
@@ -82,6 +93,9 @@ struct TWModifier: ViewModifier {
                 transaction[TWCallerAnimationKey.self] = TWCallerAnimation(animation: transaction.animation)
             }
             .onHover { isHovered = $0 }
+            .onChange(of: declaresForeground, initial: true) { _, declares in
+                if declares { installsForeground = true }
+            }
             .transformEnvironment(\.twGroups) { inherited in
                 if let name = appearance.group {
                     inherited.scopes.append(TWGroupScope(name: name, namespace: groupNamespace, state: activeState))
@@ -144,8 +158,20 @@ struct TWTextAttributesModifier: ViewModifier {
             .transformEnvironment(\.lineLimit) { inherited in
                 if let value = appearance.lineLimit { inherited = value }
             }
-            // Hierarchical primary is relative to the parent's style, including gradients.
-            .foregroundStyle(appearance.foreground.map(AnyShapeStyle.init) ?? AnyShapeStyle(HierarchicalShapeStyle.primary))
+            .modifier(TWForegroundModifier(appearance: appearance))
+    }
+}
+
+struct TWForegroundModifier: ViewModifier {
+    let appearance: TWResolvedStyle
+    func body(content: Content) -> some View {
+        if appearance.inheritsForeground {
+            // An explicit style, even hierarchical primary, would override native control label colors.
+            content
+        } else {
+            // Inactive variants and removed colors use hierarchical primary, relative to the parent's style.
+            content.foregroundStyle(appearance.foreground.map(AnyShapeStyle.init) ?? AnyShapeStyle(HierarchicalShapeStyle.primary))
+        }
     }
 }
 
@@ -238,7 +264,14 @@ struct TWPhaseModifier: ViewModifier {
         case .layout:
             view.modifier(TWClassSharedElementModifier(appearance: appearance, groups: groups))
                 .modifier(TWLayoutModifier(appearance: appearance))
-        case .decoration: view.modifier(TWDecorationModifier(appearance: appearance, scheme: scheme))
+        case .decoration:
+            // A surface role is part of the view's design, so it selects a structure once.
+            // Policy, system, and accessibility changes then alter values inside that structure.
+            if let role = appearance.surface {
+                view.modifier(TWSurfaceModifier(appearance: appearance, role: role, theme: theme, scheme: scheme))
+            } else {
+                view.modifier(TWDecorationModifier(appearance: appearance, scheme: scheme))
+            }
         case .effects: view.modifier(TWEffectsModifier(appearance: appearance))
         }
     }

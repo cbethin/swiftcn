@@ -97,9 +97,8 @@ def main():
         if unknown:
             parser.error("Unknown component slugs: " + ", ".join(sorted(unknown)))
     if args.profile == "ci":
-        sdk_version = run(XCRUN, "--sdk", "iphonesimulator", "--show-sdk-version", capture=True)
-        if sdk_version != "18.5" or "Xcode 16.4" not in run("/usr/bin/xcodebuild", "-version", capture=True):
-            raise RuntimeError("The ci profile requires Xcode 16.4 with iOS 18.5. Use the local profile.")
+        if "Xcode 26.3" not in run("/usr/bin/xcodebuild", "-version", capture=True):
+            raise RuntimeError("The ci profile requires Xcode 26.3 with the iOS 18.5 runtime. Use the local profile.")
     artifacts = REPO / "artifacts" / ("duo-components" if args.duo else "ios-components" if args.components else "ios-visual")
     artifacts.mkdir(parents=True, exist_ok=True)
     app = artifacts / "SwiftCNVisualHost.app"
@@ -130,7 +129,8 @@ def main():
     run("/usr/bin/codesign", "--force", "--sign", "-", str(app))
     runtimes = json.loads(run(XCRUN, "simctl", "list", "runtimes", "-j", capture=True))["runtimes"]
     sdk_version = run(XCRUN, "--sdk", "iphonesimulator", "--show-sdk-version", capture=True)
-    runtime = os.environ.get("SWIFTCN_IOS_RUNTIME")
+    # Reviewed references keep the iOS 18.5 runtime, which renders the pre-Liquid Glass fallbacks.
+    runtime = os.environ.get("SWIFTCN_IOS_RUNTIME") or ("com.apple.CoreSimulator.SimRuntime.iOS-18-5" if args.profile == "ci" else None)
     if not runtime:
         matching = [r for r in runtimes if r.get("isAvailable") and r["name"].startswith("iOS ")
                     and r["version"] == sdk_version]

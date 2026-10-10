@@ -67,6 +67,11 @@ struct ComponentGalleryView: View {
                         Spacer()
                         CNSwitch("Dark appearance", isOn: $dark)
                     }
+                    #if DEBUG
+                    if ProcessInfo.processInfo.environment["SWIFTCN_UI_PROBE"] == "native-button-labels" {
+                        NativeButtonLabelProbe()
+                    }
+                    #endif
                     if let selection {
                         selection.example.id(selection).tw("p-6 w-full")
                         GalleryCodePanel(source: selection.source).id(selection)

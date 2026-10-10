@@ -12,11 +12,11 @@ case "$profile" in
     local) reference_dir="$repo_dir/artifacts/local-baselines" ;;
     ci)
         xcode_version="$(/usr/bin/xcodebuild -version)"
-        if [[ "$(sw_vers -productVersion)" != 15.* || "$xcode_version" != *'Xcode 16.4'* ]]; then
-            echo "The ci profile requires macOS 15 and Xcode 16.4. Use the local profile on this machine." >&2
+        if [[ "$(sw_vers -productVersion)" != 15.* || "$xcode_version" != *'Xcode 26.3'* ]]; then
+            echo "The ci profile requires macOS 15 and Xcode 26.3. Use the local profile on this machine." >&2
             exit 2
         fi
-        reference_dir="$repo_dir/Tests/SwiftCNVisualTests/__Snapshots__/macos-15-xcode-16.4"
+        reference_dir="$repo_dir/Tests/SwiftCNVisualTests/__Snapshots__/macos-15-xcode-26.3"
         ;;
     *) echo "Unknown snapshot profile: $profile" >&2; exit 2 ;;
 esac

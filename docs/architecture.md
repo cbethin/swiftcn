@@ -55,6 +55,18 @@ Keep focus ownership explicit at the control.
 Use native appearance APIs for controls without a suitable adapter.
 Do not infer custom control semantics from appearance.
 
+## Surfaces
+
+Separate the theme from the appearance policy.
+Resolve each surface role to one fill: glass, a material, or a solid color.
+Choose the fill from the role, the policy, system support, and Reduce Transparency.
+Keep native glass under accessibility settings; replace custom materials with solid fills.
+Keep availability checks in the library.
+Select the view structure from the surface role only. Change values for policy, system, and accessibility changes.
+Choose native button style types without accessibility inputs.
+Keep grouping and morph identity explicit through native containers and identifiers.
+Do not install gestures from appearance classes.
+
 ## Animation
 
 Store native animation presets, duration, and delay as independent style properties.

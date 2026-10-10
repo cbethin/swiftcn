@@ -28,12 +28,19 @@ jobs:
           - name: iPhone
             platform: ios
             family: iPhone
+            ios: '18.5'
+          - name: iPhone (iOS 26)
+            platform: ios
+            family: iPhone
+            ios: '26.2'
           - name: iPad
             platform: ios
             family: iPad
+            ios: '18.5'
     env:
-      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
       SWIFTCN_UI_DEVICE_FAMILY: ${{ matrix.family }}
+      SWIFTCN_UI_IOS_VERSION: ${{ matrix.ios }}
     steps:
       - uses: actions/checkout@v7
       - name: Toolchain

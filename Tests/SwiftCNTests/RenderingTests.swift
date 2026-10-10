@@ -118,6 +118,48 @@ struct RenderingTests {
         window.contentView = nil
     }
 
+    @Test(arguments: ["hover:text-[#ff0000]", "focus:text-[#ff0000]", "group-hover:text-[#ff0000]"])
+    func foregroundVariantsPreserveChildStateIdentity(classes: String) {
+        let model = IdentityModel()
+        let identities = IdentityRecorder()
+        let host = NSHostingView(rootView: ForegroundIdentityHarness(model: model, recorder: identities, classes: classes))
+        host.frame = CGRect(x: 0, y: 0, width: 200, height: 100)
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = host
+        defer { window.contentView = nil }
+        for focused in [false, true, false, true, false] {
+            model.focused = focused
+            host.layoutSubtreeIfNeeded()
+            drainRunLoop()
+        }
+        #expect(Set(identities.values).count == 1)
+        #expect(identities.focusedValues.contains(true))
+    }
+
+    @Test func removingTheTextColorKeepsChildIdentityAndInheritsAgain() throws {
+        let model = IdentityModel()
+        model.focused = true
+        let identities = IdentityRecorder()
+        let host = NSHostingView(rootView: ForegroundRemovalHarness(model: model, recorder: identities).foregroundStyle(.red))
+        host.frame = CGRect(x: 0, y: 0, width: 40, height: 40)
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = host
+        defer { window.contentView = nil }
+        var colors: [NSColor] = []
+        // Classes, not state, add and remove the color.
+        for focused in [true, false, true, false] {
+            model.focused = focused
+            host.layoutSubtreeIfNeeded()
+            drainRunLoop()
+            let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            colors.append(try #require(bitmap.colorAt(x: 20, y: 20)?.usingColorSpace(.sRGB)))
+        }
+        #expect(Set(identities.values).count == 1)
+        #expect(colors[0].blueComponent > 0.9 && colors[2].blueComponent > 0.9)
+        #expect(colors[1].redComponent > 0.9 && colors[3].redComponent > 0.9, "Removing the class must restore the inherited color.")
+    }
+
     @Test func minimumHeightExpandsTheStyledSurface() throws {
         let image = try render(Color.clear.frame(width: 20, height: 10).tw(.minH(44), .bgColor(.blue)))
         #expect(image.height == 44)
@@ -209,6 +251,29 @@ private struct IdentityHarness: View {
         IdentityChild(recorder: recorder, focused: model.focused)
             .tw(.focus(.fgColor(.red), .text(.xl), .bgColor(.blue), .rounded(.lg), .offset(x: 4, y: 2), .scale(1.1), .rotate(2)),
                 state: .init(isFocused: model.focused))
+    }
+}
+private struct ForegroundIdentityHarness: View {
+    @ObservedObject var model: IdentityModel
+    let recorder: IdentityRecorder
+    let classes: String
+    var body: some View {
+        // One flag drives every state, so each variant toggles between its base and active colors.
+        let state = TWState(isHovered: model.focused, isFocused: model.focused)
+        IdentityChild(recorder: recorder, focused: model.focused)
+            .tw(classes, state: state)
+            .tw("group", state: state)
+    }
+}
+private struct ForegroundRemovalHarness: View {
+    @ObservedObject var model: IdentityModel
+    let recorder: IdentityRecorder
+    var body: some View {
+        ZStack {
+            Rectangle().frame(width: 40, height: 40)
+            IdentityChild(recorder: recorder, focused: model.focused).opacity(0)
+        }
+        .tw(model.focused ? "text-[#0000ff]" : "p-0")
     }
 }
 private struct IdentityChild: View {
