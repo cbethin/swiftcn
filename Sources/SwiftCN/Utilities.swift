@@ -61,6 +61,12 @@ extension TWStyle {
     /// Apple's touch and pointer feedback for glass. It installs no gesture.
     public static var glassInteractive: Self { property(.glassInteractive(true)) }
     public static func glassTint(_ token: TWColor) -> Self { property(.glassTint(.token(token))) }
+    /// The tint of a native button or glass surface.
+    public static func tint(_ token: TWColor) -> Self { property(.glassTint(.token(token))) }
+    public static func tintColor(_ color: Color) -> Self { property(.glassTint(.color(color))) }
+    /// A native button style. State variants never change it, so the button keeps its structure.
+    public static func bezel(_ bezel: TWButtonBezel) -> Self { property(.bezel(bezel)) }
+    public static func controlSize(_ size: ControlSize) -> Self { property(.controlSize(size)) }
     public static func glassTintColor(_ color: Color) -> Self { property(.glassTint(.color(color))) }
     public static func minW(_ points: CGFloat) -> Self {
         precondition(points.isFinite && points >= 0)

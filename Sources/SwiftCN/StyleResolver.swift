@@ -16,6 +16,8 @@ struct TWResolvedStyle {
     var glassInteractive = false
     var glassTint: Color?
     var prominent = false
+    var bezel: TWButtonBezel?
+    var controlSize: ControlSize?
     /// Leaves the inherited foreground untouched: no rule in any state sets one,
     /// or a native control adapter supplies the label color.
     var inheritsForeground = false
@@ -119,6 +121,9 @@ enum TWStyleResolver {
             case .glassInteractive(let value): result.glassInteractive = value
             case .glassTint(let source): result.glassTint = color(source, theme: theme, scheme: scheme)
             case .prominent(let value): result.prominent = value
+            // The bezel selects the native style type, so only unconditioned classes choose it.
+            case .bezel(let value): if entry.element.conditionCount == 0 { result.bezel = value }
+            case .controlSize(let value): result.controlSize = value
             case .opacity(let opacity): result.opacity = opacity
             case .tracking(let value): result.tracking = value
             case .lineSpacing(let value): result.lineSpacing = value

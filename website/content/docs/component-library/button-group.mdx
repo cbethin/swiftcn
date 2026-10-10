@@ -67,14 +67,9 @@ public enum CNButtonSize: Sendable {
     public var classes: TWClasses {
         switch self {
         case .regular: ""
-        case .small: "px-3 py-1 text-xs"
-        case .large: "px-6 py-3 text-base"
-        case .icon:
-            #if os(iOS)
-            "px-2 py-2 min-w-[44] min-h-[44]"
-            #else
-            "px-2 py-2 min-w-[32] min-h-[32]"
-            #endif
+        case .small: "control-sm"
+        case .large: "control-lg"
+        case .icon: "rounded-full"
         }
     }
 }

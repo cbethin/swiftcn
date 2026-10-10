@@ -68,6 +68,9 @@ struct TWGroupCondition: Hashable, Sendable {
 
 enum TWSharedProperties: Sendable { case frame, position, size }
 
+/// The native button style a button's classes select. Apple draws the bezel; the remaining classes shape the label.
+public enum TWButtonBezel: Sendable { case prominent, bordered, borderless, link }
+
 enum TWEdge: Sendable { case top, leading, bottom, trailing }
 enum TWLength: Sendable { case units(CGFloat), points(CGFloat) }
 enum TWColorSource: Sendable { case token(TWColor), color(Color) }
@@ -88,6 +91,7 @@ enum TWProperty: Sendable {
     case borderColor(TWColorSource), borderWidth(CGFloat)
     case shadow(TWShadow)
     case surface(TWSurfaceRole), glassInteractive(Bool), glassTint(TWColorSource), prominent(Bool)
+    case bezel(TWButtonBezel), controlSize(ControlSize)
     case opacity(Double)
     case tracking(CGFloat), lineSpacing(CGFloat), textAlignment(TextAlignment), lineLimit(Int?)
     case offset(CGSize), scale(CGSize), rotation(Double), blur(CGFloat)

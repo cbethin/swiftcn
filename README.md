@@ -287,7 +287,7 @@ State a surface's role. swiftcn picks the best native appearance for the running
 
 ```swift
 Button("Continue") {}
-    .buttonStyle(.twNative("glass-prominent px-4"))
+    .buttonStyle(.tw("glass-prominent px-4"))
 
 TWSurfaceGroup(spacing: 12) {
     HStack { tools }.tw("px-3 py-2 surface-floating glass-interactive")
@@ -300,7 +300,7 @@ ContentView()
 `surface-floating` uses Liquid Glass on iOS 26 and macOS 26, a material with a themed edge on earlier systems, and a solid themed surface under Reduce Transparency.
 `surface-solid` always uses the theme, and `glass` asks for glass explicitly with the same fallbacks.
 Each surface resolves to one fill; `bg-*` never stacks under glass or a material.
-`.twNative` keeps a native `Button` and selects `.glass` or `.glassProminent` where available, `.bordered` or `.borderedProminent` otherwise.
+On a button, `glass` and `glass-prominent` select `.glass` or `.glassProminent` where available, `.bordered` or `.borderedProminent` otherwise.
 `twPresentationSurface()` keeps the system sheet where it uses glass.
 Accessibility and policy changes keep editors, bindings, and focus. Surface classes never install gestures.
 See [adaptive surfaces](website/content/docs/adaptive-surfaces.mdx).

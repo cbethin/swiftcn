@@ -117,7 +117,7 @@ public struct CNButtonToggleStyle: ToggleStyle {
     public init(classes: TWClasses = "") { self.classes = classes }
     public func makeBody(configuration: Configuration) -> some View {
         Button { configuration.isOn.toggle() } label: { configuration.label }
-            .buttonStyle(.tw(cn("button-outline", configuration.isOn ? "toggle-selected" : "toggle-unselected", classes)))
+            .buttonStyle(.tw(cn("bezel-prominent", configuration.isOn ? "toggle-selected" : "toggle-unselected", classes)))
             .accessibilityValue(configuration.isOn ? Text("On") : Text("Off"))
             .accessibilityAddTraits(configuration.isOn ? .isSelected : [])
     }
