@@ -53,7 +53,7 @@ private struct TWButtonBody: View {
         // The bezel is part of the button's design, so it selects a structure once, like a surface role.
         if let bezel = appearance.buttonBezel {
             TWNativeBezelButton(configuration: configuration, style: style, state: state, appearance: appearance,
-                                bezel: bezel, glass: appearance.surface.map(inputs.context.usesGlass) ?? false,
+                                bezel: bezel, glass: appearance.buttonSurface.map(inputs.context.usesGlass) ?? false,
                                 fullRadius: theme.radius(.full))
         } else {
             Button(role: configuration.role, action: configuration.trigger) { configuration.label }
@@ -86,7 +86,8 @@ private struct TWNativeBezelButton: View {
         .transformEnvironment(\.controlSize) { size in
             if let value = appearance.controlSize { size = value }
         }
-        .modifier(TWOptionalTint(color: appearance.glassTint))
+        // A nil tint keeps the inherited one without changing the button's structure.
+        .tint(appearance.glassTint)
         if #available(iOS 26, macOS 26, *), glass, bezel == .prominent || bezel == .bordered {
             if bezel == .prominent { button.buttonStyle(.glassProminent) } else { button.buttonStyle(.glass) }
         } else {
@@ -138,13 +139,5 @@ private struct TWPlainButtonStyle: ButtonStyle {
         return configuration.label
             .modifier(TWModifier(style: style, state: activeState, isButton: true))
             .contentShape(.interaction, Rectangle())
-    }
-}
-
-/// Applies a tint only when a class supplies one, so the inherited tint otherwise remains.
-struct TWOptionalTint: ViewModifier {
-    let color: Color?
-    func body(content: Content) -> some View {
-        if let color { content.tint(color) } else { content }
     }
 }

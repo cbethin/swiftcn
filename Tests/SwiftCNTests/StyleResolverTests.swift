@@ -61,6 +61,8 @@ struct StyleResolverTests {
         let pressed = TWState(isHovered: true, isFocused: true, isPressed: true)
         #expect(resolve("hover:bezel-prominent", state: pressed).buttonBezel == nil)
         #expect(resolve("button-outline pressed:bezel-prominent", state: pressed).buttonBezel == .bordered)
+        #expect(resolve("glass pressed:glass-prominent", state: pressed).buttonBezel == .bordered)
+        #expect(resolve("px-2 hover:glass", state: pressed).buttonBezel == nil)
     }
 
     @Test func tintAndControlSizeClassesResolve() throws {

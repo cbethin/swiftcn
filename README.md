@@ -361,10 +361,11 @@ Apple draws every button whose classes choose a native style. swiftcn converts t
 `tint-*` sets `.tint`, `control-mini` through `control-xl` set `.controlSize`, and `rounded-*` sets `.buttonBorderShape`.
 The theme supplies each variant's tint and label color. Other classes shape the label: spacing, size, and type.
 Background, border, and shadow classes never paint over the native control.
-Apple owns the press, hover, focus, and disabled appearance. State variants change only the label, and they never change the native style, so the button keeps its structure.
+Apple owns the press, hover, focus, and disabled appearance. Hover and focus variants change only the label, and no state variant changes the native style, so the button keeps its structure. `pressed:` and `active:` apply only to plain buttons, because a native style keeps the pressed state to itself.
 On macOS, prominent labels use the system label color while the window is inactive, as AppKit draws the bezel gray.
 Ghost and link buttons have no bezel to size them, so their labels keep a minimum height of 44 points on iOS and 32 points on macOS.
 
+Button recipes describe native buttons. On other views they set no background, so use `bg-*`, `text-*`, or a surface class there.
 Classes without a native style keep a plain button whose label carries the classes, including `pressed:` and `hover:` states. Menu items, command items, and calendar days use it.
 SwiftUI retains the button's action, semantic role, and activation behavior.
 Appearance variants do not set semantic roles.

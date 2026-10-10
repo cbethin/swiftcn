@@ -69,7 +69,13 @@ public enum CNButtonSize: Sendable {
         case .regular: ""
         case .small: "control-sm"
         case .large: "control-lg"
-        case .icon: "rounded-full"
+        case .icon:
+            // Icon labels are narrower than the platform's touch target.
+            #if os(iOS)
+            "rounded-full min-w-[44]"
+            #else
+            "rounded-full min-w-[32]"
+            #endif
         }
     }
 }

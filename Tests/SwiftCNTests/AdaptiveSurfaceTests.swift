@@ -199,6 +199,16 @@ struct AdaptiveSurfaceRenderingTests {
         #expect(Set(model.identities).count == 1, "Selecting a toggle must not replace its native button.")
     }
 
+    @Test func stateTintsKeepTheNativeButtonAndItsLabel() {
+        // A tint present in only one state must not change the button's structure.
+        let model = SurfaceModel()
+        let (host, window) = host(StateTintProbe(model: model))
+        defer { window.contentView = nil }
+        for _ in 0..<4 { model.expanded.toggle(); settle(host) }
+        #expect(!model.identities.isEmpty)
+        #expect(Set(model.identities).count == 1)
+    }
+
     @Test(arguments: [ControlActiveState.key, .inactive])
     func prominentLabelsFollowTheWindowState(state: ControlActiveState) throws {
         // AppKit draws an inactive window's prominent bezel gray, so a white theme label would disappear.
@@ -390,6 +400,15 @@ private struct ToggleButtonProbe: View {
         }
         .toggleStyle(CNButtonToggleStyle())
         .padding(8)
+    }
+}
+
+private struct StateTintProbe: View {
+    let model: SurfaceModel
+    var body: some View {
+        Button(action: {}) { HStack { Text("Save"); IdentityProbe(model: model) } }
+            .buttonStyle(.tw("bezel-bordered focus:tint-primary", state: .init(isFocused: model.expanded)))
+            .padding(8)
     }
 }
 
