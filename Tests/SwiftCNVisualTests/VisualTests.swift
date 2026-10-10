@@ -35,8 +35,6 @@ struct VisualTests {
         let host = NSHostingView(rootView: view
             .frame(width: CGFloat(width))
             .background(theme.color(.background, scheme: dark ? .dark : .light))
-            // Native controls render as they do in the key window, not the inactive snapshot window.
-            .environment(\.controlActiveState, .key)
             .environment(\.colorScheme, dark ? .dark : .light))
         host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         host.setFrameSize(host.fittingSize)
@@ -198,7 +196,7 @@ private struct VisualFixture: View {
                 CNButton("Cancel", variant: .secondary) {}
                 CNButton("Create project") {}
             }
-        }.twTheme(theme).environment(\.controlActiveState, .active)
+        }.twTheme(theme)
     }
 }
 #endif

@@ -39,8 +39,6 @@ struct ComponentCatalogVisualTests {
             .frame(width: CGFloat(width))
             .background(theme.color(.background, scheme: dark ? .dark : .light))
             .environment(\.colorScheme, dark ? .dark : .light)
-            // Native controls render as they do in the key window, not the inactive snapshot window.
-            .environment(\.controlActiveState, .key)
             .environment(\.dynamicTypeSize, large ? .accessibility3 : .large)
             .environment(\.locale, Locale(identifier: "en_US_POSIX"))
             .environment(\.timeZone, TimeZone(secondsFromGMT: 0)!)
