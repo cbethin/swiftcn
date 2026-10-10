@@ -13,11 +13,14 @@ Button("Delete", role: .destructive, action: delete)
 ```
 
 Built-in recipes include `card`, `primaryButton`, `secondaryButton`, `outlineButton`, and `destructiveButton`.
-The button adapter uses `ButtonStyle.Configuration.isPressed`.
+Apple draws every button whose classes choose a native style: `button-primary`, `button-secondary`, and `button-destructive` select `.borderedProminent`, `button-outline` selects `.bordered`, `button-ghost` selects `.borderless`, and `button-link` selects `.link` on macOS. `glass` and `glass-prominent` select the Liquid Glass styles where available.
+`tint-*`, `control-*`, and `rounded-*` set `.tint`, `.controlSize`, and `.buttonBorderShape`. Other classes shape the label, and background, border, and shadow classes never paint over the native control.
+Apple owns the press, hover, focus, and disabled appearance. State variants change only the label and never change the native style.
 SwiftUI retains the button's action, semantic role, and activation behavior.
 Appearance variants do not set semantic roles.
-Button recipes use a minimum height of 44 points on iOS and 32 points on macOS.
-Large text can increase that height.
+Ghost and link labels keep a minimum height of 44 points on iOS and 32 points on macOS.
+
+Classes without a native style keep a plain button whose label uses `ButtonStyle.Configuration.isPressed`:
 
 ```swift
 TWStyle(

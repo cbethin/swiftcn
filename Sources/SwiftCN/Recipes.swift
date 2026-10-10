@@ -30,8 +30,9 @@ extension TWStyle {
          "button-secondary": Self(.bezel(.prominent), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.muted), .fg(.foreground)),
          "button-outline": Self(.bezel(.bordered), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.foreground), .fg(.foreground)),
          "button-destructive": Self(.bezel(.prominent), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.destructive), .fg(.onDestructive)),
-         "button-ghost": Self(.bezel(.borderless), .rounded(.md), .text(.sm), .weight(.semibold), .fg(.foreground)),
-         "button-link": Self(.bezel(.link), .fg(.primary)),
+         // Borderless buttons have no bezel to size them, so the label keeps the platform's touch target.
+         "button-ghost": Self(.bezel(.borderless), .rounded(.md), .text(.sm), .weight(.semibold), .fg(.foreground), .minH(controlMinimumHeight)),
+         "button-link": Self(.bezel(.link), .text(.sm), .weight(.medium), .fg(.primary), .minH(controlMinimumHeight)),
          "card-header": Self(.p(6), .pb(0)),
          "card-content": Self(.p(6)),
          "card-footer": Self(.p(6), .pt(0)),
@@ -47,8 +48,6 @@ extension TWStyle {
          "toggle": Self(.text(.sm), .fg(.foreground), .disabled(.opacity(0.45))),
          "label": Self(.text(.sm), .fg(.foreground))]
         let components: [String: TWClasses] = [
-            "button-ghost": "px-4 py-2 text-sm font-semibold rounded-md hover:bg-accent pressed:opacity-80 disabled:opacity-45",
-            "button-link": "text-sm font-medium text-primary hover:opacity-80 disabled:opacity-45",
             "button-group": "text-foreground rounded-md",
             "control-motion": "animate-smooth duration-150",
             "disclosure-motion": "animate-spring duration-250",
@@ -175,6 +174,14 @@ extension TWStyle {
 
     /// Read a built-in definition when extending that same class globally.
     public static func defaultStyle(for name: String) -> Self? { defaultClasses[name] }
+
+    private static var controlMinimumHeight: CGFloat {
+        #if os(iOS)
+        44
+        #else
+        32
+        #endif
+    }
 
     private static var inputMinimumHeight: CGFloat {
         #if os(iOS)

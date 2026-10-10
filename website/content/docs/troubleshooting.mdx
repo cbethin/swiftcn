@@ -96,11 +96,11 @@ Referencing `button-primary` or `.primaryButton` inside its own replacement crea
 
 ## A button does not show its pressed appearance
 
-Apply the native button style:
+Variants such as `button-primary` use Apple's own pressed appearance. For a plain button, apply the button style:
 
 ```swift
-Button("Save") { save() }
-    .buttonStyle(.tw("button-primary active:scale-[0.98] animate-spring duration-150"))
+Button("Rename") { rename() }
+    .buttonStyle(.tw("dropdown-item active:scale-[0.98] animate-spring duration-150"))
 ```
 
 A general `.tw(...)` modifier does not install a press gesture.

@@ -46,6 +46,32 @@ struct StyleResolverTests {
         #expect(!named.inheritsForeground)
     }
 
+    @Test func buttonClassesSelectOneNativeStyle() throws {
+        #expect(resolve("button-primary").buttonBezel == .prominent)
+        #expect(resolve("button-outline").buttonBezel == .bordered)
+        #expect(resolve("button-ghost").buttonBezel == .borderless)
+        #expect(resolve("button-link").buttonBezel == .link)
+        #expect(resolve("glass").buttonBezel == .bordered)
+        #expect(resolve("glass-prominent").buttonBezel == .prominent)
+        #expect(resolve("button-outline bezel-prominent").buttonBezel == .prominent)
+        // Rows and menu items keep a plain button.
+        #expect(resolve("dropdown-item").buttonBezel == nil)
+        #expect(resolve("px-2 bg-muted").buttonBezel == nil)
+        // States never switch the native style type, so the button keeps its structure.
+        let pressed = TWState(isHovered: true, isFocused: true, isPressed: true)
+        #expect(resolve("hover:bezel-prominent", state: pressed).buttonBezel == nil)
+        #expect(resolve("button-outline pressed:bezel-prominent", state: pressed).buttonBezel == .bordered)
+    }
+
+    @Test func tintAndControlSizeClassesResolve() throws {
+        #expect(resolve("tint-destructive").glassTint == TWTheme.standard.color(.destructive, scheme: .light))
+        #expect(resolve("tint-[#ff0000]").glassTint != nil)
+        #expect(resolve("control-sm").controlSize == .small)
+        #expect(resolve("control-xl").controlSize == .extraLarge)
+        #expect(throws: (any Error).self) { try TWStyle.parse("tint-unknown") }
+        #expect(throws: (any Error).self) { try TWStyle.parse("control-huge") }
+    }
+
     @Test func statesOverrideBaseRegardlessOfDeclarationOrder() {
         let style = TWStyle(.pressed(.opacity(0.5)), .opacity(1))
         #expect(resolve(style).opacity == 1)

@@ -51,8 +51,7 @@ private struct TWButtonBody: View {
         let appearance = TWStyleResolver.resolve(TWStyle(rules.view, rules.button, style), theme: theme, scheme: scheme,
                                                  state: state, globalRules: rules)
         // The bezel is part of the button's design, so it selects a structure once, like a surface role.
-        // A glass surface without a bezel class keeps the bordered glass style.
-        if let bezel = appearance.bezel ?? (appearance.surface == nil ? nil : appearance.prominent ? .prominent : .bordered) {
+        if let bezel = appearance.buttonBezel {
             TWNativeBezelButton(configuration: configuration, style: style, state: state, appearance: appearance,
                                 bezel: bezel, glass: appearance.surface.map(inputs.context.usesGlass) ?? false,
                                 fullRadius: theme.radius(.full))
@@ -73,11 +72,11 @@ private struct TWNativeBezelButton: View {
     let bezel: TWButtonBezel
     let glass: Bool
     let fullRadius: CGFloat
+    #if os(macOS)
+    @Environment(\.controlActiveState) private var activeState
+    #endif
 
     var body: some View {
-        // Native styles adopt any explicit foreground, so the label sets the style's own color unless a class does.
-        let foreground = appearance.foreground.map(AnyShapeStyle.init) ?? (bezel == .prominent ? AnyShapeStyle(Color.white)
-            : glass ? AnyShapeStyle(HierarchicalShapeStyle.primary) : AnyShapeStyle(TintShapeStyle()))
         let button = Button(role: configuration.role, action: configuration.trigger) {
             configuration.label.modifier(TWModifier(style: style, state: state, isButton: true, decorates: false))
                 .foregroundStyle(foreground)
@@ -102,6 +101,17 @@ private struct TWNativeBezelButton: View {
                 #endif
             }
         }
+    }
+
+    /// Native styles adopt any explicit foreground, so the label sets the style's own color unless a class does.
+    private var foreground: AnyShapeStyle {
+        #if os(macOS)
+        // AppKit draws prominent bezels gray in an inactive window, with the system label color.
+        if bezel == .prominent && activeState == .inactive { return AnyShapeStyle(Color.primary) }
+        #endif
+        if let color = appearance.foreground { return AnyShapeStyle(color) }
+        if bezel == .prominent { return AnyShapeStyle(Color.white) }
+        return glass ? AnyShapeStyle(HierarchicalShapeStyle.primary) : AnyShapeStyle(TintShapeStyle())
     }
 
     private var borderShape: ButtonBorderShape {

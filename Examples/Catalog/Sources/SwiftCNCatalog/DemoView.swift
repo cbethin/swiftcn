@@ -56,7 +56,7 @@ struct MotionPlayground: View {
         MotionSurface.classes(expanded: expanded, motion: motionClasses)
     }
     private var buttonClasses: String {
-        "button-primary active:opacity-80 hover:bg-accent hover:text-foreground \(motionClasses)"
+        "button-primary \(motionClasses)"
     }
 
     var body: some View {
