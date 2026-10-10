@@ -164,6 +164,17 @@ struct PopoverInteractionTests {
         #expect(!model.presented, "Repeated reversals must finish closed without a stale reopening.")
     }
     private func click(_ window: NSWindow, at point: NSPoint) throws {
+        // Native AppKit buttons enter a modal mouse-tracking loop on older macOS versions, which synthesized
+        // events never end. Hit-test the trigger, then use the native activation API in this CLI fixture.
+        let root = try #require(window.contentView)
+        var hit = root.hitTest(root.superview?.convert(point, from: nil) ?? point)
+        while let view = hit {
+            if let button = view as? NSButton {
+                if button.isEnabled { button.performClick(nil) }
+                return
+            }
+            hit = view.superview
+        }
         for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
             let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
                 timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
