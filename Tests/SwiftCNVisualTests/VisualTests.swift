@@ -178,6 +178,8 @@ private struct VisualFixture: View {
                 CNCardTitle("Your theme, everywhere")
                 CNCardDescription("Shared surfaces, native controls, and quiet interaction states.")
             }
+            // The content's native controls show the theme as a key window does; the footer's
+            // native buttons keep the snapshot window's real state, which AppKit draws before macOS 26.
             CNCardContent {
                 CNInput("Project name", text: .constant("Design system"))
                 CNInput("Unavailable", text: .constant("Disabled field")).disabled(true)
@@ -191,7 +193,7 @@ private struct VisualFixture: View {
                 CNProgress("Setup progress", value: 0.65)
                 CNCommand([CNOption("design", title: "Design system"), CNOption("app", title: "Mobile app")],
                           selection: .constant("design"), classes: "h-[180]")
-            }
+            }.environment(\.controlActiveState, .active)
             CNCardFooter {
                 CNButton("Cancel", variant: .secondary) {}
                 CNButton("Create project") {}

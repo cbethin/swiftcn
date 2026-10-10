@@ -202,11 +202,7 @@ struct AdaptiveSurfaceRenderingTests {
     @Test(arguments: [ControlActiveState.key, .inactive])
     func prominentLabelsFollowTheWindowState(state: ControlActiveState) throws {
         // AppKit draws an inactive window's prominent bezel gray, so a white theme label would disappear.
-        let (host, window) = host(Button("Save changes") {}.buttonStyle(.tw("button-primary")).padding(8)
-            .environment(\.controlActiveState, state))
-        defer { window.contentView = nil }
-        let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-        host.cacheDisplay(in: host.bounds, to: bitmap)
+        let bitmap = try capture(Button("Save changes") {}.buttonStyle(.tw("button-primary")), state: state)
         var luminances: [Double] = []
         for y in (bitmap.pixelsHigh * 2 / 5)..<(bitmap.pixelsHigh * 3 / 5) {
             for x in (bitmap.pixelsWide / 4)..<(bitmap.pixelsWide * 3 / 4) {
@@ -221,6 +217,24 @@ struct AdaptiveSurfaceRenderingTests {
             // Before macOS 26 AppKit draws the bezel from the real window state, so only the label is asserted.
             #expect(brightest > 0.9, "The key-window label must use the theme's light label color.")
         }
+    }
+
+    @Test(arguments: ["button-outline", "button-ghost", "button-secondary"])
+    func disabledLabelsUseTheSystemDisabledColor(classes: String) throws {
+        // A theme label color must not hide the native disabled appearance.
+        func darkest(_ bitmap: NSBitmapImageRep) -> Double {
+            var value = 1.0
+            for y in 0..<bitmap.pixelsHigh {
+                for x in 0..<bitmap.pixelsWide {
+                    guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB), color.alphaComponent > 0.5 else { continue }
+                    value = min(value, 0.2126 * color.redComponent + 0.7152 * color.greenComponent + 0.0722 * color.blueComponent)
+                }
+            }
+            return value
+        }
+        let enabled = try capture(Button("Save changes") {}.buttonStyle(.tw(classes)))
+        let disabled = try capture(Button("Save changes") {}.buttonStyle(.tw(classes)).disabled(true))
+        #expect(darkest(disabled) > darkest(enabled) + 0.2, "\(classes) must dim its disabled label.")
     }
 
     @Test func interruptedGroupTransitionsSettleOnTheFinalState() throws {
@@ -290,7 +304,13 @@ struct AdaptiveSurfaceRenderingTests {
         let center = CGPoint(x: host.bounds.midX, y: host.bounds.midY)
         var hit = host.hitTest(host.convert(center, to: host.superview))
         while let view = hit {
-            if let button = view as? NSButton { button.performClick(nil); return }
+            if let button = view as? NSButton {
+                // Before macOS 26, AppKit buttons track the mouse modally, which synthesized events never end.
+                // SwiftUI's AppKit-backed buttons on macOS 26 and later take synthesized events; their activation
+                // API stops this CLI fixture's main run loop.
+                if #available(macOS 26, *) { break }
+                button.performClick(nil); return
+            }
             hit = view.superview
         }
         let point = host.convert(center, to: nil)
@@ -301,8 +321,8 @@ struct AdaptiveSurfaceRenderingTests {
             window.sendEvent(event)
         }
     }
-    private func capture<V: View>(_ view: V) throws -> NSBitmapImageRep {
-        let (host, window) = host(view.padding(8).environment(\.controlActiveState, .key).environment(\.colorScheme, .light))
+    private func capture<V: View>(_ view: V, state: ControlActiveState = .key) throws -> NSBitmapImageRep {
+        let (host, window) = host(view.padding(8).environment(\.controlActiveState, state).environment(\.colorScheme, .light))
         defer { window.contentView = nil }
         host.appearance = NSAppearance(named: .aqua)
         settle(host)
