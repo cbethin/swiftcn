@@ -211,7 +211,10 @@ final class GalleryInteractionTests: XCTestCase {
         // AppKit draws macOS button labels itself; iOS button styles adopt any explicit ancestor foreground.
         let app = launch("button", probe: "native-button-labels")
         defer { capture(app); app.terminate() }
-        for label in ["Bordered label", "Glass label", "Nested label"] {
+        var labels = ["Bordered label", "Nested label"]
+        // The probe shows the glass style only where the system provides it.
+        if #available(iOS 26, *) { labels.append("Glass label") }
+        for label in labels {
             let button = app.buttons[label]
             XCTAssertTrue(button.waitForExistence(timeout: 5))
             XCTAssertGreaterThan(try lightLabelCoverage(button), 0.02, "\(label) lost its native light label color.")
