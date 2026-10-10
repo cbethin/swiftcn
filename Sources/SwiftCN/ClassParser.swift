@@ -55,46 +55,76 @@ enum TWClassParser {
                 continue
             }
             for token in tokens {
-                let parts = try variants(token.text)
-                let name = parts.last!
-                var conditions = rule.conditions
-                var groupConditions = rule.groupConditions
-                for variant in parts.dropLast() {
-                    if variant.hasPrefix("group-") {
-                        let pieces = variant.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
-                        guard pieces.count <= 2, pieces.count == 1 || identifier(pieces[1]),
-                              let condition = groupCondition(pieces[0]) else {
-                            throw TWClassError.unknownVariant(variant)
-                        }
-                        groupConditions.insert(TWGroupCondition(name: pieces.count == 2 ? pieces[1] : nil, condition: condition))
-                        continue
+                let tokenRules: [TWRule]
+                // Top-level literal tokens depend only on their text, target, rules, and theme.
+                if stack.isEmpty, depth == 0, token.argument == nil {
+                    let key = TWExpansionCache.Key(token: token.text, target: target,
+                                                   rules: rules.revision, theme: theme.revision)
+                    if let cached = TWExpansionCache.shared.rules(for: key) {
+                        tokenRules = cached
+                    } else {
+                        tokenRules = try expandToken(token, rules: rules, theme: theme, stack: stack, depth: depth, target: target)
+                        TWExpansionCache.shared.insert(tokenRules, for: key)
                     }
-                    switch variant {
-                    case "hover": conditions.insert(.hovered)
-                    case "focus": conditions.insert(.focused)
-                    case "active", "pressed": conditions.insert(.pressed)
-                    case "disabled": conditions.insert(.disabled)
-                    default: throw TWClassError.unknownVariant(variant)
-                    }
-                }
-                let expanded: TWStyle
-                if token.argument == nil, let named = rules.named[name] ?? TWStyle.defaultClasses[name] {
-                    guard !stack.contains(name) else { throw TWClassError.recursiveClass(name) }
-                    expanded = try expand(named, rules: rules, theme: theme, stack: stack + [name], depth: depth + 1, target: target)
                 } else {
-                    guard let utility = utility(name, suppliedArgument: token.argument, theme: theme, rules: rules) else { throw TWClassError.unknownClass(name) }
-                    guard !stack.contains(name) else { throw TWClassError.recursiveClass(name) }
-                    expanded = try expand(utility, rules: rules, theme: theme, stack: stack + [name], depth: depth + 1, target: target)
+                    tokenRules = try expandToken(token, rules: rules, theme: theme, stack: stack, depth: depth, target: target)
                 }
-                result += expanded.rules.map {
-                    var value = $0
-                    value.conditions.formUnion(conditions)
-                    value.groupConditions.formUnion(groupConditions)
-                    return value
+                if rule.conditions.isEmpty, rule.groupConditions.isEmpty {
+                    result += tokenRules
+                } else {
+                    result += tokenRules.map {
+                        var value = $0
+                        value.conditions.formUnion(rule.conditions)
+                        value.groupConditions.formUnion(rule.groupConditions)
+                        return value
+                    }
                 }
             }
         }
         return TWStyle(rules: result)
+    }
+
+    /// Expand one class token, applying only the variants written on the token itself.
+    private static func expandToken(_ token: TWClassToken, rules: TWGlobalRules, theme: TWTheme,
+                                    stack: [String], depth: Int, target: TWTarget?) throws -> [TWRule] {
+        let parts = try variants(token.text)
+        let name = parts.last!
+        var conditions: Set<TWCondition> = []
+        var groupConditions: Set<TWGroupCondition> = []
+        for variant in parts.dropLast() {
+            if variant.hasPrefix("group-") {
+                let pieces = variant.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
+                guard pieces.count <= 2, pieces.count == 1 || identifier(pieces[1]),
+                      let condition = groupCondition(pieces[0]) else {
+                    throw TWClassError.unknownVariant(variant)
+                }
+                groupConditions.insert(TWGroupCondition(name: pieces.count == 2 ? pieces[1] : nil, condition: condition))
+                continue
+            }
+            switch variant {
+            case "hover": conditions.insert(.hovered)
+            case "focus": conditions.insert(.focused)
+            case "active", "pressed": conditions.insert(.pressed)
+            case "disabled": conditions.insert(.disabled)
+            default: throw TWClassError.unknownVariant(variant)
+            }
+        }
+        let expanded: TWStyle
+        if token.argument == nil, let named = rules.named[name] ?? TWStyle.defaultClasses[name] {
+            guard !stack.contains(name) else { throw TWClassError.recursiveClass(name) }
+            expanded = try expand(named, rules: rules, theme: theme, stack: stack + [name], depth: depth + 1, target: target)
+        } else {
+            guard let utility = utility(name, suppliedArgument: token.argument, theme: theme, rules: rules) else { throw TWClassError.unknownClass(name) }
+            guard !stack.contains(name) else { throw TWClassError.recursiveClass(name) }
+            expanded = try expand(utility, rules: rules, theme: theme, stack: stack + [name], depth: depth + 1, target: target)
+        }
+        guard !conditions.isEmpty || !groupConditions.isEmpty else { return expanded.rules }
+        return expanded.rules.map {
+            var value = $0
+            value.conditions.formUnion(conditions)
+            value.groupConditions.formUnion(groupConditions)
+            return value
+        }
     }
 
     private static func utility(_ name: String, suppliedArgument: TWArgument?, theme: TWTheme, rules: TWGlobalRules) -> TWStyle? {
