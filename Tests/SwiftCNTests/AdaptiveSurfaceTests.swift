@@ -173,6 +173,55 @@ struct AdaptiveSurfaceRenderingTests {
         }
     }
 
+    @Test(arguments: [("button-primary", TWColor.primary, TWColor.onPrimary, true), ("button-secondary", .muted, .foreground, true),
+                      ("button-outline", .foreground, .foreground, false), ("button-destructive", .destructive, .onDestructive, true)])
+    func variantsRenderAsTheNativeStyleWithTheThemeTint(classes: String, tint: TWColor, label: TWColor, prominent: Bool) throws {
+        let theme = TWTheme.standard
+        let native = Button(action: {}) {
+            Text("Save").font(theme.font(.sm).weight(.semibold)).foregroundStyle(theme.color(label, scheme: .light))
+        }
+        .buttonBorderShape(.roundedRectangle(radius: theme.radius(.md)))
+        .tint(theme.color(tint, scheme: .light))
+        let expected = try capture(Group {
+            if prominent { native.buttonStyle(.borderedProminent) } else { native.buttonStyle(.bordered) }
+        })
+        let actual = try capture(Button("Save") {}.buttonStyle(.tw(classes)))
+        #expect(actual.size == expected.size)
+        #expect(actual.tiffRepresentation == expected.tiffRepresentation, "\(classes) must be Apple's style, not a painted one.")
+    }
+
+    @Test func toggleSelectionChangesOnlyTheTintAndKeepsTheLabel() {
+        let model = SurfaceModel()
+        let (host, window) = host(ToggleButtonProbe(model: model))
+        defer { window.contentView = nil }
+        for _ in 0..<4 { model.expanded.toggle(); settle(host) }
+        #expect(!model.identities.isEmpty)
+        #expect(Set(model.identities).count == 1, "Selecting a toggle must not replace its native button.")
+    }
+
+    @Test(arguments: [ControlActiveState.key, .inactive])
+    func prominentLabelsFollowTheWindowState(state: ControlActiveState) throws {
+        // AppKit draws an inactive window's prominent bezel gray, so a white theme label would disappear.
+        let (host, window) = host(Button("Save changes") {}.buttonStyle(.tw("button-primary")).padding(8)
+            .environment(\.controlActiveState, state))
+        defer { window.contentView = nil }
+        let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        var luminances: [Double] = []
+        for y in (bitmap.pixelsHigh * 2 / 5)..<(bitmap.pixelsHigh * 3 / 5) {
+            for x in (bitmap.pixelsWide / 4)..<(bitmap.pixelsWide * 3 / 4) {
+                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB), color.alphaComponent > 0.5 else { continue }
+                luminances.append(0.2126 * color.redComponent + 0.7152 * color.greenComponent + 0.0722 * color.blueComponent)
+            }
+        }
+        let darkest = try #require(luminances.min()), brightest = try #require(luminances.max())
+        if state == .inactive {
+            #expect(darkest < 0.45, "The inactive label must use the dark system label color.")
+        } else {
+            #expect(brightest > 0.9 && darkest < 0.3, "The key-window label must be light on the primary bezel.")
+        }
+    }
+
     @Test func interruptedGroupTransitionsSettleOnTheFinalState() throws {
         let model = SurfaceModel()
         let (host, window) = host(SurfaceGroupProbe(model: model))
@@ -251,6 +300,15 @@ struct AdaptiveSurfaceRenderingTests {
             window.sendEvent(event)
         }
     }
+    private func capture<V: View>(_ view: V) throws -> NSBitmapImageRep {
+        let (host, window) = host(view.padding(8).environment(\.controlActiveState, .key).environment(\.colorScheme, .light))
+        defer { window.contentView = nil }
+        host.appearance = NSAppearance(named: .aqua)
+        settle(host)
+        let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        return bitmap
+    }
     private func descendants(_ root: NSView) -> [NSView] { root.subviews.flatMap { [$0] + descendants($0) } }
 }
 
@@ -300,6 +358,17 @@ private struct NativeButtonProbe: View {
             .buttonStyle(.tw("glass px-4 text-sm"))
             .environment(\._accessibilityReduceTransparency, model.reduceTransparency)
             .padding(8)
+    }
+}
+
+private struct ToggleButtonProbe: View {
+    let model: SurfaceModel
+    var body: some View {
+        Toggle(isOn: Binding(get: { model.expanded }, set: { model.expanded = $0 })) {
+            HStack { Text("Bold"); IdentityProbe(model: model) }
+        }
+        .toggleStyle(CNButtonToggleStyle())
+        .padding(8)
     }
 }
 

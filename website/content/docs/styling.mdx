@@ -67,14 +67,14 @@ Native modifiers retain their order around each surface.
 ## State variants
 
 ```swift
-Button("Save", action: save)
-    .buttonStyle(.tw("button-primary hover:opacity-90 active:scale-[0.98] disabled:opacity-45"))
-    .disabled(isSaving)
+Button("Rename", action: rename)
+    .buttonStyle(.tw("dropdown-item hover:bg-accent active:scale-[0.98] disabled:opacity-45"))
+    .disabled(isLocked)
 ```
 
 Hover, focus, pressed, and disabled patches apply after base values, in that order. More specific conditions win before declaration order when precedence is equal.
 
-Variants only affect appearance. Native `.disabled(...)` controls whether a control is disabled. See [native controls and state](/docs/native-controls).
+Variants only affect appearance. Native button styles, such as `button-primary`, keep Apple's own state appearance. Native `.disabled(...)` controls whether a control is disabled. See [native controls and state](/docs/native-controls).
 
 
 ## Validate generated strings

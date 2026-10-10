@@ -44,6 +44,9 @@ struct TWResolvedStyle {
     var sharedProperties = TWSharedProperties.frame
     var sharedSource = true
     var nativeSlots: [TWNativeSlot] = []
+
+    /// The native button style, if any. A glass surface without a bezel class keeps the bordered glass style.
+    var buttonBezel: TWButtonBezel? { bezel ?? (surface == nil ? nil : prominent ? .prominent : .bordered) }
 }
 
 enum TWStyleResolver {
