@@ -25,10 +25,13 @@ extension TWStyle {
     /// Built-in classes stay editable when you copy these source files.
     static let defaultClasses: [String: Self] = {
         var recipes: [String: Self] = ["card": Self(.p(6), .bg(.surface), .fg(.foreground), .rounded(.lg), .border(.border), .shadow(.sm)),
-         "button-primary": Self(buttonBase, .bg(.primary), .fg(.onPrimary), .hover(.opacity(0.92))),
-         "button-secondary": Self(buttonBase, .bg(.muted), .fg(.foreground), .hover(.bg(.accent))),
-         "button-outline": Self(buttonBase, .bg(.surface), .fg(.foreground), .border(.border), .hover(.bg(.accent))),
-         "button-destructive": Self(buttonBase, .bg(.destructive), .fg(.onDestructive), .hover(.opacity(0.92))),
+         // Apple draws every button variant. The theme supplies the tint and label color.
+         "button-primary": Self(.bezel(.prominent), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.primary), .fg(.onPrimary)),
+         "button-secondary": Self(.bezel(.prominent), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.muted), .fg(.foreground)),
+         "button-outline": Self(.bezel(.bordered), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.foreground), .fg(.foreground)),
+         "button-destructive": Self(.bezel(.prominent), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.destructive), .fg(.onDestructive)),
+         "button-ghost": Self(.bezel(.borderless), .rounded(.md), .text(.sm), .weight(.semibold), .fg(.foreground)),
+         "button-link": Self(.bezel(.link), .fg(.primary)),
          "card-header": Self(.p(6), .pb(0)),
          "card-content": Self(.p(6)),
          "card-footer": Self(.p(6), .pt(0)),
@@ -148,12 +151,11 @@ extension TWStyle {
             "resizable-handle": "text-mutedForeground hover:text-foreground control-motion",
             "tooltip": "text-xs",
             "hover-card": "p-4 bg-surface text-foreground border shadow-md rounded-lg",
-            "toggle-selected": "bg-primary text-onPrimary",
-            "toggle-unselected": "bg-surface text-foreground border"
+            // Selection changes only the tint, so the native style and the label keep their identity.
+            "toggle-selected": "tint-primary text-onPrimary",
+            "toggle-unselected": "tint-muted text-foreground"
         ]
         for (name, classes) in components { recipes[name] = .classes(classes) }
-        recipes["button-ghost"] = Self(buttonBase, .fg(.foreground), .hover(.bg(.accent)))
-        recipes["button-link"] = Self(buttonBase, .px(0), .fg(.primary), .hover(.opacity(0.80)))
         recipes["input-group"] = Self(.px(3), .minH(inputMinimumHeight), .text(.sm), .fg(.foreground), .bg(.surface), .border(.input), .rounded(.md), .focus(.border(.ring, width: 2)), .disabled(.opacity(0.45)), .classes("control-motion"))
         recipes["input-group-field"] = Self(.text(.sm), .py(2), .minH(inputMinimumHeight))
         #if os(iOS)
@@ -180,15 +182,5 @@ extension TWStyle {
         #else
         36
         #endif
-    }
-
-    private static var buttonBase: Self {
-        #if os(iOS)
-        let minimumHeight: CGFloat = 44
-        #else
-        let minimumHeight: CGFloat = 32
-        #endif
-        return Self(.px(4), .py(2), .minH(minimumHeight), .text(.sm), .weight(.semibold), .rounded(.md),
-                    .pressed(.opacity(0.80)), .classes("control-motion"), .disabled(.opacity(0.45)))
     }
 }

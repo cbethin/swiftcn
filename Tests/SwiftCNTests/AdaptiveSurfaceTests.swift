@@ -164,8 +164,8 @@ struct AdaptiveSurfaceRenderingTests {
 
     @Test func nativeButtonLabelsReceiveLayoutWithoutAnotherBackground() throws {
         // A red background class must not paint over the native control.
-        let plain = try render(Button("Save") {}.buttonStyle(.twNative("glass")), glass: false)
-        let styled = try render(Button("Save") {}.buttonStyle(.twNative("glass bg-[#ff0000] px-6")), glass: false)
+        let plain = try render(Button("Save") {}.buttonStyle(.tw("glass")), glass: false)
+        let styled = try render(Button("Save") {}.buttonStyle(.tw("glass bg-[#ff0000] px-6")), glass: false)
         #expect(styled.width > plain.width)
         for x in stride(from: 0, to: styled.width, by: 2) {
             let sample = try pixel(styled, x: x, y: styled.height / 2)
@@ -297,7 +297,7 @@ private struct NativeButtonProbe: View {
         Button { model.taps += 1 } label: {
             HStack { Text("Tap"); IdentityProbe(model: model) }
         }
-            .buttonStyle(.twNative("glass px-4 text-sm"))
+            .buttonStyle(.tw("glass px-4 text-sm"))
             .environment(\._accessibilityReduceTransparency, model.reduceTransparency)
             .padding(8)
     }

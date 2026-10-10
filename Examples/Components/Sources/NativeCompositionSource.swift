@@ -136,9 +136,9 @@ struct NativeSurfacesExample: View {
             }.pickerStyle(.segmented)
             HStack(spacing: 12) {
                 Button("Share") { shares += 1 }
-                    .buttonStyle(.twNative("glass px-1"))
+                    .buttonStyle(.tw("glass px-1"))
                 Button("Open note") { sheetOpen = true }
-                    .buttonStyle(.twNative("glass-prominent px-2 font-semibold"))
+                    .buttonStyle(.tw("glass-prominent px-2 font-semibold"))
             }
             TWSurfaceGroup(spacing: 12) {
                 HStack(spacing: 12) {
@@ -182,7 +182,7 @@ struct NativeSurfacesExample: View {
                     TextField("Write a note", text: $note)
                         .textFieldStyle(.tw("input"))
                     Button("Done") { sheetOpen = false }
-                        .buttonStyle(.twNative("glass-prominent"))
+                        .buttonStyle(.tw("glass-prominent"))
                 }
             }
             .presentationDetents([.medium, .large])
