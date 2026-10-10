@@ -87,6 +87,7 @@ enum TWProperty: Sendable {
     case border(TWColorSource, CGFloat)
     case borderColor(TWColorSource), borderWidth(CGFloat)
     case shadow(TWShadow)
+    case surface(TWSurfaceRole), glassInteractive(Bool), glassTint(TWColorSource), prominent(Bool)
     case opacity(Double)
     case tracking(CGFloat), lineSpacing(CGFloat), textAlignment(TextAlignment), lineLimit(Int?)
     case offset(CGSize), scale(CGSize), rotation(Double), blur(CGFloat)

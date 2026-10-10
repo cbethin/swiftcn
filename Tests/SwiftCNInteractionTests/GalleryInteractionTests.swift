@@ -108,6 +108,44 @@ final class GalleryInteractionTests: XCTestCase {
         #endif
     }
 
+    @MainActor func testAdaptiveSurfacesKeepTapsTransitionsAndSheetTyping() {
+        let app = launch("native:surfaces")
+        defer { capture(app); app.terminate() }
+        let share = app.buttons["Share"]
+        for _ in 0..<8 { activate(share) }
+        XCTAssertTrue(text(app, containing: "Shared 8 times").waitForExistence(timeout: 5))
+        // Interrupt the glass morph repeatedly; the group must settle on the final state.
+        let toggle = app.buttons.matching(NSPredicate(format: "label IN {'More tools', 'Fewer tools'}")).firstMatch
+        for _ in 0..<5 { activate(toggle) }
+        let reset = app.buttons["Reset tool"]
+        XCTAssertTrue(reset.waitForExistence(timeout: 5))
+        activate(app.buttons["Eraser"])
+        XCTAssertTrue(text(app, containing: "Tool: eraser").waitForExistence(timeout: 5))
+        activate(reset)
+        XCTAssertTrue(text(app, containing: "Tool: pencil").waitForExistence(timeout: 5))
+        for policy in ["Solid", "Glass", "Automatic"] {
+            #if os(macOS)
+            activate(app.radioButtons[policy])
+            #else
+            activate(app.buttons[policy])
+            #endif
+        }
+        XCTAssertTrue(reset.exists, "Changing the appearance policy must not change the controls.")
+        activate(app.buttons["Open note"])
+        let note = app.textFields["Write a note"]
+        XCTAssertTrue(note.waitForExistence(timeout: 5))
+        activate(note)
+        // Return ends the edit session. Without it, plain SwiftUI sheets on the iOS 27 simulator can drop the
+        // final synthesized keystroke from the binding when Done dismisses the sheet immediately.
+        note.typeText("Glass 12345\n")
+        expectValue(note, "Glass 12345")
+        activate(app.buttons["Done"])
+        XCTAssertTrue(wait(for: NSPredicate(format: "exists == false"), on: note))
+        activate(app.buttons["Open note"])
+        XCTAssertTrue(note.waitForExistence(timeout: 5))
+        expectValue(note, "Glass 12345")
+    }
+
     @MainActor func testCustomResizeHandleTracksRealDraggingInBothDirections() {
         let app = launch("resizable")
         defer { capture(app); app.terminate() }
@@ -168,9 +206,49 @@ final class GalleryInteractionTests: XCTestCase {
     }
     #endif
 
-    @MainActor private func launch(_ example: String) -> XCUIApplication {
+    #if os(iOS)
+    @MainActor func testNativeProminentButtonsKeepTheirLabelColorUnderStyledAncestors() throws {
+        // AppKit draws macOS button labels itself; iOS button styles adopt any explicit ancestor foreground.
+        let app = launch("button", probe: "native-button-labels")
+        defer { capture(app); app.terminate() }
+        var labels = ["Bordered label", "Nested label"]
+        // The probe shows the glass style only where the system provides it.
+        if #available(iOS 26, *) { labels.append("Glass label") }
+        for label in labels {
+            let button = app.buttons[label]
+            XCTAssertTrue(button.waitForExistence(timeout: 5))
+            XCTAssertGreaterThan(try lightLabelCoverage(button), 0.02, "\(label) lost its native light label color.")
+        }
+        XCTAssertLessThan(try lightLabelCoverage(app.buttons["Explicit label"]), 0.002,
+                          "An explicit text-* class must still reach the native label.")
+    }
+
+    /// The share of near-white pixels across the label band, away from the rounded edges.
+    @MainActor private func lightLabelCoverage(_ element: XCUIElement) throws -> Double {
+        let image = try XCTUnwrap(element.screenshot().image.cgImage)
+        let width = image.width, height = image.height
+        let context = try XCTUnwrap(CGContext(
+            data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        let bytes = try XCTUnwrap(context.data).assumingMemoryBound(to: UInt8.self)
+        var light = 0, total = 0
+        for y in (height * 3 / 10)..<(height * 7 / 10) {
+            for x in (width * 15 / 100)..<(width * 85 / 100) {
+                let index = (y * width + x) * 4
+                if min(bytes[index], bytes[index + 1], bytes[index + 2]) > 215 { light += 1 }
+                total += 1
+            }
+        }
+        return Double(light) / Double(max(total, 1))
+    }
+    #endif
+
+    @MainActor private func launch(_ example: String, probe: String? = nil) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
+        app.launchEnvironment["SWIFTCN_UI_PROBE"] = probe
         #if os(macOS)
         app.launchArguments = ["-AppleKeyboardUIMode", "3"]
         #endif
@@ -178,6 +256,11 @@ final class GalleryInteractionTests: XCTestCase {
         app.launchEnvironment["SWIFTCN_UI_EXAMPLE"] = example
         app.launch()
         return app
+    }
+
+    /// macOS exposes Text as a value; iOS exposes it as a label.
+    @MainActor private func text(_ app: XCUIApplication, containing value: String) -> XCUIElement {
+        app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", value, value)).firstMatch
     }
 
     @MainActor private func activate(_ element: XCUIElement) {

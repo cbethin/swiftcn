@@ -91,9 +91,11 @@ Each failure includes the reference, the new image, and their difference.
 
 ## Continuous integration
 
-The continuous integration (CI) job selects macOS 15 and Xcode 16.4.
-The committed macOS references use `Tests/SwiftCNVisualTests/__Snapshots__/macos-15-xcode-16.4`.
+The continuous integration (CI) job selects macOS 15 and Xcode 26.3.
+The committed macOS references use `Tests/SwiftCNVisualTests/__Snapshots__/macos-15-xcode-26.3`.
 The iOS references use `Tests/SwiftCNVisualTests/__Snapshots__/ios-18.5-iphone-16`.
+Xcode 26.3 builds with the 26 SDKs. The macOS 15 host and the iOS 18.5 runtime render the pre-Liquid Glass fallbacks, so these references cover the earlier appearance.
+The `glass-surfaces` job runs the adaptive surface tests on macOS 26 and uploads glass captures as evidence.
 The normal CI job verifies these references on each main push and pull request.
 The job uploads visual evidence even when verification fails.
 
