@@ -72,6 +72,7 @@ private struct TWNativeBezelButton: View {
     let bezel: TWButtonBezel
     let glass: Bool
     let fullRadius: CGFloat
+    @Environment(\.isEnabled) private var isEnabled
     #if os(macOS)
     @Environment(\.controlActiveState) private var activeState
     #endif
@@ -105,6 +106,12 @@ private struct TWNativeBezelButton: View {
 
     /// Native styles adopt any explicit foreground, so the label sets the style's own color unless a class does.
     private var foreground: AnyShapeStyle {
+        // An explicit theme color would hide the native disabled appearance.
+        #if os(macOS)
+        if !isEnabled { return AnyShapeStyle(Color(nsColor: .disabledControlTextColor)) }
+        #else
+        if !isEnabled { return AnyShapeStyle(Color(uiColor: .tertiaryLabel)) }
+        #endif
         #if os(macOS)
         // AppKit draws prominent bezels gray in an inactive window, with the system label color.
         if bezel == .prominent && activeState == .inactive { return AnyShapeStyle(Color.primary) }

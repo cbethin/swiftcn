@@ -31,7 +31,7 @@ extension TWStyle {
          "button-outline": Self(.bezel(.bordered), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.foreground), .fg(.foreground)),
          "button-destructive": Self(.bezel(.prominent), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.destructive), .fg(.onDestructive)),
          // Borderless buttons have no bezel to size them, so the label keeps the platform's touch target.
-         "button-ghost": Self(.bezel(.borderless), .rounded(.md), .text(.sm), .weight(.semibold), .fg(.foreground), .minH(controlMinimumHeight)),
+         "button-ghost": Self(.bezel(.borderless), .px(3), .rounded(.md), .text(.sm), .weight(.semibold), .fg(.foreground), .minH(controlMinimumHeight)),
          "button-link": Self(.bezel(.link), .text(.sm), .weight(.medium), .fg(.primary), .minH(controlMinimumHeight)),
          "card-header": Self(.p(6), .pb(0)),
          "card-content": Self(.p(6)),
