@@ -307,6 +307,9 @@ struct AdaptiveSurfaceRenderingTests {
 
     @Test func buttonsWithoutATintClassKeepTheInheritedTint() throws {
         // `.tint(nil)` resets the tint to the default, so a button without a tint class must not apply one.
+        // Before macOS 26 AppKit draws prominent bezels from the real window state, gray in this unfocused fixture,
+        // so the tint is only visible from macOS 26. The glass-surfaces CI job runs this suite there.
+        guard #available(macOS 26, *) else { return }
         // Counts strongly green and strongly red pixels across the bezel's middle row; bezel sizes differ by system.
         func hues(_ classes: String) throws -> (green: Int, red: Int) {
             let bitmap = try capture(Button("Save changes") {}.buttonStyle(.tw(classes)).tint(Color(red: 0, green: 0.8, blue: 0)))
