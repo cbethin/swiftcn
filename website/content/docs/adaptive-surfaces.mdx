@@ -12,6 +12,7 @@ import SwiftCN
 
 struct AdaptiveSurfacesExample: View {
     @State private var expanded = false
+    @State private var progress: CGFloat = 0.3
     @Namespace private var surfaces
 
     var body: some View {
@@ -31,8 +32,14 @@ struct AdaptiveSurfacesExample: View {
                 }
             }
             Text("Settings").tw("p-4 surface-solid rounded-lg")
+            Text("Uploading").tw("px-4 py-2")
+                .twGlassFrames(progress) { value, size in
+                    [TWGlassPiece(id: "progress", frame: CGRect(x: 0, y: 0, width: size.width * value, height: size.height))]
+                }
+                .onTapGesture { withAnimation(.smooth) { progress = progress < 1 ? 1 : 0.3 } }
         }
         .twAppearance(.automatic)
+        .twGlassRenderer(.automatic)
     }
 }
 ```
@@ -75,13 +82,47 @@ Global defaults from `TWGlobalRules.view` are overridden by local classes in the
 If your app sets `UIDesignRequiresCompatibility` in its Info.plist, `.automatic` follows it and uses the earlier appearance.
 Use `.twAppearance(.glass)` or the `glass` class to opt specific surfaces back in.
 
+## Glass renderer
+
+`.twGlassRenderer` chooses the framework that draws glass surfaces and groups. Fills, roles, and the appearance policy stay the same.
+
+| Renderer | iOS 27 and later | iOS 26 | macOS 26 and later, Mac Catalyst |
+| --- | --- | --- | --- |
+| `.automatic` (default) | UIKit | SwiftUI | SwiftUI |
+| `.swiftUI` | SwiftUI | SwiftUI | SwiftUI |
+| `.uiKit` | UIKit | UIKit | SwiftUI |
+
+On a physical iPhone running iOS 27.0.1, SwiftUI's `glassEffect` anywhere in a window stopped the window redrawing, while state and touches kept working.
+UIKit's `UIGlassEffect` renders correctly, so `.automatic` uses it on iOS 27 and later. The iOS simulators never showed the problem.
+Use `.twGlassRenderer(.swiftUI)` to return to SwiftUI's glass once the system is fixed.
+
+UIKit's renderer draws a `UIVisualEffectView` with `UIGlassEffect` behind each glass surface, using the surface's tint, `glass-interactive`, and corner shape.
+It never applies SwiftUI's `glassEffect`, not even `.identity`. Solid and material fills, including the Reduce Transparency fallback, create no glass view at all.
+The glass view only draws: SwiftUI keeps every touch, so `glass-interactive` may not show UIKit's touch response.
+
+The renderer depends only on the system and this setting, never on accessibility, so it selects a view structure once.
+Set it near the root of your app and leave it: changing it rebuilds the surfaces below.
+
+Glass buttons follow the renderer too. With UIKit's renderer, `glass` and `glass-prominent` buttons never use SwiftUI's `.glass` or `.glassProminent` styles:
+
+- A plain `Button` keeps its role, action, and accessibility. A UIKit glass view is drawn behind its label, at the native styles' sizes: 28 points tall for `control-sm` and `control-mini`, 34 for the regular size, and 50 for `control-lg` and `control-xl`. On iOS the touch target is at least 44 points, without changing layout.
+- `glass-prominent` tints the glass with the `tint-*` color, or the inherited tint, and keeps the white label. Plain `glass` stays clear with the primary label, unless a `tint-*` class tints it.
+- Buttons are capsules unless a `rounded-*` class sets corners.
+- Pressing scales the button to 96% and fades it to 78% with a spring. Reduce Motion keeps the fade with a short ease-out and no scale.
+- Disabled buttons drop the tint and use the system's disabled label color.
+- Under Reduce Transparency a themed solid fill replaces the glass view: the surface color with its edge for `glass`, the tint for `glass-prominent`. Only the background changes, so the button keeps its identity.
+- Glass buttons draw their own glass and do not blend with a `TWSurfaceGroup`.
+
+Controls the system draws itself, such as sheets, menus, pickers, and toolbars, keep the system appearance.
+
 ## Native buttons
 
 Every `.buttonStyle(.tw(...))` button whose classes choose a native style is drawn by Apple.
-On a button, `glass` and `glass-prominent` select `.glass` or `.glassProminent` on Liquid Glass systems, and `.bordered` or `.borderedProminent` otherwise.
+On a button, `glass` and `glass-prominent` select `.glass` or `.glassProminent` on Liquid Glass systems, and `.bordered` or `.borderedProminent` otherwise. With UIKit's renderer they draw UIKit's glass instead; see [Glass renderer](#glass-renderer).
 `surface-solid` always selects the bordered styles.
 Classes add spacing and typography to the label. Background, border, and shadow classes are ignored so nothing paints over the native control.
-Use `tint-*` or the native `.tint` modifier for color.
+Use `tint-*` or the native `.tint` modifier for color. A button without a tint class keeps the inherited tint.
+A tint class that applies only in some states, such as `focus:tint-primary`, uses the default tint in the other states: SwiftUI cannot restore an inherited tint once a button sets one.
 
 Accessibility settings never change the selected style type, so a button keeps its identity, focus, and pending activation.
 
@@ -90,6 +131,36 @@ Accessibility settings never change the selected style type, so a button keeps i
 `TWSurfaceGroup` wraps `GlassEffectContainer`, so nearby glass shapes blend and morph together.
 `twSurfaceID(_:in:)` wraps `glassEffectID`. Apply it after the surface's `.tw` classes.
 Earlier systems show the content unchanged and ignore the identifier. Use native transitions for those.
+
+With UIKit's renderer, `TWSurfaceGroup` draws its surfaces' glass in one `UIGlassContainerEffect` behind its content, so nearby shapes still blend.
+Each surface reports its bounds to the group. Glass that arrives materializes, glass that leaves dematerializes, and glass that moves follows the transaction's animation.
+`twSurfaceID(_:in:)` names a surface's glass shape: a surface that leaves and one that arrives with the same identifier share one shape, which moves and resizes between them.
+It names the one surface directly below it. On a view that contains several surfaces side by side it has no effect, like `glassEffectID` on a view without glass.
+This differs from SwiftUI's container in a few ways:
+
+- The group's glass sits behind all of the group's content, not behind each surface. Avoid overlapping a grouped surface with other content in the group.
+- SwiftUI reports the surfaces' frames on every animation frame and gesture event, including `.offset` and `.scaleEffect`, so the glass stays on its surface while it moves. Scrolling inside a group is untested; keep scroll views outside the group.
+- A surface in a sheet or popover presented from inside the group draws its own glass.
+
+`.twGlassTracking(_:)` chooses how UIKit's group glass follows those frames.
+`.transaction`, the default, bridges the transaction's animation to UIKit, so glass that arrives or leaves materializes and dematerializes.
+`.direct` sets every frame as it arrives and adds and removes glass at once, so UIKit never animates on top of frames your code already drives.
+
+## Glass at computed frames
+
+`TWGlassCluster(spacing:pieces:)` draws glass at frames you compute, in its own coordinates, without surfaces or layout.
+Each `TWGlassPiece` has an identifier, a frame, a shape, an optional tint, and the interactive flag.
+Shapes are `.capsule`, `.rounded(_:)`, and `.edges(top:bottom:)` for different top and bottom corners, as on a sheet.
+
+- With UIKit's renderer, the cluster sets each frame directly inside one `UIGlassContainerEffect`, without UIKit animation, and adds and removes pieces by identifier.
+- With SwiftUI's renderer, it places `glassEffect` pieces in a `GlassEffectContainer`.
+- Under Reduce Transparency each piece is a solid fill: its tint, or the theme's surface, with the fallback edge. No glass view is drawn. Without Liquid Glass each piece is a material with that edge.
+- The cluster only draws. It takes no touches and is hidden from accessibility.
+
+`.twGlassFrames(_:spacing:pieces:)` draws a cluster behind a view at frames computed from an animatable value.
+SwiftUI interpolates the value and calls `pieces` with it and the view's size on every animation frame. A gesture that sets the value calls it on every event.
+The value can be any `VectorArithmetic` type, such as `CGFloat` or `AnimatablePair`.
+Content is not moved for you: place it from the same value, so content and glass move together.
 
 ## Native sheets
 

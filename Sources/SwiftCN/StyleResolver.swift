@@ -24,6 +24,9 @@ struct TWResolvedStyle {
     /// Leaves the inherited foreground untouched: no rule in any state sets one,
     /// or a native control adapter supplies the label color.
     var inheritsForeground = false
+    /// Leaves the inherited tint untouched: no rule in any state sets one. SwiftUI's `.tint(nil)` resets
+    /// the tint to the default rather than inheriting it, so a button applies `.tint` only when a rule may set one.
+    var inheritsTint = false
     var opacity: Double = 1
     var tracking: CGFloat?
     var lineSpacing: CGFloat?
@@ -84,6 +87,9 @@ enum TWStyleResolver {
         // Decided before state filtering, so hover or focus variants never add or remove the modifier.
         result.inheritsForeground = !expanded.rules.contains {
             if case .foreground = $0.property { true } else { false }
+        }
+        result.inheritsTint = !expanded.rules.contains {
+            if case .glassTint = $0.property { true } else { false }
         }
         var selectedNative: [String: (name: String, argument: TWArgument?)] = [:]
         for entry in rules {

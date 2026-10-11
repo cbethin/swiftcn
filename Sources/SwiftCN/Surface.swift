@@ -10,8 +10,22 @@ public enum TWAppearance: Sendable, Hashable {
     case solid
 }
 
+/// Which framework draws Liquid Glass surfaces and groups. Fills, roles, and the appearance policy are unchanged.
+public enum TWGlassRenderer: Sendable, Hashable {
+    /// UIKit's glass on iOS 27 and later, and SwiftUI's glass elsewhere.
+    /// On a physical iPhone running iOS 27.0.1, SwiftUI's `glassEffect` stopped the window redrawing; UIKit's glass did not.
+    case automatic
+    /// SwiftUI's `glassEffect` and `GlassEffectContainer`.
+    case swiftUI
+    /// UIKit's `UIGlassEffect` and `UIGlassContainerEffect` on iOS 26 and later.
+    /// macOS and Mac Catalyst use SwiftUI's glass.
+    case uiKit
+}
+
 extension EnvironmentValues {
     @Entry public var twAppearance: TWAppearance = .automatic
+    /// Set it once, near the root. Changing it rebuilds the surfaces below.
+    @Entry public var twGlassRenderer: TWGlassRenderer = .automatic
     /// Test override for the operating system's glass support. Nil reads the running system.
     @Entry var twGlassSupport: Bool? = nil
     /// True inside a presentation that keeps the system background. Custom content should then omit its own fill.
@@ -23,6 +37,12 @@ extension View {
     public func twAppearance(_ appearance: TWAppearance) -> some View {
         environment(\.twAppearance, appearance)
     }
+
+    /// Choose the framework that draws glass in this subtree. Set it once, near the root:
+    /// a change rebuilds the surfaces below, unlike appearance and accessibility changes.
+    public func twGlassRenderer(_ renderer: TWGlassRenderer) -> some View {
+        environment(\.twGlassRenderer, renderer)
+    }
 }
 
 /// The surface a view asks for. The policy and the system choose its fill.
@@ -31,11 +51,63 @@ enum TWSurfaceRole: Sendable, Hashable { case floating, solid, glass }
 /// Every surface resolves to exactly one of these fills.
 enum TWSurfaceFill: Sendable, Hashable { case glass, material, solid }
 
+/// The API that draws glass. It depends on the system and the renderer setting, never on accessibility,
+/// so it selects a surface's view structure once.
+enum TWGlassEngine: Sendable, Hashable {
+    /// No glass API. Glass fills draw nothing; other fills draw as usual.
+    case none
+    /// SwiftUI's `glassEffect`, applied in every state so the structure stays fixed.
+    case swiftUI
+    /// UIKit's `UIGlassEffect` behind the content. SwiftUI's glass is never applied, not even `.identity`.
+    case uiKit
+
+    /// UIKit draws Liquid Glass on iOS 26 and later. Mac Catalyst keeps SwiftUI's glass, like macOS.
+    static var systemSupportsUIKitGlass: Bool {
+        #if os(iOS) && !targetEnvironment(macCatalyst)
+        if #available(iOS 26, *) { return true }
+        #endif
+        return false
+    }
+
+    /// On a physical iPhone running iOS 27.0.1, SwiftUI's glass anywhere in a window stopped it redrawing
+    /// while state and touches kept working. UIKit's glass renders. The simulators never froze.
+    static var systemPrefersUIKitGlass: Bool {
+        #if os(iOS) && !targetEnvironment(macCatalyst)
+        if #available(iOS 27, *) { return true }
+        #endif
+        return false
+    }
+}
+
+extension TWGlassRenderer {
+    /// Inputs are fixed for the life of the process; tests pass them explicitly.
+    func engine(swiftUIGlass: Bool = TWSurfaceContext.systemSupportsGlass,
+                uiKitGlass: Bool = TWGlassEngine.systemSupportsUIKitGlass,
+                prefersUIKit: Bool = TWGlassEngine.systemPrefersUIKitGlass) -> TWGlassEngine {
+        let fallback: TWGlassEngine = swiftUIGlass ? .swiftUI : .none
+        switch self {
+        case .automatic: return uiKitGlass && prefersUIKit ? .uiKit : fallback
+        case .swiftUI: return fallback
+        case .uiKit: return uiKitGlass ? .uiKit : fallback
+        }
+    }
+}
+
+/// The glass a surface applies. Only `.swiftUI` calls SwiftUI's `glassEffect`.
+enum TWGlassLayer: Sendable, Hashable {
+    case none
+    /// SwiftUI's `glassEffect`: real glass when active, `.identity` otherwise.
+    case swiftUI(active: Bool)
+    /// A UIKit glass view behind the content.
+    case uiKit
+}
+
 struct TWSurfaceContext: Sendable, Hashable {
     var appearance = TWAppearance.automatic
     var supportsGlass = false
     var requiresCompatibility = false
     var reduceTransparency = false
+    var engine = TWGlassEngine.swiftUI
 
     /// Native glass and controls adapt to accessibility settings themselves; custom fallbacks do not.
     func fill(for role: TWSurfaceRole) -> TWSurfaceFill {
@@ -61,6 +133,16 @@ struct TWSurfaceContext: Sendable, Hashable {
     /// Native sheets keep the system background wherever the system draws glass.
     var keepsSystemPresentation: Bool { usesGlass(.floating) }
 
+    /// The glass layer for a role. The engine fixes which API is used; the fill only decides whether it draws.
+    func glassLayer(for role: TWSurfaceRole) -> TWGlassLayer {
+        let glass = fill(for: role) == .glass
+        switch engine {
+        case .none: return .none
+        case .swiftUI: return .swiftUI(active: glass)
+        case .uiKit: return glass ? .uiKit : .none
+        }
+    }
+
     static var systemSupportsGlass: Bool {
         if #available(iOS 26, macOS 26, *) { true } else { false }
     }
@@ -74,13 +156,16 @@ struct TWSurfaceContext: Sendable, Hashable {
 struct TWSurfaceInputs: DynamicProperty {
     @Environment(\.twAppearance) private var appearance
     @Environment(\.twGlassSupport) private var glassSupport
+    @Environment(\.twGlassRenderer) private var renderer
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var context: TWSurfaceContext {
         TWSurfaceContext(appearance: appearance, supportsGlass: glassSupport ?? TWSurfaceContext.systemSupportsGlass,
                          requiresCompatibility: TWSurfaceContext.systemRequiresCompatibility,
-                         reduceTransparency: reduceTransparency)
+                         reduceTransparency: reduceTransparency, engine: engine)
     }
+
+    var engine: TWGlassEngine { renderer.engine() }
 }
 
 /// Draws one surface behind the content: glass, a material, or a solid fill. Explicit borders and shadows remain.
@@ -93,11 +178,29 @@ struct TWSurfaceModifier: ViewModifier {
     @Environment(\.colorSchemeContrast) private var contrast
 
     func body(content: Content) -> some View {
-        let fill = inputs.context.fill(for: role)
-        // Keep the same modifiers in every state so accessibility changes preserve descendant state.
-        if #available(iOS 26, macOS 26, *) {
-            decorate(content.glassEffect(fill == .glass ? glass : .identity, in: shape), fill: fill)
-        } else {
+        let context = inputs.context
+        let fill = context.fill(for: role)
+        let layer = context.glassLayer(for: role)
+        // The engine selects the structure. Each branch keeps the same modifiers in every state,
+        // so accessibility and policy changes preserve descendant state.
+        switch context.engine {
+        case .swiftUI:
+            if #available(iOS 26, macOS 26, *) {
+                decorate(content.glassEffect(layer == .swiftUI(active: true) ? glass : .identity, in: shape), fill: fill)
+            } else {
+                decorate(content, fill: fill)
+            }
+        case .uiKit:
+            #if os(iOS)
+            if #available(iOS 26, *) {
+                decorate(content.modifier(TWUIKitSurfaceGlassModifier(style: layer == .uiKit ? uiKitGlass : nil)), fill: fill)
+            } else {
+                decorate(content, fill: fill)
+            }
+            #else
+            decorate(content, fill: fill)
+            #endif
+        case .none:
             decorate(content, fill: fill)
         }
     }
@@ -119,6 +222,12 @@ struct TWSurfaceModifier: ViewModifier {
     @available(iOS 26, macOS 26, *)
     private var glass: Glass {
         Glass.regular.tint(appearance.glassTint).interactive(appearance.glassInteractive)
+    }
+
+    /// The same glass for UIKit.
+    private var uiKitGlass: TWGlassStyle {
+        TWGlassStyle(tint: appearance.glassTint, interactive: appearance.glassInteractive,
+                     shape: appearance.hasRadius ? .rounded(appearance.radius) : .capsule)
     }
 
     /// Floating surfaces default to a capsule, like native glass. Radius classes select a rounded rectangle.
@@ -148,19 +257,51 @@ struct TWSurfaceModifier: ViewModifier {
     }
 }
 
+/// One surface's glass, as UIKit draws it.
+struct TWGlassStyle: Hashable {
+    var tint: Color?
+    var interactive = false
+    var shape = TWGlassShape.capsule
+}
+
+/// A surface's glass shape within a group: its `twSurfaceID`, or one the surface keeps for itself.
+struct TWGlassPieceID: Hashable, @unchecked Sendable {
+    // Built only from `Hashable & Sendable` values.
+    var namespace: Namespace.ID?
+    var value: AnyHashable
+}
+
 /// Groups glass surfaces so nearby shapes blend and morph on systems with Liquid Glass.
 /// Earlier systems show the content unchanged. Put a stack inside to arrange several surfaces.
+/// With UIKit's renderer the group draws its surfaces' glass in one `UIGlassContainerEffect` behind its content.
 public struct TWSurfaceGroup<Content: View>: View {
     private let spacing: CGFloat?
     private let content: Content
+    // The engine depends on the renderer alone, so accessibility and policy changes never invalidate the group.
+    @Environment(\.twGlassRenderer) private var renderer
     public init(spacing: CGFloat? = nil, @ViewBuilder content: () -> Content) {
         self.spacing = spacing
         self.content = content()
     }
     public var body: some View {
-        if #available(iOS 26, macOS 26, *) {
-            GlassEffectContainer(spacing: spacing) { content }
-        } else {
+        switch renderer.engine() {
+        case .swiftUI:
+            if #available(iOS 26, macOS 26, *) {
+                GlassEffectContainer(spacing: spacing) { content }
+            } else {
+                content
+            }
+        case .uiKit:
+            #if os(iOS)
+            if #available(iOS 26, *) {
+                TWUIKitGlassGroup(spacing: spacing, content: content)
+            } else {
+                content
+            }
+            #else
+            content
+            #endif
+        case .none:
             content
         }
     }
@@ -169,6 +310,8 @@ public struct TWSurfaceGroup<Content: View>: View {
 extension View {
     /// Morph identity for a glass surface inside a TWSurfaceGroup. Apply it after the surface's .tw classes.
     /// Other fills ignore the identifier; use native transitions for those.
+    /// With UIKit's renderer, a surface that leaves and one that arrives with the same identifier share one glass shape,
+    /// which moves and resizes with the transaction's animation.
     public func twSurfaceID<ID: Hashable & Sendable>(_ id: ID?, in namespace: Namespace.ID) -> some View {
         modifier(TWSurfaceIDModifier(id: id, namespace: namespace))
     }
@@ -183,10 +326,26 @@ extension View {
 private struct TWSurfaceIDModifier<ID: Hashable & Sendable>: ViewModifier {
     let id: ID?
     let namespace: Namespace.ID
+    @Environment(\.twGlassRenderer) private var renderer
     func body(content: Content) -> some View {
-        if #available(iOS 26, macOS 26, *) {
-            content.glassEffectID(id, in: namespace)
-        } else {
+        switch renderer.engine() {
+        case .swiftUI:
+            if #available(iOS 26, macOS 26, *) {
+                content.glassEffectID(id, in: namespace)
+            } else {
+                content
+            }
+        case .uiKit:
+            #if os(iOS)
+            // Renames the glass of the one surface directly below, as glassEffectID names that view's glass.
+            let name = id.map { TWGlassPieceID(namespace: namespace, value: AnyHashable($0)) }
+            content.transformPreference(TWGroupPieceKey.self) { pieces in
+                if let name { TWGroupPiece.name(&pieces, name) }
+            }
+            #else
+            content
+            #endif
+        case .none:
             content
         }
     }
