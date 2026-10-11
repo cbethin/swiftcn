@@ -6,15 +6,16 @@ description: "Let SwiftUI interpolate state changes with familiar animation clas
 Use animation classes to animate changes to the modifiers that `.tw` owns:
 
 ```swift
-Button("Save", action: save)
-    .buttonStyle(.tw("button-primary active:opacity-80 animate-spring duration-150"))
+Button("Rename", action: rename)
+    .buttonStyle(.tw("dropdown-item active:opacity-80 animate-spring duration-150"))
 
 Text("Details")
     .tw("\(expanded ? "p-6 rounded-xl" : "p-3 rounded-md") bg-surface animate-ease-out duration-200", value: expanded)
 ```
 
 SwiftUI owns the state and interpolates the native modifier values.
-Button press and release, hover, explicit focus, and computed strings use the same animation rules.
+Plain button press and release, hover, explicit focus, and computed strings use the same animation rules.
+Apple animates native button styles itself.
 You do not need an extra `.animation(..., value:)` call for these styled values.
 The modifier structure stays stable during these changes.
 Pass `value:` for layout changes, including padding that changes a view's intrinsic size.
@@ -67,7 +68,7 @@ let rules = TWGlobalRules(
 ContentView().twRules(rules)
 // Inside ContentView:
 Text("Details").tw("motion-card")
-Button("Save", action: save).buttonStyle(.tw("button-primary animate-press"))
+Button("Rename", action: rename).buttonStyle(.tw("dropdown-item animate-press"))
 ```
 
 Preset factories receive the resolved duration in seconds.

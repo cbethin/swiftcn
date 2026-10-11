@@ -21,7 +21,7 @@ struct NativeRegistryExample: View {
 
     private var rules: TWGlobalRules {
         TWGlobalRules(modifiers: [
-            "glass": .view { view, active in
+            "frosted": .view { view, active in
                 view.background {
                     RoundedRectangle(cornerRadius: 20)
                         .fill(.ultraThinMaterial)
@@ -40,7 +40,7 @@ struct NativeRegistryExample: View {
         VStack(spacing: 24) {
             Text("Room for ideas")
                 .tw(cn(
-                    "text-xl font-semibold p-6 glass",
+                    "text-xl font-semibold p-6 frosted",
                     "tilt-[\(expanded ? 8.0 : 0.0)]",
                     "animate-[\(Animation.default)]"
                 ), value: expanded)
@@ -61,7 +61,7 @@ The documentation compiler check compiles this complete file for macOS and iOS, 
 
 | Registration | Class | Factory |
 | --- | --- | --- |
-| `.view { view, active in ... }` | `glass` | Transform a view; use `active` to select neutral values when absent. |
+| `.view { view, active in ... }` | `frosted` | Transform a view; use `active` to select neutral values when absent. |
 | `.modifier { active, theme in ... }` | `lifted` | Return one concrete native `ViewModifier` type for both states. |
 | `.value(default: 0.0) { view, degrees in ... }` | `tilt-[\(angle)]` | Read a native value; standard scalar text also works. |
 | `.argument(default: 0.0, parse: ...) { view, degrees in ... }` | `tilt-[8deg]` | Decode a typed value, then use native modifiers directly. |
@@ -88,15 +88,15 @@ Native button styles supply press state; other views require explicit `TWState` 
 It accepts optional class arguments or an array of optional classes:
 
 ```swift
-let classes = cn("card glass", selected ? "border-primary" : nil)
-let shared = cn(["glass", "p-4", TWClasses(extraClasses)])
+let classes = cn("card frosted", selected ? "border-primary" : nil)
+let shared = cn(["frosted", "p-4", TWClasses(extraClasses)])
 ```
 
 Its builder form accepts strings, arrays, conditions, and loops:
 
 ```swift
 let classes = cn {
-    "card glass"
+    "card frosted"
     sharedClasses
     if selected { "border-primary" }
     "tilt-[\(angle)]"

@@ -101,7 +101,7 @@ public struct CNCalendar: View {
         #endif
     }
     private func navigationButton(_ offset: Int, title: LocalizedStringKey, image: String) -> some View {
-        CNButton(variant: .ghost, size: .icon, classes: "border px-0 py-0", action: {
+        CNButton(variant: .outline, size: .icon, classes: "px-0 py-0", action: {
             guard let next = CNCalendarGrid.adjacent(to: month, offset: offset, in: range, calendar: calendar) else { return }
             visibleMonth = next
         }) { Image(systemName: image).tw("text-xs").accessibilityHidden(true) }

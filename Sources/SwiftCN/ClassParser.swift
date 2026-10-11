@@ -154,6 +154,20 @@ enum TWClassParser {
         case "shared-size": return TWStyle(rules: [TWRule(property: .sharedProperties(.size))])
         case "shared-source": return TWStyle(rules: [TWRule(property: .sharedSource(true))])
         case "shared-follower": return TWStyle(rules: [TWRule(property: .sharedSource(false))])
+        case "surface-floating": return .surfaceFloating
+        case "surface-solid": return .surfaceSolid
+        case "glass": return .glass
+        case "glass-prominent": return .glassProminent
+        case "glass-interactive": return .glassInteractive
+        case "bezel-prominent": return .bezel(.prominent)
+        case "bezel-bordered": return .bezel(.bordered)
+        case "bezel-borderless": return .bezel(.borderless)
+        case "bezel-link": return .bezel(.link)
+        case "control-mini": return .controlSize(.mini)
+        case "control-sm": return .controlSize(.small)
+        case "control-md": return .controlSize(.regular)
+        case "control-lg": return .controlSize(.large)
+        case "control-xl": return .controlSize(.extraLarge)
         default: break
         }
         if let (prefix, decoded) = argument(name) {
@@ -189,6 +203,9 @@ enum TWClassParser {
         func color(_ value: String) -> TWColor? {
             let token = aliases[value] ?? TWColor(value)
             return theme.colors[token] == nil ? nil : token
+        }
+        for prefix in ["glass-tint-", "tint-"] where name.hasPrefix(prefix) {
+            return color(String(name.dropFirst(prefix.count))).map { .glassTint($0) }
         }
         for prefix in ["text-", "bg-", "border-", "rounded-", "shadow-", "font-"] where name.hasPrefix(prefix) {
             let value = String(name.dropFirst(prefix.count))

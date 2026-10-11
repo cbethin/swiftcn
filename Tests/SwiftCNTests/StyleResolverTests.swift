@@ -33,6 +33,47 @@ struct StyleResolverTests {
         #expect(raw.padding.trailing == 7)
     }
 
+    @Test func foregroundInheritanceDependsOnlyOnTheDeclaredRules() throws {
+        #expect(resolve("p-2 bg-background text-lg font-semibold").inheritsForeground)
+        let hovered = TWState(isHovered: true, isFocused: true)
+        for classes in ["text-primary", "hover:text-primary", "focus:text-primary", "group-hover:text-primary"] {
+            // A variant that is inactive now still keeps the foreground modifier installed.
+            #expect(!resolve(.classes(classes)).inheritsForeground, "\(classes)")
+            #expect(!resolve(.classes(classes), state: hovered).inheritsForeground, "\(classes)")
+        }
+        let rules = TWGlobalRules(named: ["accent-label": .classes("hover:text-primary")])
+        let named = TWStyleResolver.resolve("accent-label", theme: .standard, scheme: .light, state: TWState(), globalRules: rules)
+        #expect(!named.inheritsForeground)
+    }
+
+    @Test func buttonClassesSelectOneNativeStyle() throws {
+        #expect(resolve("button-primary").buttonBezel == .prominent)
+        #expect(resolve("button-outline").buttonBezel == .bordered)
+        #expect(resolve("button-ghost").buttonBezel == .borderless)
+        #expect(resolve("button-link").buttonBezel == .link)
+        #expect(resolve("glass").buttonBezel == .bordered)
+        #expect(resolve("glass-prominent").buttonBezel == .prominent)
+        #expect(resolve("button-outline bezel-prominent").buttonBezel == .prominent)
+        // Rows and menu items keep a plain button.
+        #expect(resolve("dropdown-item").buttonBezel == nil)
+        #expect(resolve("px-2 bg-muted").buttonBezel == nil)
+        // States never switch the native style type, so the button keeps its structure.
+        let pressed = TWState(isHovered: true, isFocused: true, isPressed: true)
+        #expect(resolve("hover:bezel-prominent", state: pressed).buttonBezel == nil)
+        #expect(resolve("button-outline pressed:bezel-prominent", state: pressed).buttonBezel == .bordered)
+        #expect(resolve("glass pressed:glass-prominent", state: pressed).buttonBezel == .bordered)
+        #expect(resolve("px-2 hover:glass", state: pressed).buttonBezel == nil)
+    }
+
+    @Test func tintAndControlSizeClassesResolve() throws {
+        #expect(resolve("tint-destructive").glassTint == TWTheme.standard.color(.destructive, scheme: .light))
+        #expect(resolve("tint-[#ff0000]").glassTint != nil)
+        #expect(resolve("control-sm").controlSize == .small)
+        #expect(resolve("control-xl").controlSize == .extraLarge)
+        #expect(throws: (any Error).self) { try TWStyle.parse("tint-unknown") }
+        #expect(throws: (any Error).self) { try TWStyle.parse("control-huge") }
+    }
+
     @Test func statesOverrideBaseRegardlessOfDeclarationOrder() {
         let style = TWStyle(.pressed(.opacity(0.5)), .opacity(1))
         #expect(resolve(style).opacity == 1)

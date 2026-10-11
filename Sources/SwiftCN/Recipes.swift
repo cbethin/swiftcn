@@ -25,10 +25,14 @@ extension TWStyle {
     /// Built-in classes stay editable when you copy these source files.
     static let defaultClasses: [String: Self] = {
         var recipes: [String: Self] = ["card": Self(.p(6), .bg(.surface), .fg(.foreground), .rounded(.lg), .border(.border), .shadow(.sm)),
-         "button-primary": Self(buttonBase, .bg(.primary), .fg(.onPrimary), .hover(.opacity(0.92))),
-         "button-secondary": Self(buttonBase, .bg(.muted), .fg(.foreground), .hover(.bg(.accent))),
-         "button-outline": Self(buttonBase, .bg(.surface), .fg(.foreground), .border(.border), .hover(.bg(.accent))),
-         "button-destructive": Self(buttonBase, .bg(.destructive), .fg(.onDestructive), .hover(.opacity(0.92))),
+         // Apple draws every button variant. The theme supplies the tint and label color.
+         "button-primary": Self(.bezel(.prominent), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.primary), .fg(.onPrimary)),
+         "button-secondary": Self(.bezel(.prominent), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.muted), .fg(.foreground)),
+         "button-outline": Self(.bezel(.bordered), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.foreground), .fg(.foreground)),
+         "button-destructive": Self(.bezel(.prominent), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.destructive), .fg(.onDestructive)),
+         // Borderless buttons have no bezel to size them, so the label keeps the platform's touch target.
+         "button-ghost": Self(.bezel(.borderless), .px(3), .rounded(.md), .text(.sm), .weight(.semibold), .fg(.foreground), .minH(controlMinimumHeight)),
+         "button-link": Self(.bezel(.link), .text(.sm), .weight(.medium), .fg(.primary), .minH(controlMinimumHeight)),
          "card-header": Self(.p(6), .pb(0)),
          "card-content": Self(.p(6)),
          "card-footer": Self(.p(6), .pt(0)),
@@ -44,8 +48,6 @@ extension TWStyle {
          "toggle": Self(.text(.sm), .fg(.foreground), .disabled(.opacity(0.45))),
          "label": Self(.text(.sm), .fg(.foreground))]
         let components: [String: TWClasses] = [
-            "button-ghost": "px-4 py-2 text-sm font-semibold rounded-md hover:bg-accent pressed:opacity-80 disabled:opacity-45",
-            "button-link": "text-sm font-medium text-primary hover:opacity-80 disabled:opacity-45",
             "button-group": "text-foreground rounded-md",
             "control-motion": "animate-smooth duration-150",
             "disclosure-motion": "animate-spring duration-250",
@@ -148,12 +150,11 @@ extension TWStyle {
             "resizable-handle": "text-mutedForeground hover:text-foreground control-motion",
             "tooltip": "text-xs",
             "hover-card": "p-4 bg-surface text-foreground border shadow-md rounded-lg",
-            "toggle-selected": "bg-primary text-onPrimary",
-            "toggle-unselected": "bg-surface text-foreground border"
+            // Selection changes only the tint, so the native style and the label keep their identity.
+            "toggle-selected": "tint-primary text-onPrimary",
+            "toggle-unselected": "tint-muted text-foreground"
         ]
         for (name, classes) in components { recipes[name] = .classes(classes) }
-        recipes["button-ghost"] = Self(buttonBase, .fg(.foreground), .hover(.bg(.accent)))
-        recipes["button-link"] = Self(buttonBase, .px(0), .fg(.primary), .hover(.opacity(0.80)))
         recipes["input-group"] = Self(.px(3), .minH(inputMinimumHeight), .text(.sm), .fg(.foreground), .bg(.surface), .border(.input), .rounded(.md), .focus(.border(.ring, width: 2)), .disabled(.opacity(0.45)), .classes("control-motion"))
         recipes["input-group-field"] = Self(.text(.sm), .py(2), .minH(inputMinimumHeight))
         #if os(iOS)
@@ -174,21 +175,19 @@ extension TWStyle {
     /// Read a built-in definition when extending that same class globally.
     public static func defaultStyle(for name: String) -> Self? { defaultClasses[name] }
 
+    private static var controlMinimumHeight: CGFloat {
+        #if os(iOS)
+        44
+        #else
+        32
+        #endif
+    }
+
     private static var inputMinimumHeight: CGFloat {
         #if os(iOS)
         44
         #else
         36
         #endif
-    }
-
-    private static var buttonBase: Self {
-        #if os(iOS)
-        let minimumHeight: CGFloat = 44
-        #else
-        let minimumHeight: CGFloat = 32
-        #endif
-        return Self(.px(4), .py(2), .minH(minimumHeight), .text(.sm), .weight(.semibold), .rounded(.md),
-                    .pressed(.opacity(0.80)), .classes("control-motion"), .disabled(.opacity(0.45)))
     }
 }
