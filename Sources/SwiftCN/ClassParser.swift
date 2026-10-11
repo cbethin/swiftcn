@@ -167,6 +167,7 @@ enum TWClassParser {
             return prefix == "duration-" ? .duration(seconds) : .delay(seconds)
         }
         if name == "w-full" { return .fullWidth }
+        if name == "h-full" { return .fullHeight }
         if name == "border" { return .border(.border) }
         if name == "rounded" { return .rounded(.md) }
         if name == "shadow" { return .shadow(.sm) }
