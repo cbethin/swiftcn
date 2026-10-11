@@ -115,6 +115,15 @@ struct StyleResolverTests {
         #expect(expanding.expandsWidth)
     }
 
+    @Test func heightUtilitiesReplaceOneAnother() {
+        let fixed = resolve(TWStyle(.fullHeight, .h(100)))
+        #expect(fixed.height == 100)
+        #expect(!fixed.expandsHeight)
+        let expanding = resolve(TWStyle(.h(100), .fullHeight))
+        #expect(expanding.height == nil)
+        #expect(expanding.expandsHeight)
+    }
+
     @Test func themeOverridesKeepUnspecifiedDefaults() {
         let theme = TWTheme(radii: [.lg: 20])
         #expect(theme.radius(.lg) == 20)

@@ -90,7 +90,7 @@ Text("Project settings")
 | `.borderColor(.blue, width: 2)` | Native border color |
 | `.shadow(.sm)` | Shadow on the surface background |
 | `.opacity(0.8)` | Opacity for the complete surface |
-| `.w(200)`, `.h(44)`, `.minW(80)`, `.maxW(300)`, `.minH(44)`, `.maxH(200)`, `.fullWidth` | Outer dimensions, size limits, or available width |
+| `.w(200)`, `.h(44)`, `.minW(80)`, `.maxW(300)`, `.minH(44)`, `.maxH(200)`, `.fullWidth`, `.fullHeight` | Outer dimensions, size limits, or available width or height |
 | `.fontSize(18)`, `.tracking(0.5)`, `.lineSpacing(4)`, `.textAlignment(.center)`, `.lineLimit(2)` | Fixed font size, text attributes, and line limits |
 | `.offset(x: 12, y: -4)`, `.scale(1.05)`, `.rotate(3)`, `.blur(2)` | Native visual transforms and blur |
 
@@ -705,7 +705,7 @@ Supported classes include:
 | Kind | Classes |
 | --- | --- |
 | Spacing | `p-4`, `px-2.5`, `py-2`, `pt-1`, `pb-1`, `ps-2`, `pe-2` |
-| Size | `w-12`, `h-10`, `min-h-11`, `w-full` |
+| Size | `w-12`, `h-10`, `min-h-11`, `w-full`, `h-full` |
 | Typography | `text-xs` through `text-3xl`, `font-medium`, `font-semibold`, `font-bold` |
 | Colors | `bg-primary`, `text-foreground`, `text-muted-foreground`, `text-primary-foreground` |
 | Decoration | `rounded-md`, `rounded-full`, `border`, `border-2`, `border-primary`, `shadow-sm`, `opacity-80` |
