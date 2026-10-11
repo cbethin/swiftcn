@@ -38,6 +38,121 @@ struct AdaptiveSurfacePolicyTests {
         #expect(TWSurfaceContext(appearance: .glass, supportsGlass: true, requiresCompatibility: true).keepsSystemPresentation)
     }
 
+    @Test func rendererSelectsUIKitOnlyWhereItCanDrawGlass() {
+        // swiftUIGlass, uiKitGlass, prefersUIKit: macOS 14, macOS 26, iOS 17, iOS 26, iOS 27.
+        let systems = [(false, false, false), (true, false, false), (false, false, false), (true, true, false), (true, true, true)]
+        let expected: [TWGlassRenderer: [TWGlassEngine]] = [
+            .automatic: [.none, .swiftUI, .none, .swiftUI, .uiKit],
+            .swiftUI: [.none, .swiftUI, .none, .swiftUI, .swiftUI],
+            .uiKit: [.none, .swiftUI, .none, .uiKit, .uiKit],
+        ]
+        for (renderer, engines) in expected {
+            for ((swiftUI, uiKit, prefers), engine) in zip(systems, engines) {
+                #expect(renderer.engine(swiftUIGlass: swiftUI, uiKitGlass: uiKit, prefersUIKit: prefers) == engine,
+                        "\(renderer) on \((swiftUI, uiKit, prefers))")
+            }
+        }
+    }
+
+    @Test func runningSystemKeepsMacOSOnSwiftUIGlass() {
+        #if os(macOS)
+        #expect(!TWGlassEngine.systemSupportsUIKitGlass)
+        #expect(!TWGlassEngine.systemPrefersUIKitGlass)
+        let system: TWGlassEngine = TWSurfaceContext.systemSupportsGlass ? .swiftUI : .none
+        for renderer in [TWGlassRenderer.automatic, .swiftUI, .uiKit] { #expect(renderer.engine() == system) }
+        #endif
+        #expect(EnvironmentValues().twGlassRenderer == .automatic)
+    }
+
+    @Test(arguments: [TWAppearance.automatic, .glass, .solid], [false, true])
+    func uiKitSurfacesNeverApplySwiftUIGlass(appearance: TWAppearance, compatibility: Bool) {
+        for supportsGlass in [false, true] {
+            for reduceTransparency in [false, true] {
+                let context = TWSurfaceContext(appearance: appearance, supportsGlass: supportsGlass, requiresCompatibility: compatibility,
+                                               reduceTransparency: reduceTransparency, engine: .uiKit)
+                for role in [TWSurfaceRole.floating, .solid, .glass] {
+                    // Solid, material, and Reduce Transparency surfaces draw no glass at all; glass fills draw UIKit's.
+                    #expect(context.glassLayer(for: role) == (context.fill(for: role) == .glass ? .uiKit : .none))
+                }
+            }
+        }
+    }
+
+    @Test func swiftUIGlassStaysInPlaceAcrossFills() {
+        // The SwiftUI engine keeps glassEffect in every state, so a fill change never alters the structure.
+        for reduceTransparency in [false, true] {
+            for appearance in [TWAppearance.automatic, .glass, .solid] {
+                let context = TWSurfaceContext(appearance: appearance, supportsGlass: true, reduceTransparency: reduceTransparency)
+                for role in [TWSurfaceRole.floating, .solid, .glass] {
+                    #expect(context.glassLayer(for: role) == .swiftUI(active: context.fill(for: role) == .glass))
+                }
+            }
+        }
+        #expect(TWSurfaceContext(supportsGlass: false, engine: .none).glassLayer(for: .glass) == .none)
+    }
+
+    @Test func buttonRenderingFollowsTheEngine() {
+        for bezel in [TWButtonBezel.prominent, .bordered, .borderless, .link] {
+            let native: TWButtonRendering = switch bezel {
+            case .prominent: .borderedProminent
+            case .bordered: .bordered
+            case .borderless: .borderless
+            case .link: .link
+            }
+            let glassBezel = bezel == .prominent || bezel == .bordered
+            for engine in [TWGlassEngine.none, .swiftUI, .uiKit] {
+                #expect(TWButtonRendering.resolve(bezel: bezel, glass: false, engine: engine) == native)
+            }
+            #expect(TWButtonRendering.resolve(bezel: bezel, glass: true, engine: .none) == native)
+            #expect(TWButtonRendering.resolve(bezel: bezel, glass: true, engine: .swiftUI)
+                    == (glassBezel ? .swiftUIGlass(prominent: bezel == .prominent) : native))
+            #expect(TWButtonRendering.resolve(bezel: bezel, glass: true, engine: .uiKit)
+                    == (glassBezel ? .uiKitGlass(prominent: bezel == .prominent) : native))
+        }
+    }
+
+    @Test(arguments: [TWAppearance.automatic, .glass, .solid], [false, true])
+    func uiKitButtonsNeverSelectSwiftUIGlassStyles(appearance: TWAppearance, compatibility: Bool) {
+        let classes = ["glass", "glass-prominent", "glass px-4 rounded-md", "glass-prominent tint-destructive",
+                       "glass-prominent glass-interactive control-lg", "surface-floating", "surface-solid", "surface-solid glass-prominent",
+                       "bezel-bordered glass", "bezel-prominent surface-floating", "bezel-borderless glass", "bezel-link glass",
+                       "button-primary", "button-secondary", "button-outline", "button-destructive", "button-ghost", "button-link",
+                       "button-outline hover:glass", "focus:glass-prominent", "pressed:glass", "disabled:glass-prominent"]
+        let states = [TWState(), TWState(isHovered: true), TWState(isFocused: true), TWState(isPressed: true), TWState(isDisabled: true)]
+        for supportsGlass in [false, true] {
+            for name in classes {
+                for state in states {
+                    let resolved = resolve(name, state: state)
+                    guard let bezel = resolved.buttonBezel else { continue }
+                    var renderings: Set<TWButtonRendering> = []
+                    for reduceTransparency in [false, true] {
+                        let context = TWSurfaceContext(appearance: appearance, supportsGlass: supportsGlass, requiresCompatibility: compatibility,
+                                                       reduceTransparency: reduceTransparency, engine: .uiKit)
+                        let glass = resolved.buttonSurface.map(context.usesGlass) ?? false
+                        let rendering = TWButtonRendering.resolve(bezel: bezel, glass: glass, engine: context.engine)
+                        if case .swiftUIGlass = rendering { Issue.record("\(name) in \(state) selected SwiftUI's glass style") }
+                        renderings.insert(rendering)
+                    }
+                    #expect(renderings.count == 1, "Reduce Transparency must not change the style type of \(name).")
+                }
+            }
+        }
+        // The same classes keep SwiftUI's glass styles on the SwiftUI engine.
+        let context = TWSurfaceContext(appearance: appearance, supportsGlass: true, requiresCompatibility: compatibility)
+        #expect(TWButtonRendering.resolve(bezel: .bordered, glass: context.usesGlass(.glass), engine: .swiftUI) == .swiftUIGlass(prominent: false))
+        #expect(resolve("glass-prominent").buttonBezel == .prominent)
+    }
+
+    @Test func tintClassesInAnyStateDecideWhetherAButtonAppliesATint() {
+        #expect(resolve("glass-prominent").inheritsTint)
+        #expect(resolve("bezel-prominent px-4").inheritsTint)
+        #expect(!resolve("button-primary").inheritsTint, "Recipes that set a tint apply it.")
+        #expect(!resolve("glass-prominent tint-destructive").inheritsTint)
+        // Decided before state filtering, so a focus tint never adds or removes the modifier.
+        #expect(!resolve("bezel-bordered focus:tint-primary").inheritsTint)
+        #expect(!resolve("bezel-bordered focus:tint-primary", state: TWState(isFocused: true)).inheritsTint)
+    }
+
     @Test func surfaceClassesResolveToOneRoleAndLocalClassesWin() {
         #expect(resolve("surface-floating").surface == .floating)
         #expect(resolve("surface-solid").surface == .solid)
@@ -188,6 +303,29 @@ struct AdaptiveSurfaceRenderingTests {
         let actual = try capture(Button("Save") {}.buttonStyle(.tw(classes)))
         #expect(actual.size == expected.size)
         #expect(actual.tiffRepresentation == expected.tiffRepresentation, "\(classes) must be Apple's style, not a painted one.")
+    }
+
+    @Test func buttonsWithoutATintClassKeepTheInheritedTint() throws {
+        // `.tint(nil)` resets the tint to the default, so a button without a tint class must not apply one.
+        // Before macOS 26 AppKit draws prominent bezels from the real window state, gray in this unfocused fixture,
+        // so the tint is only visible from macOS 26. The glass-surfaces CI job runs this suite there.
+        guard #available(macOS 26, *) else { return }
+        // Counts strongly green and strongly red pixels across the bezel's middle row; bezel sizes differ by system.
+        func hues(_ classes: String) throws -> (green: Int, red: Int) {
+            let bitmap = try capture(Button("Save changes") {}.buttonStyle(.tw(classes)).tint(Color(red: 0, green: 0.8, blue: 0)))
+            var green = 0, red = 0
+            for x in 0..<bitmap.pixelsWide {
+                guard let color = bitmap.colorAt(x: x, y: bitmap.pixelsHigh / 2)?.usingColorSpace(.sRGB),
+                      color.alphaComponent > 0.9 else { continue }
+                if color.greenComponent > max(color.redComponent, color.blueComponent) + 0.3 { green += 1 }
+                if color.redComponent > max(color.greenComponent, color.blueComponent) + 0.3 { red += 1 }
+            }
+            return (green, red)
+        }
+        let inherited = try hues("bezel-prominent")
+        #expect(inherited.green > 4 && inherited.red == 0, "The bezel must use the ancestor's tint: \(inherited)")
+        let local = try hues("bezel-prominent tint-destructive")
+        #expect(local.red > 4 && local.green == 0, "A tint class still wins: \(local)")
     }
 
     @Test func toggleSelectionChangesOnlyTheTintAndKeepsTheLabel() {
