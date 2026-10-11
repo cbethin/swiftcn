@@ -38,6 +38,59 @@ struct AdaptiveSurfacePolicyTests {
         #expect(TWSurfaceContext(appearance: .glass, supportsGlass: true, requiresCompatibility: true).keepsSystemPresentation)
     }
 
+    @Test func rendererSelectsUIKitOnlyWhereItCanDrawGlass() {
+        // swiftUIGlass, uiKitGlass, prefersUIKit: macOS 14, macOS 26, iOS 17, iOS 26, iOS 27.
+        let systems = [(false, false, false), (true, false, false), (false, false, false), (true, true, false), (true, true, true)]
+        let expected: [TWGlassRenderer: [TWGlassEngine]] = [
+            .automatic: [.none, .swiftUI, .none, .swiftUI, .uiKit],
+            .swiftUI: [.none, .swiftUI, .none, .swiftUI, .swiftUI],
+            .uiKit: [.none, .swiftUI, .none, .uiKit, .uiKit],
+        ]
+        for (renderer, engines) in expected {
+            for ((swiftUI, uiKit, prefers), engine) in zip(systems, engines) {
+                #expect(renderer.engine(swiftUIGlass: swiftUI, uiKitGlass: uiKit, prefersUIKit: prefers) == engine,
+                        "\(renderer) on \((swiftUI, uiKit, prefers))")
+            }
+        }
+    }
+
+    @Test func runningSystemKeepsMacOSOnSwiftUIGlass() {
+        #if os(macOS)
+        #expect(!TWGlassEngine.systemSupportsUIKitGlass)
+        #expect(!TWGlassEngine.systemPrefersUIKitGlass)
+        let system: TWGlassEngine = TWSurfaceContext.systemSupportsGlass ? .swiftUI : .none
+        for renderer in [TWGlassRenderer.automatic, .swiftUI, .uiKit] { #expect(renderer.engine() == system) }
+        #endif
+        #expect(EnvironmentValues().twGlassRenderer == .automatic)
+    }
+
+    @Test(arguments: [TWAppearance.automatic, .glass, .solid], [false, true])
+    func uiKitSurfacesNeverApplySwiftUIGlass(appearance: TWAppearance, compatibility: Bool) {
+        for supportsGlass in [false, true] {
+            for reduceTransparency in [false, true] {
+                let context = TWSurfaceContext(appearance: appearance, supportsGlass: supportsGlass, requiresCompatibility: compatibility,
+                                               reduceTransparency: reduceTransparency, engine: .uiKit)
+                for role in [TWSurfaceRole.floating, .solid, .glass] {
+                    // Solid, material, and Reduce Transparency surfaces draw no glass at all; glass fills draw UIKit's.
+                    #expect(context.glassLayer(for: role) == (context.fill(for: role) == .glass ? .uiKit : .none))
+                }
+            }
+        }
+    }
+
+    @Test func swiftUIGlassStaysInPlaceAcrossFills() {
+        // The SwiftUI engine keeps glassEffect in every state, so a fill change never alters the structure.
+        for reduceTransparency in [false, true] {
+            for appearance in [TWAppearance.automatic, .glass, .solid] {
+                let context = TWSurfaceContext(appearance: appearance, supportsGlass: true, reduceTransparency: reduceTransparency)
+                for role in [TWSurfaceRole.floating, .solid, .glass] {
+                    #expect(context.glassLayer(for: role) == .swiftUI(active: context.fill(for: role) == .glass))
+                }
+            }
+        }
+        #expect(TWSurfaceContext(supportsGlass: false, engine: .none).glassLayer(for: .glass) == .none)
+    }
+
     @Test func surfaceClassesResolveToOneRoleAndLocalClassesWin() {
         #expect(resolve("surface-floating").surface == .floating)
         #expect(resolve("surface-solid").surface == .solid)

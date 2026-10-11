@@ -33,6 +33,7 @@ struct AdaptiveSurfacesExample: View {
             Text("Settings").tw("p-4 surface-solid rounded-lg")
         }
         .twAppearance(.automatic)
+        .twGlassRenderer(.automatic)
     }
 }
 ```
@@ -75,6 +76,29 @@ Global defaults from `TWGlobalRules.view` are overridden by local classes in the
 If your app sets `UIDesignRequiresCompatibility` in its Info.plist, `.automatic` follows it and uses the earlier appearance.
 Use `.twAppearance(.glass)` or the `glass` class to opt specific surfaces back in.
 
+## Glass renderer
+
+`.twGlassRenderer` chooses the framework that draws glass surfaces and groups. Fills, roles, and the appearance policy stay the same.
+
+| Renderer | iOS 27 and later | iOS 26 | macOS 26 and later |
+| --- | --- | --- | --- |
+| `.automatic` (default) | UIKit | SwiftUI | SwiftUI |
+| `.swiftUI` | SwiftUI | SwiftUI | SwiftUI |
+| `.uiKit` | UIKit | UIKit | SwiftUI |
+
+On a physical iPhone running iOS 27.0.1, SwiftUI's `glassEffect` anywhere in a window stopped the window redrawing, while state and touches kept working.
+UIKit's `UIGlassEffect` renders correctly, so `.automatic` uses it on iOS 27 and later. The iOS simulators never showed the problem.
+Use `.twGlassRenderer(.swiftUI)` to return to SwiftUI's glass once the system is fixed.
+
+UIKit's renderer draws a `UIVisualEffectView` with `UIGlassEffect` behind each glass surface, using the surface's tint, `glass-interactive`, and corner shape.
+It never applies SwiftUI's `glassEffect`, not even `.identity`. Solid and material fills, including the Reduce Transparency fallback, create no glass view at all.
+The glass view only draws: SwiftUI keeps every touch, so `glass-interactive` may not show UIKit's touch response.
+
+The renderer depends only on the system and this setting, never on accessibility, so it selects a view structure once.
+Set it near the root of your app and leave it: changing it rebuilds the surfaces below.
+
+Native buttons are not affected. `glass` and `glass-prominent` buttons still use SwiftUI's `.glass` and `.glassProminent` styles.
+
 ## Native buttons
 
 Every `.buttonStyle(.tw(...))` button whose classes choose a native style is drawn by Apple.
@@ -90,6 +114,15 @@ Accessibility settings never change the selected style type, so a button keeps i
 `TWSurfaceGroup` wraps `GlassEffectContainer`, so nearby glass shapes blend and morph together.
 `twSurfaceID(_:in:)` wraps `glassEffectID`. Apply it after the surface's `.tw` classes.
 Earlier systems show the content unchanged and ignore the identifier. Use native transitions for those.
+
+With UIKit's renderer, `TWSurfaceGroup` draws its surfaces' glass in one `UIGlassContainerEffect` behind its content, so nearby shapes still blend.
+Each surface reports its bounds to the group. Glass that arrives materializes, glass that leaves dematerializes, and glass that moves follows the transaction's animation.
+`twSurfaceID(_:in:)` names a surface's glass shape: a surface that leaves and one that arrives with the same identifier share one shape, which moves and resizes between them.
+This differs from SwiftUI's container in a few ways:
+
+- The group's glass sits behind all of the group's content, not behind each surface. Avoid overlapping a grouped surface with other content in the group.
+- Glass follows the surfaces' layout and the transaction's animation. Render-time effects such as `scaleEffect`, and scroll offsets inside the group, may not move it, so keep scroll views and scaled surfaces outside the group.
+- A surface in a sheet or popover presented from inside the group draws its own glass.
 
 ## Native sheets
 
