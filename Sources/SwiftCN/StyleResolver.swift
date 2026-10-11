@@ -43,6 +43,7 @@ struct TWResolvedStyle {
     var maximumWidth: CGFloat?
     var maximumHeight: CGFloat?
     var expandsWidth = false
+    var expandsHeight = false
     var motion = TWResolvedMotion()
     var group: String?
     var sharedID: String?
@@ -150,12 +151,13 @@ enum TWStyleResolver {
             case .rotation(let value): result.rotation = value
             case .blur(let value): result.blur = value
             case .width(let width): result.width = width; result.expandsWidth = false
-            case .height(let height): result.height = height
+            case .height(let height): result.height = height; result.expandsHeight = false
             case .minimumHeight(let height): result.minimumHeight = height
             case .minimumWidth(let value): result.minimumWidth = value
             case .maximumWidth(let value): result.maximumWidth = value
             case .maximumHeight(let value): result.maximumHeight = value
             case .fullWidth: result.width = nil; result.expandsWidth = true
+            case .fullHeight: result.height = nil; result.expandsHeight = true
             case .animation(let preset): result.motion.preset = preset
             case .animationDuration(let duration): result.motion.duration = duration
             case .animationDelay(let delay): result.motion.delay = delay

@@ -50,6 +50,7 @@ extension TWStyle {
         return property(.minimumHeight(points))
     }
     public static var fullWidth: Self { property(.fullWidth) }
+    public static var fullHeight: Self { property(.fullHeight) }
     /// A floating surface. The appearance policy and the system choose glass, a material, or a solid fill.
     public static var surfaceFloating: Self { property(.surface(.floating)) }
     /// A themed solid surface on every system.

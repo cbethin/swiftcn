@@ -182,7 +182,8 @@ struct TWLayoutModifier: ViewModifier {
             .frame(width: appearance.width, height: appearance.height)
             .frame(minWidth: appearance.minimumWidth,
                    maxWidth: appearance.maximumWidth ?? (appearance.expandsWidth ? .infinity : nil),
-                   minHeight: appearance.minimumHeight, maxHeight: appearance.maximumHeight)
+                   minHeight: appearance.minimumHeight,
+                   maxHeight: appearance.maximumHeight ?? (appearance.expandsHeight ? .infinity : nil))
     }
 }
 
