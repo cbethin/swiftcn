@@ -12,7 +12,7 @@ const preamble = `# swiftcn
 Notes for writing swiftcn code:
 
 - Only the classes in the [class reference](${basePath}/classes.md) are valid. swiftcn is not Tailwind's full set: there are no responsive breakpoints, flex or grid utilities, percentages, \`rem\`, \`calc\`, or CSS variables. Use native SwiftUI stacks for layout.
-- One invalid class leaves the whole surface unstyled at run time. Run \`swift package swiftcn-lint\` (or \`swift run swiftcn-lint Sources --format json\`) after editing class strings; each problem includes a suggested replacement.
+- One invalid class leaves the whole surface unstyled at run time. Add the \`SwiftCNLintPlugin\` build plugin to every target that uses swiftcn (see Installation); the build then fails on an invalid class before Swift compiles. To check without building, run \`swift run swiftcn-lint Sources --format json\` after editing class strings; each problem includes the file, line, column, and a suggested replacement.
 - Bracket values use native units: \`w-[240]\` is 240 points, \`duration-[400]\` is 400 milliseconds, \`rotate-[3]\` is 3 degrees. Interpolate Swift values inside brackets: \`rotate-[\\(angle)]\`.
 - Typed utilities have the same vocabulary with compiler checks: \`.tw(.p(4), .bg(.surface), .rounded(.lg))\`.
 - Use \`.buttonStyle(.tw("button-primary"))\` for buttons; Apple draws the bezel.

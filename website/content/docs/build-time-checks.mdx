@@ -13,7 +13,8 @@ PlayerView.swift:9:44: error: Unknown swiftcn class 'text-muted-foregrund'. Did 
 
 ## Check every build
 
-Add the build plugin to each target that uses classes:
+The [installation](/docs/installation) steps add the build plugin. It runs before the target's Swift sources compile, so an invalid class fails the build first.
+To add it to another target:
 
 ```swift
 .target(
@@ -44,7 +45,7 @@ swift run swiftcn-lint Sources
 
 It exits with status 1 when it finds an invalid class.
 `--format json` prints each problem with its file, line, column, the class, and a suggested replacement.
-Coding agents can run it after each edit and apply the suggestion.
+Coding agents can run it after each edit and apply the suggestion, then build.
 
 ## What it checks
 
