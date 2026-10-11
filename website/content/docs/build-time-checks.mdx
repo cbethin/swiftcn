@@ -1,0 +1,86 @@
+---
+title: "Build-time checks"
+description: "Catch misspelled classes when you build, before a view renders unstyled."
+---
+
+One invalid class leaves a whole surface undecorated at run time.
+`swiftcn-lint` finds those classes when you build, with the swiftcn parser itself.
+Xcode shows each problem as an error on the line that contains it:
+
+```text
+PlayerView.swift:9:44: error: Unknown swiftcn class 'text-muted-foregrund'. Did you mean 'text-muted-foreground'?
+```
+
+## Check every build
+
+Add the build plugin to each target that uses classes:
+
+```swift
+.target(
+    name: "App",
+    dependencies: [.product(name: "SwiftCN", package: "swiftcn")],
+    plugins: [.plugin(name: "SwiftCNLintPlugin", package: "swiftcn")]
+)
+```
+
+In an Xcode project, open the target's **Build Phases**, expand **Run Build Tool Plug-ins**, and add **SwiftCNLintPlugin**.
+Xcode asks you to trust the plugin the first time it runs.
+The check runs again only when a Swift file in the target changes.
+
+## Check without building
+
+Run the command plugin from your package directory:
+
+```sh
+swift package swiftcn-lint
+swift package swiftcn-lint --target App --format json
+```
+
+Or run the tool on any files or directories:
+
+```sh
+swift run swiftcn-lint Sources
+```
+
+It exits with status 1 when it finds an invalid class.
+`--format json` prints each problem with its file, line, column, the class, and a suggested replacement.
+Coding agents can run it after each edit and apply the suggestion.
+
+## What it checks
+
+The tool checks class strings in `.tw("…")`, `.buttonStyle(.tw("…"))` and the other control styles, `.twAnimation("…")`, `cn(…)`, `classes:` arguments, and `TWClasses` or `TWStyle` literals.
+It also checks the classes inside recipes that you register with `named:`.
+Each class goes through `TWStyle.parse`, so the rules match the runtime exactly.
+
+Interpolated values inside brackets stay typed Swift, so the tool checks only the variants and the prefix: `rotate-[\(angle)]`.
+A runtime string outside brackets, such as `"\(base) p-4"`, can hold any classes; the tool checks the literal classes around it.
+Typed utilities such as `.tw(.p(4), .bg(.surface))` are already checked by the compiler.
+
+## Custom classes
+
+The tool learns the names that your sources register: recipes in `named`, custom classes in `modifiers` and `utilities`, presets in `animations`, and colors declared with `TWColor("brand")`.
+List names registered in another module in `swiftcn-lint.json`, next to the target's sources or at the package root:
+
+```json
+{
+  "classes": ["brand-chip"],
+  "prefixes": ["tilt"],
+  "animations": ["wobble"],
+  "colors": ["brand"],
+  "warningsOnly": false
+}
+```
+
+Set `warningsOnly` to report problems as warnings while you adopt the check.
+Suppress one line with a comment:
+
+```swift
+Text("Draft").tw("p-4 experimental-glow") // swiftcn-lint: ignore
+```
+
+Use `// swiftcn-lint: ignore-next-line` on the line before.
+
+## Class reference
+
+[`classes.md`](https://cbethin.github.io/swiftcn/classes.md) lists every class that the parser accepts, generated from the parser's own tables.
+Point coding agents at it, or at [`llms.txt`](https://cbethin.github.io/swiftcn/llms.txt), so they write valid classes on the first try.

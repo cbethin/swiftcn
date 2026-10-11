@@ -22,13 +22,13 @@ public enum TWClassError: Error, Equatable, CustomStringConvertible {
 
 enum TWClassParser {
     // These tables do not depend on the theme, registry, or interpolated values.
-    private static let fonts: [String: TWText] = ["xs": .xs, "sm": .sm, "base": .base, "lg": .lg,
+    static let fonts: [String: TWText] = ["xs": .xs, "sm": .sm, "base": .base, "lg": .lg,
                                                  "xl": .xl, "2xl": .xxl, "3xl": .xxxl]
-    private static let weights: [String: Font.Weight] = ["regular": .regular, "normal": .regular, "medium": .medium,
+    static let weights: [String: Font.Weight] = ["regular": .regular, "normal": .regular, "medium": .medium,
                                                        "semibold": .semibold, "bold": .bold, "light": .light]
-    private static let radii: [String: TWRadius] = ["none": .none, "sm": .sm, "md": .md, "lg": .lg, "xl": .xl, "full": .full]
-    private static let shadows: [String: TWShadow] = ["none": .none, "sm": .sm, "md": .md, "lg": .lg]
-    private static let aliases: [String: TWColor] = ["primary-foreground": .onPrimary, "accent-foreground": .onAccent,
+    static let radii: [String: TWRadius] = ["none": .none, "sm": .sm, "md": .md, "lg": .lg, "xl": .xl, "full": .full]
+    static let shadows: [String: TWShadow] = ["none": .none, "sm": .sm, "md": .md, "lg": .lg]
+    static let aliases: [String: TWColor] = ["primary-foreground": .onPrimary, "accent-foreground": .onAccent,
                                                    "destructive-foreground": .onDestructive, "card": .surface,
                                                    "card-foreground": .foreground, "muted-foreground": .mutedForeground]
 

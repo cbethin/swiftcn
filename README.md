@@ -233,6 +233,26 @@ Separate `.tw(...)` calls create separate styled surfaces.
 For example, `.tw(.p(2)).tw(.p(3))` adds both layers of padding.
 Native modifiers retain their order around each surface.
 
+## Build-time checks
+
+An invalid class leaves its surface undecorated at run time. Add the build plugin to catch it when you build:
+
+```swift
+.target(name: "App", dependencies: [.product(name: "SwiftCN", package: "swiftcn")],
+        plugins: [.plugin(name: "SwiftCNLintPlugin", package: "swiftcn")])
+```
+
+Xcode then reports each invalid class on its line, with the closest valid class:
+
+```text
+PlayerView.swift:9:44: error: Unknown swiftcn class 'text-muted-foregrund'. Did you mean 'text-muted-foreground'?
+```
+
+The check uses the swiftcn parser and learns the recipes, modifiers, utilities, animations, and colors that your sources register.
+Run it without building with `swift package swiftcn-lint`, or `swift run swiftcn-lint Sources --format json` for coding agents.
+[`classes.md`](https://cbethin.github.io/swiftcn/classes.md) lists every valid class.
+See [build-time checks](website/content/docs/build-time-checks.mdx) for Xcode projects, configuration, and suppression.
+
 ## Theme
 
 ```swift
