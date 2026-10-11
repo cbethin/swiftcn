@@ -91,6 +91,58 @@ struct AdaptiveSurfacePolicyTests {
         #expect(TWSurfaceContext(supportsGlass: false, engine: .none).glassLayer(for: .glass) == .none)
     }
 
+    @Test func buttonRenderingFollowsTheEngine() {
+        for bezel in [TWButtonBezel.prominent, .bordered, .borderless, .link] {
+            let native: TWButtonRendering = switch bezel {
+            case .prominent: .borderedProminent
+            case .bordered: .bordered
+            case .borderless: .borderless
+            case .link: .link
+            }
+            let glassBezel = bezel == .prominent || bezel == .bordered
+            for engine in [TWGlassEngine.none, .swiftUI, .uiKit] {
+                #expect(TWButtonRendering.resolve(bezel: bezel, glass: false, engine: engine) == native)
+            }
+            #expect(TWButtonRendering.resolve(bezel: bezel, glass: true, engine: .none) == native)
+            #expect(TWButtonRendering.resolve(bezel: bezel, glass: true, engine: .swiftUI)
+                    == (glassBezel ? .swiftUIGlass(prominent: bezel == .prominent) : native))
+            #expect(TWButtonRendering.resolve(bezel: bezel, glass: true, engine: .uiKit)
+                    == (glassBezel ? .uiKitGlass(prominent: bezel == .prominent) : native))
+        }
+    }
+
+    @Test(arguments: [TWAppearance.automatic, .glass, .solid], [false, true])
+    func uiKitButtonsNeverSelectSwiftUIGlassStyles(appearance: TWAppearance, compatibility: Bool) {
+        let classes = ["glass", "glass-prominent", "glass px-4 rounded-md", "glass-prominent tint-destructive",
+                       "glass-prominent glass-interactive control-lg", "surface-floating", "surface-solid", "surface-solid glass-prominent",
+                       "bezel-bordered glass", "bezel-prominent surface-floating", "bezel-borderless glass", "bezel-link glass",
+                       "button-primary", "button-secondary", "button-outline", "button-destructive", "button-ghost", "button-link",
+                       "button-outline hover:glass", "focus:glass-prominent", "pressed:glass", "disabled:glass-prominent"]
+        let states = [TWState(), TWState(isHovered: true), TWState(isFocused: true), TWState(isPressed: true), TWState(isDisabled: true)]
+        for supportsGlass in [false, true] {
+            for name in classes {
+                for state in states {
+                    let resolved = resolve(name, state: state)
+                    guard let bezel = resolved.buttonBezel else { continue }
+                    var renderings: Set<TWButtonRendering> = []
+                    for reduceTransparency in [false, true] {
+                        let context = TWSurfaceContext(appearance: appearance, supportsGlass: supportsGlass, requiresCompatibility: compatibility,
+                                                       reduceTransparency: reduceTransparency, engine: .uiKit)
+                        let glass = resolved.buttonSurface.map(context.usesGlass) ?? false
+                        let rendering = TWButtonRendering.resolve(bezel: bezel, glass: glass, engine: context.engine)
+                        if case .swiftUIGlass = rendering { Issue.record("\(name) in \(state) selected SwiftUI's glass style") }
+                        renderings.insert(rendering)
+                    }
+                    #expect(renderings.count == 1, "Reduce Transparency must not change the style type of \(name).")
+                }
+            }
+        }
+        // The same classes keep SwiftUI's glass styles on the SwiftUI engine.
+        let context = TWSurfaceContext(appearance: appearance, supportsGlass: true, requiresCompatibility: compatibility)
+        #expect(TWButtonRendering.resolve(bezel: .bordered, glass: context.usesGlass(.glass), engine: .swiftUI) == .swiftUIGlass(prominent: false))
+        #expect(resolve("glass-prominent").buttonBezel == .prominent)
+    }
+
     @Test func surfaceClassesResolveToOneRoleAndLocalClassesWin() {
         #expect(resolve("surface-floating").surface == .floating)
         #expect(resolve("surface-solid").surface == .solid)

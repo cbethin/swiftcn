@@ -52,8 +52,9 @@ private struct TWButtonBody: View {
                                                  state: state, globalRules: rules)
         // The bezel is part of the button's design, so it selects a structure once, like a surface role.
         if let bezel = appearance.buttonBezel {
-            TWNativeBezelButton(configuration: configuration, style: style, state: state, appearance: appearance,
-                                bezel: bezel, glass: appearance.buttonSurface.map(inputs.context.usesGlass) ?? false,
+            let glass = appearance.buttonSurface.map(inputs.context.usesGlass) ?? false
+            TWNativeBezelButton(configuration: configuration, style: style, state: state, appearance: appearance, bezel: bezel,
+                                rendering: .resolve(bezel: bezel, glass: glass, engine: inputs.engine),
                                 fullRadius: theme.radius(.full))
         } else {
             Button(role: configuration.role, action: configuration.trigger) { configuration.label }
@@ -62,16 +63,51 @@ private struct TWButtonBody: View {
     }
 }
 
+/// How a button with a native bezel draws. The glass engine and the policy choose it, never accessibility,
+/// so a button keeps one style type, and with it its identity, focus, and pending activation.
+enum TWButtonRendering: Sendable, Hashable {
+    /// SwiftUI's `.glass` or `.glassProminent` style.
+    case swiftUIGlass(prominent: Bool)
+    /// A plain button with UIKit's glass behind the label. SwiftUI's glass styles are never used.
+    case uiKitGlass(prominent: Bool)
+    case borderedProminent, bordered, borderless, link
+
+    static func resolve(bezel: TWButtonBezel, glass: Bool, engine: TWGlassEngine) -> Self {
+        if glass, bezel == .prominent || bezel == .bordered {
+            switch engine {
+            case .swiftUI: return .swiftUIGlass(prominent: bezel == .prominent)
+            case .uiKit: return .uiKitGlass(prominent: bezel == .prominent)
+            case .none: break
+            }
+        }
+        switch bezel {
+        case .prominent: return .borderedProminent
+        case .bordered: return .bordered
+        case .borderless: return .borderless
+        case .link: return .link
+        }
+    }
+
+    var isGlass: Bool {
+        switch self {
+        case .swiftUIGlass, .uiKitGlass: true
+        default: false
+        }
+    }
+}
+
 /// Apple draws the bezel, press, hover, focus and disabled appearance. Classes add the label's layout and type,
-/// never another background.
+/// never another background. UIKit's glass renderer draws glass buttons itself; see `TWUIKitGlassButtonStyle`.
 private struct TWNativeBezelButton: View {
     let configuration: PrimitiveButtonStyleConfiguration
     let style: TWStyle
     let state: TWState
     let appearance: TWResolvedStyle
     let bezel: TWButtonBezel
-    let glass: Bool
+    let rendering: TWButtonRendering
     let fullRadius: CGFloat
+    @Environment(\.twTheme) private var theme
+    @Environment(\.colorScheme) private var scheme
     @Environment(\.isEnabled) private var isEnabled
     #if os(macOS)
     @Environment(\.controlActiveState) private var activeState
@@ -88,21 +124,44 @@ private struct TWNativeBezelButton: View {
         }
         // A nil tint keeps the inherited one without changing the button's structure.
         .tint(appearance.glassTint)
-        if #available(iOS 26, macOS 26, *), glass, bezel == .prominent || bezel == .bordered {
-            if bezel == .prominent { button.buttonStyle(.glassProminent) } else { button.buttonStyle(.glass) }
-        } else {
-            switch bezel {
-            case .prominent: button.buttonStyle(.borderedProminent)
-            case .bordered: button.buttonStyle(.bordered)
-            case .borderless: button.buttonStyle(.borderless)
-            case .link:
-                #if os(macOS)
-                button.buttonStyle(.link)
-                #else
-                button.buttonStyle(.borderless)
-                #endif
+        switch rendering {
+        case .swiftUIGlass(let prominent):
+            if #available(iOS 26, macOS 26, *) {
+                if prominent { button.buttonStyle(.glassProminent) } else { button.buttonStyle(.glass) }
+            } else if prominent {
+                button.buttonStyle(.borderedProminent)
+            } else {
+                button.buttonStyle(.bordered)
             }
+        case .uiKitGlass(let prominent):
+            #if os(iOS)
+            if #available(iOS 26, *) {
+                button.buttonStyle(TWUIKitGlassButtonStyle(
+                    prominent: prominent, tint: appearance.glassTint, radius: glassRadius,
+                    surface: theme.color(.surface, scheme: scheme), edge: theme.color(.border, scheme: scheme)))
+            } else if prominent {
+                button.buttonStyle(.borderedProminent)
+            } else {
+                button.buttonStyle(.bordered)
+            }
+            #else
+            if prominent { button.buttonStyle(.borderedProminent) } else { button.buttonStyle(.bordered) }
+            #endif
+        case .borderedProminent: button.buttonStyle(.borderedProminent)
+        case .bordered: button.buttonStyle(.bordered)
+        case .borderless: button.buttonStyle(.borderless)
+        case .link:
+            #if os(macOS)
+            button.buttonStyle(.link)
+            #else
+            button.buttonStyle(.borderless)
+            #endif
         }
+    }
+
+    /// UIKit glass buttons are capsules, like native glass buttons, unless a radius class asks for corners.
+    private var glassRadius: CGFloat? {
+        appearance.hasRadius && appearance.radius < fullRadius ? appearance.radius : nil
     }
 
     /// Native styles adopt any explicit foreground, so the label sets the style's own color unless a class does.
@@ -119,7 +178,7 @@ private struct TWNativeBezelButton: View {
         #endif
         if let color = appearance.foreground { return AnyShapeStyle(color) }
         if bezel == .prominent { return AnyShapeStyle(Color.white) }
-        return glass ? AnyShapeStyle(HierarchicalShapeStyle.primary) : AnyShapeStyle(TintShapeStyle())
+        return rendering.isGlass ? AnyShapeStyle(HierarchicalShapeStyle.primary) : AnyShapeStyle(TintShapeStyle())
     }
 
     private var borderShape: ButtonBorderShape {

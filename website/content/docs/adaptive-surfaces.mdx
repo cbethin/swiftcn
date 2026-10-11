@@ -97,12 +97,22 @@ The glass view only draws: SwiftUI keeps every touch, so `glass-interactive` may
 The renderer depends only on the system and this setting, never on accessibility, so it selects a view structure once.
 Set it near the root of your app and leave it: changing it rebuilds the surfaces below.
 
-Native buttons are not affected. `glass` and `glass-prominent` buttons still use SwiftUI's `.glass` and `.glassProminent` styles.
+Glass buttons follow the renderer too. With UIKit's renderer, `glass` and `glass-prominent` buttons never use SwiftUI's `.glass` or `.glassProminent` styles:
+
+- A plain `Button` keeps its role, action, and accessibility. A UIKit glass view is drawn behind its label, at the native styles' sizes: 28 points tall for `control-sm` and `control-mini`, 34 for the regular size, and 50 for `control-lg` and `control-xl`. On iOS the touch target is at least 44 points, without changing layout.
+- `glass-prominent` tints the glass with the `tint-*` color, or the inherited tint, and keeps the white label. Plain `glass` stays clear with the primary label, unless a `tint-*` class tints it.
+- Buttons are capsules unless a `rounded-*` class sets corners.
+- Pressing scales the button to 96% and fades it to 78% with a spring. Reduce Motion keeps the fade with a short ease-out and no scale.
+- Disabled buttons drop the tint and use the system's disabled label color.
+- Under Reduce Transparency a themed solid fill replaces the glass view: the surface color with its edge for `glass`, the tint for `glass-prominent`. Only the background changes, so the button keeps its identity.
+- Glass buttons draw their own glass and do not blend with a `TWSurfaceGroup`.
+
+Controls the system draws itself, such as sheets, menus, pickers, and toolbars, keep the system appearance.
 
 ## Native buttons
 
 Every `.buttonStyle(.tw(...))` button whose classes choose a native style is drawn by Apple.
-On a button, `glass` and `glass-prominent` select `.glass` or `.glassProminent` on Liquid Glass systems, and `.bordered` or `.borderedProminent` otherwise.
+On a button, `glass` and `glass-prominent` select `.glass` or `.glassProminent` on Liquid Glass systems, and `.bordered` or `.borderedProminent` otherwise. With UIKit's renderer they draw UIKit's glass instead; see [Glass renderer](#glass-renderer).
 `surface-solid` always selects the bordered styles.
 Classes add spacing and typography to the label. Background, border, and shadow classes are ignored so nothing paints over the native control.
 Use `tint-*` or the native `.tint` modifier for color.

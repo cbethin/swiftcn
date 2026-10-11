@@ -12,10 +12,12 @@ extension EnvironmentValues {
 
 @available(iOS 26, *) @MainActor
 extension TWGlassStyle {
-    var effect: UIGlassEffect {
+    var effect: UIGlassEffect { effect(tint: tint.map(UIColor.init)) }
+
+    func effect(tint: UIColor?) -> UIGlassEffect {
         let glass = UIGlassEffect(style: .regular)
         glass.isInteractive = interactive
-        glass.tintColor = tint.map(UIColor.init)
+        glass.tintColor = tint
         return glass
     }
 
@@ -238,6 +240,156 @@ private struct TWUIKitGlassContainer: UIViewRepresentable {
     static func dismantleUIView(_ container: UIVisualEffectView, coordinator: Coordinator) {
         // Surfaces that outlive the container draw their own glass again.
         coordinator.group?.claim([], animation: TWGlassAnimation())
+    }
+}
+
+/// A glass button drawn with UIKit, for the UIKit renderer, where SwiftUI's `.glass` and `.glassProminent`
+/// styles are avoided. Sizes match the native glass styles: 28 points tall for small and mini controls,
+/// 34 for regular, and 50 for large. The touch target is at least 44 points without changing layout.
+/// Prominent glass takes the tint, or the inherited tint like the native style. Under Reduce Transparency
+/// a themed solid fill replaces the glass view.
+@available(iOS 26, *)
+struct TWUIKitGlassButtonStyle: ButtonStyle {
+    let prominent: Bool
+    /// The `tint-*` or `glass-tint-*` color. Nil follows the inherited tint for prominent glass.
+    let tint: Color?
+    /// Nil is a capsule.
+    let radius: CGFloat?
+    /// The Reduce Transparency fallback for plain glass.
+    let surface: Color
+    let edge: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        TWUIKitGlassButtonBody(configuration: configuration, style: self)
+    }
+}
+
+@available(iOS 26, *)
+private struct TWUIKitGlassButtonBody: View {
+    let configuration: ButtonStyleConfiguration
+    let style: TWUIKitGlassButtonStyle
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.controlSize) private var controlSize
+
+    var body: some View {
+        let pressed = isEnabled && configuration.isPressed
+        let metrics = TWGlassButtonMetrics(controlSize)
+        let shape = style.radius.map { AnyShape(RoundedRectangle(cornerRadius: $0, style: .continuous)) } ?? AnyShape(Capsule())
+        configuration.label
+            // Native styles size their label for the control size unless the app or a class sets a font.
+            .transformEnvironment(\.font) { font in if font == nil { font = metrics.font } }
+            .padding(.horizontal, metrics.horizontalPadding)
+            .frame(minHeight: metrics.height)
+            .background {
+                // Accessibility changes the background only; the label keeps its identity.
+                if reduceTransparency {
+                    fallback(shape)
+                } else {
+                    TWUIKitButtonGlass(tint: isEnabled ? style.tint : nil, followsTint: style.prominent && isEnabled,
+                                       glassTint: style.prominent || style.tint != nil, radius: style.radius)
+                }
+            }
+            .contentShape(.interaction, TWMinimumTargetShape())
+            .contentShape(.hoverEffect, shape)
+            .hoverEffect(.highlight)
+            .scaleEffect(reduceMotion || !pressed ? 1 : 0.96)
+            .opacity(pressed ? 0.78 : 1)
+            .animation(reduceMotion ? .easeOut(duration: 0.12) : .spring(response: 0.23, dampingFraction: 0.72), value: pressed)
+    }
+
+    @ViewBuilder private func fallback(_ shape: AnyShape) -> some View {
+        if style.prominent {
+            if !isEnabled {
+                shape.fill(Color(uiColor: .tertiarySystemFill))
+            } else if let tint = style.tint {
+                shape.fill(tint)
+            } else {
+                shape.fill(.tint)
+            }
+        } else {
+            shape.fill(style.surface).overlay(shape.stroke(style.edge, lineWidth: 1))
+        }
+    }
+}
+
+/// The native glass styles' metrics on iOS 27.
+private struct TWGlassButtonMetrics {
+    var height: CGFloat
+    var horizontalPadding: CGFloat
+    var font: Font
+
+    init(_ size: ControlSize) {
+        switch size {
+        case .mini, .small: (height, horizontalPadding, font) = (28, 10, .subheadline)
+        case .large, .extraLarge: (height, horizontalPadding, font) = (50, 20, .body)
+        default: (height, horizontalPadding, font) = (34, 12, .body)
+        }
+    }
+}
+
+/// The bezel, grown to at least 44 points in each direction around its center.
+private struct TWMinimumTargetShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path(rect.insetBy(dx: min(0, (rect.width - 44) / 2), dy: min(0, (rect.height - 44) / 2)))
+    }
+}
+
+@available(iOS 26, *)
+private struct TWUIKitButtonGlass: UIViewRepresentable {
+    let tint: Color?
+    /// Prominent glass without a tint class follows the inherited tint, as the native style does.
+    let followsTint: Bool
+    /// Plain glass without a tint class stays clear.
+    let glassTint: Bool
+    let radius: CGFloat?
+
+    func makeUIView(context: Context) -> TWGlassButtonView { TWGlassButtonView() }
+
+    func updateUIView(_ view: TWGlassButtonView, context: Context) {
+        view.cornerConfiguration = TWGlassStyle(radius: radius).corners
+        view.configure(tint: glassTint ? tint.map(UIColor.init) : nil, followsTint: followsTint && tint == nil)
+    }
+}
+
+/// SwiftUI's tint reaches a hosted view's `tintColor`, so prominent glass follows it as it changes.
+@available(iOS 26, *)
+final class TWGlassButtonView: UIVisualEffectView {
+    private var fixedTint: UIColor?
+    private var followsTint = false
+    private var applied: UIColor??
+
+    init() {
+        super.init(effect: nil)
+        isUserInteractionEnabled = false
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
+
+    func configure(tint: UIColor?, followsTint: Bool) {
+        fixedTint = tint
+        self.followsTint = followsTint
+        apply()
+    }
+
+    override func tintColorDidChange() {
+        super.tintColorDidChange()
+        if followsTint { apply() }
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        // The inherited tint is known only once the view joins SwiftUI's hierarchy.
+        if followsTint { apply() }
+    }
+
+    private func apply() {
+        let tint = followsTint ? tintColor : fixedTint
+        guard applied != .some(tint) else { return }
+        applied = .some(tint)
+        effect = TWGlassStyle(tint: nil, interactive: true).effect(tint: tint)
     }
 }
 

@@ -301,15 +301,14 @@ ContentView()
 `surface-floating` uses Liquid Glass on iOS 26 and macOS 26, a material with a themed edge on earlier systems, and a solid themed surface under Reduce Transparency.
 `surface-solid` always uses the theme, and `glass` asks for glass explicitly with the same fallbacks.
 Each surface resolves to one fill; `bg-*` never stacks under glass or a material.
-On a button, `glass` and `glass-prominent` select `.glass` or `.glassProminent` where available, `.bordered` or `.borderedProminent` otherwise.
+On a button, `glass` and `glass-prominent` select `.glass` or `.glassProminent` where SwiftUI draws glass, UIKit glass behind a plain button with UIKit's renderer, and `.bordered` or `.borderedProminent` otherwise.
 `twPresentationSurface()` keeps the system sheet where it uses glass.
 Accessibility and policy changes keep editors, bindings, and focus. Surface classes never install gestures.
 
 `twGlassRenderer` chooses the framework that draws glass surfaces and groups.
 `.automatic` uses UIKit's `UIGlassEffect` on iOS 27 and later and SwiftUI's `glassEffect` elsewhere, because SwiftUI's glass stopped a window redrawing on a physical iPhone running iOS 27.0.1.
 `.swiftUI` returns to SwiftUI's glass once the system is fixed, and `.uiKit` opts iOS 26 in. macOS always uses SwiftUI's glass.
-With UIKit's renderer, surfaces never apply SwiftUI's glass, and solid and material fills create no glass view.
-Native `glass` buttons still use SwiftUI's `.glass` and `.glassProminent` styles.
+With UIKit's renderer, nothing in swiftcn applies SwiftUI's glass: surfaces, groups, and glass buttons use UIKit's, and solid and material fills create no glass view.
 See [adaptive surfaces](website/content/docs/adaptive-surfaces.mdx).
 
 ## Composable components and controls
