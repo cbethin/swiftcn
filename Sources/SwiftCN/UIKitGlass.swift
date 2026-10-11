@@ -25,8 +25,18 @@ extension UIGlassEffect {
 extension TWGlassStyle {
     var effect: UIGlassEffect { .tw(tint: tint.map(UIColor.init), interactive: interactive) }
 
+    var corners: UICornerConfiguration { shape.corners }
+}
+
+@available(iOS 26, *) @MainActor
+extension TWGlassShape {
     var corners: UICornerConfiguration {
-        radius.map { .capsule(maximumRadius: $0) } ?? .capsule()
+        switch self {
+        case .capsule: .capsule()
+        // Clamped like a rounded rectangle when the radius exceeds half the height.
+        case .rounded(let radius): .capsule(maximumRadius: radius)
+        case .edges(let top, let bottom): .uniformEdges(topRadius: .fixed(top), bottomRadius: .fixed(bottom))
+        }
     }
 }
 
@@ -44,11 +54,11 @@ struct TWUIKitSurfaceGlassModifier: ViewModifier {
             .background {
                 if let style { TWUIKitSurfaceGlass(style: style, slot: slot, group: group) }
             }
-            .transformAnchorPreference(key: TWGlassPieceKey.self, value: .bounds) { pieces, bounds in
+            .transformAnchorPreference(key: TWGroupPieceKey.self, value: .bounds) { pieces, bounds in
                 // Surfaces inside this one are nested, so a twSurfaceID outside it names this surface only.
                 for index in pieces.indices { pieces[index].nested = true }
                 guard let style, group != nil else { return }
-                pieces.insert(TWGlassPiece(id: TWGlassPieceID(value: slot), slot: slot, bounds: bounds, style: style), at: 0)
+                pieces.insert(TWGroupPiece(id: TWGlassPieceID(value: slot), slot: slot, bounds: bounds, style: style), at: 0)
             }
     }
 }
@@ -129,7 +139,7 @@ final class TWGlassSlotView: UIView {
     }
 }
 
-struct TWGlassPiece {
+struct TWGroupPiece {
     /// The glass shape: the surface's `twSurfaceID`, or its slot.
     var id: TWGlassPieceID
     /// The surface that reported the piece. The group claims it, so the surface does not draw it too.
@@ -141,7 +151,7 @@ struct TWGlassPiece {
 
     /// Names the one surface directly below a `twSurfaceID`. Several surfaces side by side, or none,
     /// keep their own shapes, as `glassEffectID` on a view without glass does nothing.
-    static func name(_ pieces: inout [TWGlassPiece], _ id: TWGlassPieceID) {
+    static func name(_ pieces: inout [TWGroupPiece], _ id: TWGlassPieceID) {
         let top = pieces.indices.filter { !pieces[$0].nested }
         if top.count == 1 { pieces[top[0]].id = id }
         // An identifier further out must not rename this surface again.
@@ -149,9 +159,9 @@ struct TWGlassPiece {
     }
 }
 
-struct TWGlassPieceKey: PreferenceKey {
-    static var defaultValue: [TWGlassPiece] { [] }
-    static func reduce(value: inout [TWGlassPiece], nextValue: () -> [TWGlassPiece]) { value += nextValue() }
+struct TWGroupPieceKey: PreferenceKey {
+    static var defaultValue: [TWGroupPiece] { [] }
+    static func reduce(value: inout [TWGroupPiece], nextValue: () -> [TWGroupPiece]) { value += nextValue() }
 }
 
 /// A `GlassEffectContainer` drawn with `UIGlassContainerEffect`. Surfaces report their bounds by preference;
@@ -161,33 +171,39 @@ struct TWUIKitGlassGroup<Content: View>: View {
     let spacing: CGFloat?
     let content: Content
     @State private var group = TWGlassGroup()
+    @Environment(\.twGlassTracking) private var tracking
 
     var body: some View {
         content
             .environment(\.twGlassGroup, group)
-            .backgroundPreferenceValue(TWGlassPieceKey.self) { pieces in
+            .backgroundPreferenceValue(TWGroupPieceKey.self) { pieces in
                 GeometryReader { proxy in
-                    TWUIKitGlassContainer(spacing: spacing, group: group, pieces: pieces.map {
+                    TWUIKitGlassContainer(spacing: spacing, tracking: tracking, group: group, pieces: pieces.map {
                         TWGlassFrame(id: $0.id, slot: $0.slot, frame: proxy[$0.bounds], style: $0.style)
                     })
                 }
             }
             // An enclosing group must not draw these surfaces again.
-            .transformPreference(TWGlassPieceKey.self) { $0 = [] }
+            .transformPreference(TWGroupPieceKey.self) { $0 = [] }
     }
 }
 
 struct TWGlassFrame {
     var id: TWGlassPieceID
-    var slot: UUID
+    /// The group surface that reported the piece. A cluster's pieces have none.
+    var slot: UUID?
     var frame: CGRect
     var style: TWGlassStyle
 }
 
+/// Child glass views in one `UIGlassContainerEffect`, added and removed by identifier. With `.transaction` tracking,
+/// frames and materialization follow the SwiftUI transaction's animation; with `.direct`, every change is set as it
+/// arrives, without UIKit animation, so per-frame updates are never animated twice.
 @available(iOS 26, *)
-private struct TWUIKitGlassContainer: UIViewRepresentable {
+struct TWUIKitGlassContainer: UIViewRepresentable {
     let spacing: CGFloat?
-    let group: TWGlassGroup
+    let tracking: TWGlassTracking
+    let group: TWGlassGroup?
     let pieces: [TWGlassFrame]
 
     final class Coordinator {
@@ -206,7 +222,7 @@ private struct TWUIKitGlassContainer: UIViewRepresentable {
     }
 
     func updateUIView(_ container: UIVisualEffectView, context: Context) {
-        let animation = TWGlassAnimation(context.transaction, animate: context.animate)
+        let animation = tracking == .transaction ? TWGlassAnimation(context.transaction, animate: context.animate) : TWGlassAnimation()
         let coordinator = context.coordinator
         coordinator.group = group
         let current = container.effect as? UIGlassContainerEffect
@@ -215,7 +231,10 @@ private struct TWUIKitGlassContainer: UIViewRepresentable {
             if let spacing { effect.spacing = spacing }
             container.effect = effect
         }
-        for piece in pieces {
+        let diff = TWGlassPieceDiff(current: Array(coordinator.views.keys), next: pieces.map(\.id))
+        let byID = Dictionary(pieces.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        for id in diff.kept + diff.inserted {
+            guard let piece = byID[id] else { continue }
             coordinator.leaving[piece.id] = nil
             if let view = coordinator.views[piece.id] {
                 // Move existing glass with the transaction, so shapes morph alongside their content.
@@ -239,8 +258,8 @@ private struct TWUIKitGlassContainer: UIViewRepresentable {
                 animation.perform { view.effect = piece.style.effect }
             }
         }
-        let live = Set(pieces.map(\.id))
-        for (id, view) in coordinator.views where !live.contains(id) && coordinator.leaving[id] == nil {
+        for id in diff.removed where coordinator.leaving[id] == nil {
+            guard let view = coordinator.views[id] else { continue }
             // Glass that leaves dematerializes, unless a piece with its identifier returns first.
             let token = UUID()
             coordinator.leaving[id] = token
@@ -251,7 +270,7 @@ private struct TWUIKitGlassContainer: UIViewRepresentable {
                 coordinator.styles[id] = nil
             }
         }
-        group.claim(Set(pieces.map(\.slot)), animation: animation)
+        group?.claim(Set(pieces.compactMap(\.slot)), animation: animation)
     }
 
     static func dismantleUIView(_ container: UIVisualEffectView, coordinator: Coordinator) {
@@ -369,7 +388,7 @@ private struct TWUIKitButtonGlass: UIViewRepresentable {
     func makeUIView(context: Context) -> TWGlassButtonView { TWGlassButtonView() }
 
     func updateUIView(_ view: TWGlassButtonView, context: Context) {
-        view.cornerConfiguration = TWGlassStyle(radius: radius).corners
+        view.cornerConfiguration = (radius.map { .rounded($0) } ?? TWGlassShape.capsule).corners
         view.configure(tint: glassTint ? tint.map(UIColor.init) : nil, followsTint: followsTint && tint == nil)
     }
 }

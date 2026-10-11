@@ -308,7 +308,19 @@ Accessibility and policy changes keep editors, bindings, and focus. Surface clas
 `twGlassRenderer` chooses the framework that draws glass surfaces and groups.
 `.automatic` uses UIKit's `UIGlassEffect` on iOS 27 and later and SwiftUI's `glassEffect` elsewhere, because SwiftUI's glass stopped a window redrawing on a physical iPhone running iOS 27.0.1.
 `.swiftUI` returns to SwiftUI's glass once the system is fixed, and `.uiKit` opts iOS 26 in. macOS and Mac Catalyst always use SwiftUI's glass.
-With UIKit's renderer, nothing in swiftcn applies SwiftUI's glass: surfaces, groups, and glass buttons use UIKit's, and solid and material fills create no glass view.
+With UIKit's renderer, nothing in swiftcn applies SwiftUI's glass: surfaces, groups, clusters, and glass buttons use UIKit's, and solid and material fills create no glass view.
+
+For glass that follows a gesture or an animated value, compute the frames yourself.
+`TWGlassCluster(spacing:pieces:)` draws `TWGlassPiece` shapes at frames you give it, and `.twGlassFrames(value) { value, size in pieces }` recomputes them on every animation frame:
+
+```swift
+Text("Uploading").tw("px-4 py-2")
+    .twGlassFrames(progress) { value, size in
+        [TWGlassPiece(id: "progress", frame: CGRect(x: 0, y: 0, width: size.width * value, height: size.height))]
+    }
+```
+
+`.twGlassTracking(.direct)` makes a `TWSurfaceGroup` set its UIKit glass frames as they arrive, with no UIKit animation on top.
 See [adaptive surfaces](website/content/docs/adaptive-surfaces.mdx).
 
 ## Composable components and controls

@@ -12,6 +12,7 @@ import SwiftCN
 
 struct AdaptiveSurfacesExample: View {
     @State private var expanded = false
+    @State private var progress: CGFloat = 0.3
     @Namespace private var surfaces
 
     var body: some View {
@@ -31,6 +32,11 @@ struct AdaptiveSurfacesExample: View {
                 }
             }
             Text("Settings").tw("p-4 surface-solid rounded-lg")
+            Text("Uploading").tw("px-4 py-2")
+                .twGlassFrames(progress) { value, size in
+                    [TWGlassPiece(id: "progress", frame: CGRect(x: 0, y: 0, width: size.width * value, height: size.height))]
+                }
+                .onTapGesture { withAnimation(.smooth) { progress = progress < 1 ? 1 : 0.3 } }
         }
         .twAppearance(.automatic)
         .twGlassRenderer(.automatic)
@@ -133,8 +139,28 @@ It names the one surface directly below it. On a view that contains several surf
 This differs from SwiftUI's container in a few ways:
 
 - The group's glass sits behind all of the group's content, not behind each surface. Avoid overlapping a grouped surface with other content in the group.
-- Glass follows the surfaces' layout and the transaction's animation. Render-time effects such as `scaleEffect`, and scroll offsets inside the group, may not move it, so keep scroll views and scaled surfaces outside the group.
+- SwiftUI reports the surfaces' frames on every animation frame and gesture event, including `.offset` and `.scaleEffect`, so the glass stays on its surface while it moves. Scrolling inside a group is untested; keep scroll views outside the group.
 - A surface in a sheet or popover presented from inside the group draws its own glass.
+
+`.twGlassTracking(_:)` chooses how UIKit's group glass follows those frames.
+`.transaction`, the default, bridges the transaction's animation to UIKit, so glass that arrives or leaves materializes and dematerializes.
+`.direct` sets every frame as it arrives and adds and removes glass at once, so UIKit never animates on top of frames your code already drives.
+
+## Glass at computed frames
+
+`TWGlassCluster(spacing:pieces:)` draws glass at frames you compute, in its own coordinates, without surfaces or layout.
+Each `TWGlassPiece` has an identifier, a frame, a shape, an optional tint, and the interactive flag.
+Shapes are `.capsule`, `.rounded(_:)`, and `.edges(top:bottom:)` for different top and bottom corners, as on a sheet.
+
+- With UIKit's renderer, the cluster sets each frame directly inside one `UIGlassContainerEffect`, without UIKit animation, and adds and removes pieces by identifier.
+- With SwiftUI's renderer, it places `glassEffect` pieces in a `GlassEffectContainer`.
+- Under Reduce Transparency each piece is a solid fill: its tint, or the theme's surface, with the fallback edge. No glass view is drawn. Without Liquid Glass each piece is a material with that edge.
+- The cluster only draws. It takes no touches and is hidden from accessibility.
+
+`.twGlassFrames(_:spacing:pieces:)` draws a cluster behind a view at frames computed from an animatable value.
+SwiftUI interpolates the value and calls `pieces` with it and the view's size on every animation frame. A gesture that sets the value calls it on every event.
+The value can be any `VectorArithmetic` type, such as `CGFloat` or `AnimatablePair`.
+Content is not moved for you: place it from the same value, so content and glass move together.
 
 ## Native sheets
 

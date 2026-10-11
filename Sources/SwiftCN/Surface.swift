@@ -224,10 +224,10 @@ struct TWSurfaceModifier: ViewModifier {
         Glass.regular.tint(appearance.glassTint).interactive(appearance.glassInteractive)
     }
 
-    /// The same glass for UIKit. A nil radius is a capsule.
+    /// The same glass for UIKit.
     private var uiKitGlass: TWGlassStyle {
         TWGlassStyle(tint: appearance.glassTint, interactive: appearance.glassInteractive,
-                     radius: appearance.hasRadius ? appearance.radius : nil)
+                     shape: appearance.hasRadius ? .rounded(appearance.radius) : .capsule)
     }
 
     /// Floating surfaces default to a capsule, like native glass. Radius classes select a rounded rectangle.
@@ -261,8 +261,7 @@ struct TWSurfaceModifier: ViewModifier {
 struct TWGlassStyle: Hashable {
     var tint: Color?
     var interactive = false
-    /// Nil is a capsule. A radius larger than half the shape's height is clamped, like a rounded rectangle.
-    var radius: CGFloat?
+    var shape = TWGlassShape.capsule
 }
 
 /// A surface's glass shape within a group: its `twSurfaceID`, or one the surface keeps for itself.
@@ -340,8 +339,8 @@ private struct TWSurfaceIDModifier<ID: Hashable & Sendable>: ViewModifier {
             #if os(iOS)
             // Renames the glass of the one surface directly below, as glassEffectID names that view's glass.
             let name = id.map { TWGlassPieceID(namespace: namespace, value: AnyHashable($0)) }
-            content.transformPreference(TWGlassPieceKey.self) { pieces in
-                if let name { TWGlassPiece.name(&pieces, name) }
+            content.transformPreference(TWGroupPieceKey.self) { pieces in
+                if let name { TWGroupPiece.name(&pieces, name) }
             }
             #else
             content
