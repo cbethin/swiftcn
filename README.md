@@ -307,7 +307,7 @@ Accessibility and policy changes keep editors, bindings, and focus. Surface clas
 
 `twGlassRenderer` chooses the framework that draws glass surfaces and groups.
 `.automatic` uses UIKit's `UIGlassEffect` on iOS 27 and later and SwiftUI's `glassEffect` elsewhere, because SwiftUI's glass stopped a window redrawing on a physical iPhone running iOS 27.0.1.
-`.swiftUI` returns to SwiftUI's glass once the system is fixed, and `.uiKit` opts iOS 26 in. macOS always uses SwiftUI's glass.
+`.swiftUI` returns to SwiftUI's glass once the system is fixed, and `.uiKit` opts iOS 26 in. macOS and Mac Catalyst always use SwiftUI's glass.
 With UIKit's renderer, nothing in swiftcn applies SwiftUI's glass: surfaces, groups, and glass buttons use UIKit's, and solid and material fills create no glass view.
 See [adaptive surfaces](website/content/docs/adaptive-surfaces.mdx).
 

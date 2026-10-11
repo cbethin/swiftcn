@@ -80,7 +80,7 @@ Use `.twAppearance(.glass)` or the `glass` class to opt specific surfaces back i
 
 `.twGlassRenderer` chooses the framework that draws glass surfaces and groups. Fills, roles, and the appearance policy stay the same.
 
-| Renderer | iOS 27 and later | iOS 26 | macOS 26 and later |
+| Renderer | iOS 27 and later | iOS 26 | macOS 26 and later, Mac Catalyst |
 | --- | --- | --- | --- |
 | `.automatic` (default) | UIKit | SwiftUI | SwiftUI |
 | `.swiftUI` | SwiftUI | SwiftUI | SwiftUI |
@@ -115,7 +115,8 @@ Every `.buttonStyle(.tw(...))` button whose classes choose a native style is dra
 On a button, `glass` and `glass-prominent` select `.glass` or `.glassProminent` on Liquid Glass systems, and `.bordered` or `.borderedProminent` otherwise. With UIKit's renderer they draw UIKit's glass instead; see [Glass renderer](#glass-renderer).
 `surface-solid` always selects the bordered styles.
 Classes add spacing and typography to the label. Background, border, and shadow classes are ignored so nothing paints over the native control.
-Use `tint-*` or the native `.tint` modifier for color.
+Use `tint-*` or the native `.tint` modifier for color. A button without a tint class keeps the inherited tint.
+A tint class that applies only in some states, such as `focus:tint-primary`, uses the default tint in the other states: SwiftUI cannot restore an inherited tint once a button sets one.
 
 Accessibility settings never change the selected style type, so a button keeps its identity, focus, and pending activation.
 
@@ -128,6 +129,7 @@ Earlier systems show the content unchanged and ignore the identifier. Use native
 With UIKit's renderer, `TWSurfaceGroup` draws its surfaces' glass in one `UIGlassContainerEffect` behind its content, so nearby shapes still blend.
 Each surface reports its bounds to the group. Glass that arrives materializes, glass that leaves dematerializes, and glass that moves follows the transaction's animation.
 `twSurfaceID(_:in:)` names a surface's glass shape: a surface that leaves and one that arrives with the same identifier share one shape, which moves and resizes between them.
+It names the one surface directly below it. On a view that contains several surfaces side by side it has no effect, like `glassEffectID` on a view without glass.
 This differs from SwiftUI's container in a few ways:
 
 - The group's glass sits behind all of the group's content, not behind each surface. Avoid overlapping a grouped surface with other content in the group.

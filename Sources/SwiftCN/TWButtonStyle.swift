@@ -122,8 +122,7 @@ private struct TWNativeBezelButton: View {
         .transformEnvironment(\.controlSize) { size in
             if let value = appearance.controlSize { size = value }
         }
-        // A nil tint keeps the inherited one without changing the button's structure.
-        .tint(appearance.glassTint)
+        .modifier(TWButtonTintModifier(inherits: appearance.inheritsTint, tint: appearance.glassTint))
         switch rendering {
         case .swiftUIGlass(let prominent):
             if #available(iOS 26, macOS 26, *) {
@@ -138,7 +137,8 @@ private struct TWNativeBezelButton: View {
             if #available(iOS 26, *) {
                 button.buttonStyle(TWUIKitGlassButtonStyle(
                     prominent: prominent, tint: appearance.glassTint, radius: glassRadius,
-                    surface: theme.color(.surface, scheme: scheme), edge: theme.color(.border, scheme: scheme)))
+                    surface: theme.color(.surface, scheme: scheme), edge: theme.color(.border, scheme: scheme),
+                    strongEdge: theme.color(.input, scheme: scheme)))
             } else if prominent {
                 button.buttonStyle(.borderedProminent)
             } else {
@@ -184,6 +184,18 @@ private struct TWNativeBezelButton: View {
     private var borderShape: ButtonBorderShape {
         guard appearance.hasRadius else { return .automatic }
         return appearance.radius >= fullRadius ? .capsule : .roundedRectangle(radius: appearance.radius)
+    }
+}
+
+/// Applies a tint class. Without one in any state, the button keeps the inherited tint: `.tint(nil)` would reset it.
+/// The choice never depends on state, so hover and focus tints keep the button's structure. A state without its tint
+/// uses the default tint.
+private struct TWButtonTintModifier: ViewModifier {
+    let inherits: Bool
+    let tint: Color?
+
+    func body(content: Content) -> some View {
+        if inherits { content } else { content.tint(tint) }
     }
 }
 

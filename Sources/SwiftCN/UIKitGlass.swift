@@ -11,15 +11,19 @@ extension EnvironmentValues {
 }
 
 @available(iOS 26, *) @MainActor
-extension TWGlassStyle {
-    var effect: UIGlassEffect { effect(tint: tint.map(UIColor.init)) }
-
-    func effect(tint: UIColor?) -> UIGlassEffect {
+extension UIGlassEffect {
+    /// Regular glass, as surfaces and buttons draw it.
+    static func tw(tint: UIColor?, interactive: Bool) -> UIGlassEffect {
         let glass = UIGlassEffect(style: .regular)
         glass.isInteractive = interactive
         glass.tintColor = tint
         return glass
     }
+}
+
+@available(iOS 26, *) @MainActor
+extension TWGlassStyle {
+    var effect: UIGlassEffect { .tw(tint: tint.map(UIColor.init), interactive: interactive) }
 
     var corners: UICornerConfiguration {
         radius.map { .capsule(maximumRadius: $0) } ?? .capsule()
@@ -33,20 +37,18 @@ struct TWUIKitSurfaceGlassModifier: ViewModifier {
     /// Nil when another fill wins. Then no UIKit view exists.
     let style: TWGlassStyle?
     @Environment(\.twGlassGroup) private var group
-    @Environment(\.twSurfaceGlassID) private var surfaceID
-    @State private var ownID = UUID()
+    @State private var slot = UUID()
 
     func body(content: Content) -> some View {
-        let id = surfaceID ?? TWGlassPieceID(value: ownID)
         content
-            // A surface nested in this one keeps its own identity.
-            .environment(\.twSurfaceGlassID, nil)
             .background {
-                if let style { TWUIKitSurfaceGlass(style: style, id: id, group: group) }
+                if let style { TWUIKitSurfaceGlass(style: style, slot: slot, group: group) }
             }
-            .anchorPreference(key: TWGlassPieceKey.self, value: .bounds) { bounds in
-                guard let style, group != nil else { return [] }
-                return [TWGlassPiece(id: id, bounds: bounds, style: style)]
+            .transformAnchorPreference(key: TWGlassPieceKey.self, value: .bounds) { pieces, bounds in
+                // Surfaces inside this one are nested, so a twSurfaceID outside it names this surface only.
+                for index in pieces.indices { pieces[index].nested = true }
+                guard let style, group != nil else { return }
+                pieces.insert(TWGlassPiece(id: TWGlassPieceID(value: slot), slot: slot, bounds: bounds, style: style), at: 0)
             }
     }
 }
@@ -54,18 +56,18 @@ struct TWUIKitSurfaceGlassModifier: ViewModifier {
 @available(iOS 26, *)
 private struct TWUIKitSurfaceGlass: UIViewRepresentable {
     let style: TWGlassStyle
-    let id: TWGlassPieceID
+    let slot: UUID
     let group: TWGlassGroup?
 
     func makeUIView(context: Context) -> TWGlassSlotView { TWGlassSlotView() }
 
     func updateUIView(_ view: TWGlassSlotView, context: Context) {
         let animation = TWGlassAnimation(context.transaction, animate: context.animate)
-        view.update(style: style, id: id, group: group, animation: animation)
+        view.update(style: style, slot: slot, group: group, animation: animation)
     }
 
     static func dismantleUIView(_ view: TWGlassSlotView, coordinator: ()) {
-        view.update(style: nil, id: nil, group: nil, animation: TWGlassAnimation())
+        view.update(style: nil, slot: nil, group: nil, animation: TWGlassAnimation())
     }
 }
 
@@ -75,7 +77,7 @@ final class TWGlassSlotView: UIView {
     private let glass = UIVisualEffectView()
     private var style: TWGlassStyle?
     private var drawn: TWGlassStyle?
-    private var id: TWGlassPieceID?
+    private var slot: UUID?
     private weak var group: TWGlassGroup?
 
     init() {
@@ -89,9 +91,9 @@ final class TWGlassSlotView: UIView {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
 
-    func update(style: TWGlassStyle?, id: TWGlassPieceID?, group: TWGlassGroup?, animation: TWGlassAnimation) {
+    func update(style: TWGlassStyle?, slot: UUID?, group: TWGlassGroup?, animation: TWGlassAnimation) {
         self.style = style
-        self.id = id
+        self.slot = slot
         if group !== self.group {
             self.group?.slots.remove(self)
             group?.slots.add(self)
@@ -102,7 +104,7 @@ final class TWGlassSlotView: UIView {
 
     /// Shows the glass unless the group draws this surface. Called again when the group's claims change.
     func refresh(_ animation: TWGlassAnimation) {
-        let claimed = id.map { group?.claimed.contains($0) == true } ?? false
+        let claimed = slot.map { group?.claimed.contains($0) == true } ?? false
         let next = claimed ? nil : style
         guard next != drawn else { return }
         drawn = next
@@ -116,21 +118,35 @@ final class TWGlassSlotView: UIView {
 /// The surfaces a group draws. A surface outside the group's hierarchy, such as one in a sheet presented
 /// from inside the group, never reaches its preferences, so it is never claimed and draws its own glass.
 @MainActor final class TWGlassGroup {
-    var claimed: Set<TWGlassPieceID> = []
+    var claimed: Set<UUID> = []
     let slots = NSHashTable<UIView>.weakObjects()
 
     @available(iOS 26, *)
-    func claim(_ ids: Set<TWGlassPieceID>, animation: TWGlassAnimation) {
-        guard ids != claimed else { return }
-        claimed = ids
-        for case let slot as TWGlassSlotView in slots.allObjects { slot.refresh(animation) }
+    func claim(_ slots: Set<UUID>, animation: TWGlassAnimation) {
+        guard slots != claimed else { return }
+        claimed = slots
+        for case let slot as TWGlassSlotView in self.slots.allObjects { slot.refresh(animation) }
     }
 }
 
 struct TWGlassPiece {
+    /// The glass shape: the surface's `twSurfaceID`, or its slot.
     var id: TWGlassPieceID
+    /// The surface that reported the piece. The group claims it, so the surface does not draw it too.
+    var slot: UUID
+    /// Inside another surface. A `twSurfaceID` outside both names the outer surface.
+    var nested = false
     var bounds: Anchor<CGRect>
     var style: TWGlassStyle
+
+    /// Names the one surface directly below a `twSurfaceID`. Several surfaces side by side, or none,
+    /// keep their own shapes, as `glassEffectID` on a view without glass does nothing.
+    static func name(_ pieces: inout [TWGlassPiece], _ id: TWGlassPieceID) {
+        let top = pieces.indices.filter { !pieces[$0].nested }
+        if top.count == 1 { pieces[top[0]].id = id }
+        // An identifier further out must not rename this surface again.
+        for index in pieces.indices { pieces[index].nested = true }
+    }
 }
 
 struct TWGlassPieceKey: PreferenceKey {
@@ -152,7 +168,7 @@ struct TWUIKitGlassGroup<Content: View>: View {
             .backgroundPreferenceValue(TWGlassPieceKey.self) { pieces in
                 GeometryReader { proxy in
                     TWUIKitGlassContainer(spacing: spacing, group: group, pieces: pieces.map {
-                        TWGlassFrame(id: $0.id, frame: proxy[$0.bounds], style: $0.style)
+                        TWGlassFrame(id: $0.id, slot: $0.slot, frame: proxy[$0.bounds], style: $0.style)
                     })
                 }
             }
@@ -163,6 +179,7 @@ struct TWUIKitGlassGroup<Content: View>: View {
 
 struct TWGlassFrame {
     var id: TWGlassPieceID
+    var slot: UUID
     var frame: CGRect
     var style: TWGlassStyle
 }
@@ -234,7 +251,7 @@ private struct TWUIKitGlassContainer: UIViewRepresentable {
                 coordinator.styles[id] = nil
             }
         }
-        group.claim(live, animation: animation)
+        group.claim(Set(pieces.map(\.slot)), animation: animation)
     }
 
     static func dismantleUIView(_ container: UIVisualEffectView, coordinator: Coordinator) {
@@ -255,9 +272,11 @@ struct TWUIKitGlassButtonStyle: ButtonStyle {
     let tint: Color?
     /// Nil is a capsule.
     let radius: CGFloat?
-    /// The Reduce Transparency fallback for plain glass.
+    /// The Reduce Transparency fallback for plain glass, with the edge surfaces use.
     let surface: Color
     let edge: Color
+    /// The edge under Increase Contrast.
+    let strongEdge: Color
 
     func makeBody(configuration: Configuration) -> some View {
         TWUIKitGlassButtonBody(configuration: configuration, style: self)
@@ -270,6 +289,7 @@ private struct TWUIKitGlassButtonBody: View {
     let style: TWUIKitGlassButtonStyle
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.controlSize) private var controlSize
 
@@ -309,7 +329,8 @@ private struct TWUIKitGlassButtonBody: View {
                 shape.fill(.tint)
             }
         } else {
-            shape.fill(style.surface).overlay(shape.stroke(style.edge, lineWidth: 1))
+            let edge = contrast == .increased ? style.strongEdge : style.edge
+            shape.fill(style.surface).overlay(shape.stroke(edge, lineWidth: 1))
         }
     }
 }
@@ -389,7 +410,7 @@ final class TWGlassButtonView: UIVisualEffectView {
         let tint = followsTint ? tintColor : fixedTint
         guard applied != .some(tint) else { return }
         applied = .some(tint)
-        effect = TWGlassStyle(tint: nil, interactive: true).effect(tint: tint)
+        effect = UIGlassEffect.tw(tint: tint, interactive: true)
     }
 }
 

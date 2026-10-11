@@ -17,8 +17,8 @@ public enum TWGlassRenderer: Sendable, Hashable {
     case automatic
     /// SwiftUI's `glassEffect` and `GlassEffectContainer`.
     case swiftUI
-    /// UIKit's `UIGlassEffect` and `UIGlassContainerEffect` where UIKit draws glass (iOS 26 and later).
-    /// Other systems use SwiftUI's glass.
+    /// UIKit's `UIGlassEffect` and `UIGlassContainerEffect` on iOS 26 and later.
+    /// macOS and Mac Catalyst use SwiftUI's glass.
     case uiKit
 }
 
@@ -61,16 +61,16 @@ enum TWGlassEngine: Sendable, Hashable {
     /// UIKit's `UIGlassEffect` behind the content. SwiftUI's glass is never applied, not even `.identity`.
     case uiKit
 
-    /// UIKit draws Liquid Glass on iOS 26 and later.
+    /// UIKit draws Liquid Glass on iOS 26 and later. Mac Catalyst keeps SwiftUI's glass, like macOS.
     static var systemSupportsUIKitGlass: Bool {
-        #if os(iOS)
+        #if os(iOS) && !targetEnvironment(macCatalyst)
         if #available(iOS 26, *) { return true }
         #endif
         return false
     }
 
     /// On a physical iPhone running iOS 27.0.1, SwiftUI's glass anywhere in a window stopped it redrawing
-    /// while state and touches kept working. UIKit's glass renders. The simulators never froze. Mac Catalyst keeps SwiftUI.
+    /// while state and touches kept working. UIKit's glass renders. The simulators never froze.
     static var systemPrefersUIKitGlass: Bool {
         #if os(iOS) && !targetEnvironment(macCatalyst)
         if #available(iOS 27, *) { return true }
@@ -265,16 +265,11 @@ struct TWGlassStyle: Hashable {
     var radius: CGFloat?
 }
 
-/// A surface's identity within a group: its `twSurfaceID`, or one the surface keeps for itself.
+/// A surface's glass shape within a group: its `twSurfaceID`, or one the surface keeps for itself.
 struct TWGlassPieceID: Hashable, @unchecked Sendable {
     // Built only from `Hashable & Sendable` values.
     var namespace: Namespace.ID?
     var value: AnyHashable
-}
-
-extension EnvironmentValues {
-    /// The `twSurfaceID` applied outside a surface's classes. The surface clears it for its content.
-    @Entry var twSurfaceGlassID: TWGlassPieceID? = nil
 }
 
 /// Groups glass surfaces so nearby shapes blend and morph on systems with Liquid Glass.
@@ -283,13 +278,14 @@ extension EnvironmentValues {
 public struct TWSurfaceGroup<Content: View>: View {
     private let spacing: CGFloat?
     private let content: Content
-    private let inputs = TWSurfaceInputs()
+    // The engine depends on the renderer alone, so accessibility and policy changes never invalidate the group.
+    @Environment(\.twGlassRenderer) private var renderer
     public init(spacing: CGFloat? = nil, @ViewBuilder content: () -> Content) {
         self.spacing = spacing
         self.content = content()
     }
     public var body: some View {
-        switch inputs.engine {
+        switch renderer.engine() {
         case .swiftUI:
             if #available(iOS 26, macOS 26, *) {
                 GlassEffectContainer(spacing: spacing) { content }
@@ -331,9 +327,9 @@ extension View {
 private struct TWSurfaceIDModifier<ID: Hashable & Sendable>: ViewModifier {
     let id: ID?
     let namespace: Namespace.ID
-    private let inputs = TWSurfaceInputs()
+    @Environment(\.twGlassRenderer) private var renderer
     func body(content: Content) -> some View {
-        switch inputs.engine {
+        switch renderer.engine() {
         case .swiftUI:
             if #available(iOS 26, macOS 26, *) {
                 content.glassEffectID(id, in: namespace)
@@ -341,7 +337,15 @@ private struct TWSurfaceIDModifier<ID: Hashable & Sendable>: ViewModifier {
                 content
             }
         case .uiKit:
-            content.environment(\.twSurfaceGlassID, id.map { TWGlassPieceID(namespace: namespace, value: AnyHashable($0)) })
+            #if os(iOS)
+            // Renames the glass of the one surface directly below, as glassEffectID names that view's glass.
+            let name = id.map { TWGlassPieceID(namespace: namespace, value: AnyHashable($0)) }
+            content.transformPreference(TWGlassPieceKey.self) { pieces in
+                if let name { TWGlassPiece.name(&pieces, name) }
+            }
+            #else
+            content
+            #endif
         case .none:
             content
         }

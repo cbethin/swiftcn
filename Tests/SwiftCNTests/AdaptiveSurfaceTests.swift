@@ -143,6 +143,16 @@ struct AdaptiveSurfacePolicyTests {
         #expect(resolve("glass-prominent").buttonBezel == .prominent)
     }
 
+    @Test func tintClassesInAnyStateDecideWhetherAButtonAppliesATint() {
+        #expect(resolve("glass-prominent").inheritsTint)
+        #expect(resolve("bezel-prominent px-4").inheritsTint)
+        #expect(!resolve("button-primary").inheritsTint, "Recipes that set a tint apply it.")
+        #expect(!resolve("glass-prominent tint-destructive").inheritsTint)
+        // Decided before state filtering, so a focus tint never adds or removes the modifier.
+        #expect(!resolve("bezel-bordered focus:tint-primary").inheritsTint)
+        #expect(!resolve("bezel-bordered focus:tint-primary", state: TWState(isFocused: true)).inheritsTint)
+    }
+
     @Test func surfaceClassesResolveToOneRoleAndLocalClassesWin() {
         #expect(resolve("surface-floating").surface == .floating)
         #expect(resolve("surface-solid").surface == .solid)
@@ -293,6 +303,20 @@ struct AdaptiveSurfaceRenderingTests {
         let actual = try capture(Button("Save") {}.buttonStyle(.tw(classes)))
         #expect(actual.size == expected.size)
         #expect(actual.tiffRepresentation == expected.tiffRepresentation, "\(classes) must be Apple's style, not a painted one.")
+    }
+
+    @Test func buttonsWithoutATintClassKeepTheInheritedTint() throws {
+        // `.tint(nil)` resets the tint to the default, so a button without a tint class must not apply one.
+        func bezel(_ classes: String) throws -> SurfacePixel {
+            let bitmap = try capture(Button("Save changes") {}.buttonStyle(.tw(classes)).tint(Color(red: 0, green: 0.8, blue: 0)))
+            // The left of the bezel, clear of the label. The capture is padded by 8 points.
+            let color = try #require(bitmap.colorAt(x: bitmap.pixelsWide * 10 / Int(bitmap.size.width), y: bitmap.pixelsHigh / 2)?.usingColorSpace(.sRGB))
+            return SurfacePixel(red: color.redComponent, green: color.greenComponent, blue: color.blueComponent, alpha: color.alphaComponent)
+        }
+        let inherited = try bezel("bezel-prominent")
+        #expect(inherited.green > inherited.red + 0.3 && inherited.green > inherited.blue + 0.3, "\(inherited)")
+        let local = try bezel("bezel-prominent tint-destructive")
+        #expect(local.red > local.green + 0.3, "A tint class still wins: \(local)")
     }
 
     @Test func toggleSelectionChangesOnlyTheTintAndKeepsTheLabel() {
