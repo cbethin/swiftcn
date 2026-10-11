@@ -15,6 +15,7 @@ usage: swiftcn-lint [paths…] [--config swiftcn-lint.json] [--format xcode|json
   --format     xcode (default) prints path:line:column: error: message; json prints an array
   --warnings   Report problems as warnings and exit successfully
   --reference  Print the Markdown reference of every swiftcn class and exit
+  --catalog-json  Print every class as JSON for editor tooling and exit
 
 """
 
@@ -32,6 +33,9 @@ while let argument = arguments.next() {
     case "--warnings": warningsOnly = true
     case "--reference":
         print(ClassReference.markdown(), terminator: "")
+        exit(0)
+    case "--catalog-json":
+        print(try ClassCatalogJSON.encoded(), terminator: "")
         exit(0)
     case "-h", "--help":
         print(usage, terminator: "")

@@ -1,0 +1,79 @@
+{
+  "name": "swiftcn",
+  "displayName": "swiftcn",
+  "description": "Completions, hover docs, and typo fixes for swiftcn classes in SwiftUI.",
+  "version": "0.1.0",
+  "publisher": "cbethin",
+  "license": "MIT",
+  "type": "module",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cbethin/swiftcn",
+    "directory": "Editors/vscode"
+  },
+  "homepage": "https://cbethin.github.io/swiftcn/docs/editor-support/",
+  "bugs": "https://github.com/cbethin/swiftcn/issues",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Snippets"
+  ],
+  "keywords": [
+    "swift",
+    "swiftui",
+    "swiftcn",
+    "tailwind",
+    "liquid glass",
+    "language server"
+  ],
+  "activationEvents": [
+    "onLanguage:swift"
+  ],
+  "main": "./dist/extension.cjs",
+  "bin": {
+    "swiftcn-language-server": "./bin/swiftcn-language-server.cjs"
+  },
+  "contributes": {
+    "configuration": {
+      "title": "swiftcn",
+      "properties": {
+        "swiftcn.diagnostics.severity": {
+          "type": "string",
+          "enum": [
+            "warning",
+            "error",
+            "off"
+          ],
+          "default": "warning",
+          "description": "How to report unknown swiftcn classes. The swiftcn-lint build plugin reports them as errors when you build."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "check": "tsc --noEmit",
+    "test": "node esbuild.mjs && node --test test/*.test.ts",
+    "package": "node esbuild.mjs && vsce package --no-dependencies",
+    "vscode:prepublish": "node esbuild.mjs",
+    "test:editor": "node esbuild.mjs && node test/editor/run.mjs"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.2"
+  }
+}

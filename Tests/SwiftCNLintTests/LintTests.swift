@@ -131,6 +131,23 @@ struct LintTests {
                 "Regenerate with: swift run swiftcn-lint --reference > website/public/classes.md")
     }
 
+    @Test func editorCatalogIsCurrentAndParses() throws {
+        let published = try String(contentsOf: Self.repository.appending(path: "Editors/vscode/data/classes.json"), encoding: .utf8)
+        #expect(published == (try ClassCatalogJSON.encoded()),
+                "Regenerate with: swift run swiftcn-lint --catalog-json > Editors/vscode/data/classes.json")
+        let catalog = ClassCatalogJSON.catalog()
+        let rules = SwiftCNLinter().rules
+        for entry in catalog.classes where entry.kind != "internal" {
+            #expect(throws: Never.self, "\(entry.name)") { _ = try TWStyle.parse(entry.name, rules: rules) }
+        }
+        // Each snippet's default value is a working class that its own pattern matches.
+        for pattern in catalog.patterns where !pattern.snippet.isEmpty && !pattern.snippet.contains("\\\\(") {
+            let example = pattern.snippet.replacingOccurrences(of: #"\$\{\d+:([^}]*)\}"#, with: "$1", options: .regularExpression)
+            #expect(throws: Never.self, "\(example)") { _ = try TWStyle.parse(example, rules: rules) }
+            #expect(example.range(of: pattern.regex, options: .regularExpression) != nil, "\(pattern.regex) matches \(example)")
+        }
+    }
+
     /// The example apps exercise most of the grammar, so they guard against false positives.
     @Test func repositoryExamplesHaveNoFalsePositives() throws {
         let examples = Self.repository.appending(path: "Examples")

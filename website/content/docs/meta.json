@@ -23,6 +23,7 @@
     "shared-elements",
     "---Development---",
     "build-time-checks",
+    "editor-support",
     "visual-testing",
     "troubleshooting"
   ]

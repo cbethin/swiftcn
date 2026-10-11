@@ -1,0 +1,65 @@
+---
+title: "Editor support"
+description: "Completions, hover docs, and typo fixes for classes in VS Code, Cursor, and other editors."
+---
+
+The swiftcn extension suggests classes as you type them inside Swift strings.
+It runs in VS Code, Cursor, Windsurf, and VSCodium, and as a language server for other editors.
+
+- Completions inside `.tw("…")`, `.buttonStyle(.tw("…"))`, `cn(…)`, `classes:` arguments, and `TWClasses` literals.
+- Hover a class to see what it maps to, such as `text-lg`: font `.title3`, scaled with Dynamic Type.
+- A warning for each unknown class, with a quick fix for the closest valid class.
+- Suggestions for the recipes, modifiers, utilities, animations, and colors that your project registers.
+
+The class list is generated from the swiftcn parser, so suggestions match what swiftcn accepts.
+The extension works alongside the Swift extension and SourceKit-LSP.
+
+## Install
+
+Build the extension from a swiftcn checkout, then install the package:
+
+```sh
+cd Editors/vscode
+npm ci
+npm run package
+code --install-extension swiftcn-0.1.0.vsix
+```
+
+Use `cursor --install-extension` for Cursor, or **Extensions: Install from VSIX…** in any of these editors.
+
+## Settings
+
+`swiftcn.diagnostics.severity` sets how unknown classes appear: `warning` (the default), `error`, or `off`.
+Suppress one line with `// swiftcn-lint: ignore`, or the next line with `// swiftcn-lint: ignore-next-line`.
+The editor only reports names it is sure are unknown.
+The [build plugin](/docs/build-time-checks) checks every class and argument with the parser when you build.
+
+## Other editors
+
+The extension includes `swiftcn-language-server`, a standard language server over stdio.
+Install the command from a swiftcn checkout with `npm link` in `Editors/vscode`, then add it for Swift files.
+
+Neovim 0.11:
+
+```lua
+vim.lsp.config('swiftcn', {
+  cmd = { 'swiftcn-language-server', '--stdio' },
+  filetypes = { 'swift' },
+  root_markers = { 'Package.swift', '.git' },
+})
+vim.lsp.enable('swiftcn')
+```
+
+Helix, in `languages.toml`:
+
+```toml
+[language-server.swiftcn]
+command = "swiftcn-language-server"
+args = ["--stdio"]
+
+[[language]]
+name = "swift"
+language-servers = ["sourcekit-lsp", "swiftcn"]
+```
+
+Sublime Text's LSP package and Emacs Eglot run the same command for Swift files.

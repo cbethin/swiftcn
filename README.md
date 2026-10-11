@@ -253,6 +253,8 @@ Run it without building with `swift package swiftcn-lint`, or `swift run swiftcn
 [`classes.md`](https://cbethin.github.io/swiftcn/classes.md) lists every valid class.
 See [build-time checks](website/content/docs/build-time-checks.mdx) for Xcode projects, configuration, and suppression.
 
+In VS Code, Cursor, and Windsurf, the [swiftcn extension](Editors/vscode) completes classes inside strings, describes them on hover, and offers quick fixes for typos. It is also a standard language server for Neovim, Helix, and other editors.
+
 ## Theme
 
 ```swift

@@ -1,0 +1,1919 @@
+{
+  "classes" : [
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "accordion"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "accordion-item"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "alert"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "alert-description"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "alert-title"
+    },
+    {
+      "category" : "Animation",
+      "description" : "Native .bouncy spring.",
+      "name" : "animate-bouncy"
+    },
+    {
+      "category" : "Animation",
+      "description" : "Native .easeIn curve.",
+      "name" : "animate-ease-in"
+    },
+    {
+      "category" : "Animation",
+      "description" : "Native .easeInOut curve.",
+      "name" : "animate-ease-in-out"
+    },
+    {
+      "category" : "Animation",
+      "description" : "Native .easeOut curve.",
+      "name" : "animate-ease-out"
+    },
+    {
+      "category" : "Animation",
+      "description" : "Native .linear curve.",
+      "name" : "animate-linear"
+    },
+    {
+      "category" : "Animation",
+      "description" : "Disable animation for styled values.",
+      "name" : "animate-none"
+    },
+    {
+      "category" : "Animation",
+      "description" : "Native .smooth spring.",
+      "name" : "animate-smooth"
+    },
+    {
+      "category" : "Animation",
+      "description" : "Native .snappy spring.",
+      "name" : "animate-snappy"
+    },
+    {
+      "category" : "Animation",
+      "description" : "Native .spring with duration-*.",
+      "name" : "animate-spring"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "attachment"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "avatar"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "badge"
+    },
+    {
+      "category" : "Buttons",
+      "description" : "Native button style .bordered. Apple draws the bezel.",
+      "name" : "bezel-bordered"
+    },
+    {
+      "category" : "Buttons",
+      "description" : "Native button style .borderless. Apple draws the bezel.",
+      "name" : "bezel-borderless"
+    },
+    {
+      "category" : "Buttons",
+      "description" : "Native button style .link on macOS, .borderless on iOS. Apple draws the bezel.",
+      "name" : "bezel-link"
+    },
+    {
+      "category" : "Buttons",
+      "description" : "Native button style .borderedProminent. Apple draws the bezel.",
+      "name" : "bezel-prominent"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color accent.",
+      "kind" : "color",
+      "name" : "bg-accent"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color accent-foreground.",
+      "kind" : "color",
+      "name" : "bg-accent-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color background.",
+      "kind" : "color",
+      "name" : "bg-background"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color border.",
+      "kind" : "color",
+      "name" : "bg-border"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color card.",
+      "kind" : "color",
+      "name" : "bg-card"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color card-foreground.",
+      "kind" : "color",
+      "name" : "bg-card-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color destructive.",
+      "kind" : "color",
+      "name" : "bg-destructive"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color destructive-foreground.",
+      "kind" : "color",
+      "name" : "bg-destructive-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color foreground.",
+      "kind" : "color",
+      "name" : "bg-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color input.",
+      "kind" : "color",
+      "name" : "bg-input"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color muted.",
+      "kind" : "color",
+      "name" : "bg-muted"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color muted-foreground.",
+      "kind" : "color",
+      "name" : "bg-muted-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color mutedForeground.",
+      "kind" : "color",
+      "name" : "bg-mutedForeground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color onAccent.",
+      "kind" : "color",
+      "name" : "bg-onAccent"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color onDestructive.",
+      "kind" : "color",
+      "name" : "bg-onDestructive"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color onPrimary.",
+      "kind" : "color",
+      "name" : "bg-onPrimary"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color primary.",
+      "kind" : "color",
+      "name" : "bg-primary"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color primary-foreground.",
+      "kind" : "color",
+      "name" : "bg-primary-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color ring.",
+      "kind" : "color",
+      "name" : "bg-ring"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color surface.",
+      "kind" : "color",
+      "name" : "bg-surface"
+    },
+    {
+      "category" : "Color",
+      "description" : "Background color: theme color tint.",
+      "kind" : "color",
+      "name" : "bg-tint"
+    },
+    {
+      "category" : "Borders",
+      "description" : "1 pt border in the theme border color.",
+      "name" : "border"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color accent.",
+      "kind" : "color",
+      "name" : "border-accent"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color accent-foreground.",
+      "kind" : "color",
+      "name" : "border-accent-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color background.",
+      "kind" : "color",
+      "name" : "border-background"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color border.",
+      "kind" : "color",
+      "name" : "border-border"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color card.",
+      "kind" : "color",
+      "name" : "border-card"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color card-foreground.",
+      "kind" : "color",
+      "name" : "border-card-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color destructive.",
+      "kind" : "color",
+      "name" : "border-destructive"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color destructive-foreground.",
+      "kind" : "color",
+      "name" : "border-destructive-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color foreground.",
+      "kind" : "color",
+      "name" : "border-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color input.",
+      "kind" : "color",
+      "name" : "border-input"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color muted.",
+      "kind" : "color",
+      "name" : "border-muted"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color muted-foreground.",
+      "kind" : "color",
+      "name" : "border-muted-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color mutedForeground.",
+      "kind" : "color",
+      "name" : "border-mutedForeground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color onAccent.",
+      "kind" : "color",
+      "name" : "border-onAccent"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color onDestructive.",
+      "kind" : "color",
+      "name" : "border-onDestructive"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color onPrimary.",
+      "kind" : "color",
+      "name" : "border-onPrimary"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color primary.",
+      "kind" : "color",
+      "name" : "border-primary"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color primary-foreground.",
+      "kind" : "color",
+      "name" : "border-primary-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color ring.",
+      "kind" : "color",
+      "name" : "border-ring"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color surface.",
+      "kind" : "color",
+      "name" : "border-surface"
+    },
+    {
+      "category" : "Color",
+      "description" : "Border color: theme color tint.",
+      "kind" : "color",
+      "name" : "border-tint"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "breadcrumb"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "bubble"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "button-destructive"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "button-ghost"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "button-group"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "button-link"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "button-outline"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "button-primary"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "button-secondary"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "calendar"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "calendar-day"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "calendar-heading"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "calendar-outside"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "calendar-selected"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "calendar-today"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "calendar-weekday"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "card"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "card-content"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "card-description"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "card-footer"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "card-header"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "card-title"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "carousel"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "chart"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "checkbox"
+    },
+    {
+      "category" : "Components",
+      "description" : "Native modifier that swiftcn components register.",
+      "kind" : "internal",
+      "name" : "cn-aspect"
+    },
+    {
+      "category" : "Components",
+      "description" : "Native modifier that swiftcn components register.",
+      "kind" : "internal",
+      "name" : "cn-avatar-crop"
+    },
+    {
+      "category" : "Components",
+      "description" : "Native modifier that swiftcn components register.",
+      "kind" : "internal",
+      "name" : "cn-avatar-image"
+    },
+    {
+      "category" : "Components",
+      "description" : "Native modifier that swiftcn components register.",
+      "kind" : "internal",
+      "name" : "cn-mono"
+    },
+    {
+      "category" : "Components",
+      "description" : "Native modifier that swiftcn components register.",
+      "kind" : "internal",
+      "name" : "cn-shimmer"
+    },
+    {
+      "category" : "Components",
+      "description" : "Native modifier that swiftcn components register.",
+      "kind" : "internal",
+      "name" : "cn-spin"
+    },
+    {
+      "category" : "Components",
+      "description" : "Native modifier that swiftcn components register.",
+      "kind" : "internal",
+      "name" : "cn-tint"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "collapsible"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "combobox"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "command"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "command-item"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "command-search"
+    },
+    {
+      "category" : "Buttons",
+      "description" : ".controlSize(.large).",
+      "name" : "control-lg"
+    },
+    {
+      "category" : "Buttons",
+      "description" : ".controlSize(.regular).",
+      "name" : "control-md"
+    },
+    {
+      "category" : "Buttons",
+      "description" : ".controlSize(.mini).",
+      "name" : "control-mini"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "control-motion"
+    },
+    {
+      "category" : "Buttons",
+      "description" : ".controlSize(.small).",
+      "name" : "control-sm"
+    },
+    {
+      "category" : "Buttons",
+      "description" : ".controlSize(.extraLarge).",
+      "name" : "control-xl"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "data-table"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "date-picker"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "date-picker-calendar"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "dialog"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "dialog-description"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "dialog-footer"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "dialog-title"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "disclosure-motion"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "drawer"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "dropdown-content"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "dropdown-item"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "dropdown-label"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "empty"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "empty-description"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "empty-title"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "feedback-motion"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "field"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "field-description"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "field-error"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "field-group"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "field-invalid"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "field-label"
+    },
+    {
+      "category" : "Typography",
+      "description" : "Font weight .bold.",
+      "name" : "font-bold"
+    },
+    {
+      "category" : "Typography",
+      "description" : "Font weight .light.",
+      "name" : "font-light"
+    },
+    {
+      "category" : "Typography",
+      "description" : "Font weight .medium.",
+      "name" : "font-medium"
+    },
+    {
+      "category" : "Typography",
+      "description" : "Font weight .regular.",
+      "name" : "font-normal"
+    },
+    {
+      "category" : "Typography",
+      "description" : "Font weight .regular.",
+      "name" : "font-regular"
+    },
+    {
+      "category" : "Typography",
+      "description" : "Font weight .semibold.",
+      "name" : "font-semibold"
+    },
+    {
+      "category" : "Surfaces",
+      "description" : "Liquid Glass with the same fallbacks. On a button, Apple's .glass style.",
+      "name" : "glass"
+    },
+    {
+      "category" : "Surfaces",
+      "description" : "Apple's touch and pointer feedback for glass. Installs no gesture.",
+      "name" : "glass-interactive"
+    },
+    {
+      "category" : "Surfaces",
+      "description" : "Prominent Liquid Glass. On a button, Apple's .glassProminent style.",
+      "name" : "glass-prominent"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color accent.",
+      "kind" : "color",
+      "name" : "glass-tint-accent"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color accent-foreground.",
+      "kind" : "color",
+      "name" : "glass-tint-accent-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color background.",
+      "kind" : "color",
+      "name" : "glass-tint-background"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color border.",
+      "kind" : "color",
+      "name" : "glass-tint-border"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color card.",
+      "kind" : "color",
+      "name" : "glass-tint-card"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color card-foreground.",
+      "kind" : "color",
+      "name" : "glass-tint-card-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color destructive.",
+      "kind" : "color",
+      "name" : "glass-tint-destructive"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color destructive-foreground.",
+      "kind" : "color",
+      "name" : "glass-tint-destructive-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color foreground.",
+      "kind" : "color",
+      "name" : "glass-tint-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color input.",
+      "kind" : "color",
+      "name" : "glass-tint-input"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color muted.",
+      "kind" : "color",
+      "name" : "glass-tint-muted"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color muted-foreground.",
+      "kind" : "color",
+      "name" : "glass-tint-muted-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color mutedForeground.",
+      "kind" : "color",
+      "name" : "glass-tint-mutedForeground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color onAccent.",
+      "kind" : "color",
+      "name" : "glass-tint-onAccent"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color onDestructive.",
+      "kind" : "color",
+      "name" : "glass-tint-onDestructive"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color onPrimary.",
+      "kind" : "color",
+      "name" : "glass-tint-onPrimary"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color primary.",
+      "kind" : "color",
+      "name" : "glass-tint-primary"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color primary-foreground.",
+      "kind" : "color",
+      "name" : "glass-tint-primary-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color ring.",
+      "kind" : "color",
+      "name" : "glass-tint-ring"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color surface.",
+      "kind" : "color",
+      "name" : "glass-tint-surface"
+    },
+    {
+      "category" : "Color",
+      "description" : "Liquid Glass tint: theme color tint.",
+      "kind" : "color",
+      "name" : "glass-tint-tint"
+    },
+    {
+      "category" : "Shared elements",
+      "description" : "Declare a group for group variants and shared elements.",
+      "name" : "group"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "hover-card"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "input"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "input-group"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "input-group-field"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "input-otp"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "item"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "item-description"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "item-title"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "kbd"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "label"
+    },
+    {
+      "category" : "Typography",
+      "description" : "Remove an inherited line limit.",
+      "name" : "line-clamp-none"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "marker"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "menu"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "message"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "message-meta"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "pagination"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "popover"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "popover-motion"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "presentation-dialog"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "presentation-motion"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "presentation-scrim"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "presentation-sheet"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "progress"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "questionnaire"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "radio-group"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "resizable"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "resizable-handle"
+    },
+    {
+      "category" : "Borders",
+      "description" : "Corner radius 8 pt (md).",
+      "name" : "rounded"
+    },
+    {
+      "category" : "Borders",
+      "description" : "Fully rounded corners (capsule).",
+      "name" : "rounded-full"
+    },
+    {
+      "category" : "Borders",
+      "description" : "Corner radius 12 pt.",
+      "name" : "rounded-lg"
+    },
+    {
+      "category" : "Borders",
+      "description" : "Corner radius 8 pt.",
+      "name" : "rounded-md"
+    },
+    {
+      "category" : "Borders",
+      "description" : "Corner radius 0 pt.",
+      "name" : "rounded-none"
+    },
+    {
+      "category" : "Borders",
+      "description" : "Corner radius 4 pt.",
+      "name" : "rounded-sm"
+    },
+    {
+      "category" : "Borders",
+      "description" : "Corner radius 16 pt.",
+      "name" : "rounded-xl"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "scroll-area"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "select"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "separator"
+    },
+    {
+      "category" : "Effects",
+      "description" : "Theme shadow sm.",
+      "name" : "shadow"
+    },
+    {
+      "category" : "Effects",
+      "description" : "Theme shadow lg.",
+      "name" : "shadow-lg"
+    },
+    {
+      "category" : "Effects",
+      "description" : "Theme shadow md.",
+      "name" : "shadow-md"
+    },
+    {
+      "category" : "Effects",
+      "description" : "Remove the shadow.",
+      "name" : "shadow-none"
+    },
+    {
+      "category" : "Effects",
+      "description" : "Theme shadow sm.",
+      "name" : "shadow-sm"
+    },
+    {
+      "category" : "Shared elements",
+      "description" : "This endpoint follows the source.",
+      "name" : "shared-follower"
+    },
+    {
+      "category" : "Shared elements",
+      "description" : "Match frame (default).",
+      "name" : "shared-frame"
+    },
+    {
+      "category" : "Shared elements",
+      "description" : "Match position only.",
+      "name" : "shared-position"
+    },
+    {
+      "category" : "Shared elements",
+      "description" : "Match size only.",
+      "name" : "shared-size"
+    },
+    {
+      "category" : "Shared elements",
+      "description" : "This endpoint is the source (default).",
+      "name" : "shared-source"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "sidebar"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "sidebar-content"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "sidebar-footer"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "sidebar-group"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "sidebar-group-label"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "sidebar-header"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "sidebar-item-label"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "sidebar-list"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "sidebar-menu"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "sidebar-menu-badge"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "sidebar-menu-button"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "sidebar-menu-selected"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "sidebar-menu-sub"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "sidebar-motion"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "sidebar-scrim"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "sidebar-trigger"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "skeleton"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "skeleton-motion"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "slider"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "spinner"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "spinner-motion"
+    },
+    {
+      "category" : "Surfaces",
+      "description" : "Liquid Glass on iOS 26 and macOS 26, a material with a themed edge before, solid under Reduce Transparency.",
+      "name" : "surface-floating"
+    },
+    {
+      "category" : "Surfaces",
+      "description" : "A solid themed surface. bg-* sets its color.",
+      "name" : "surface-solid"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "switch"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "table"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "table-caption"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "table-cell"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "table-header"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "table-row"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "table-row-selected"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "tabs"
+    },
+    {
+      "category" : "Typography",
+      "description" : "Font .title. Scales with Dynamic Type.",
+      "name" : "text-2xl"
+    },
+    {
+      "category" : "Typography",
+      "description" : "Font .largeTitle. Scales with Dynamic Type.",
+      "name" : "text-3xl"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color accent.",
+      "kind" : "color",
+      "name" : "text-accent"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color accent-foreground.",
+      "kind" : "color",
+      "name" : "text-accent-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color background.",
+      "kind" : "color",
+      "name" : "text-background"
+    },
+    {
+      "category" : "Typography",
+      "description" : "Font .body. Scales with Dynamic Type.",
+      "name" : "text-base"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color border.",
+      "kind" : "color",
+      "name" : "text-border"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color card.",
+      "kind" : "color",
+      "name" : "text-card"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color card-foreground.",
+      "kind" : "color",
+      "name" : "text-card-foreground"
+    },
+    {
+      "category" : "Typography",
+      "description" : "Centered multiline text alignment.",
+      "name" : "text-center"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color destructive.",
+      "kind" : "color",
+      "name" : "text-destructive"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color destructive-foreground.",
+      "kind" : "color",
+      "name" : "text-destructive-foreground"
+    },
+    {
+      "category" : "Typography",
+      "description" : "Trailing multiline text alignment.",
+      "name" : "text-end"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color foreground.",
+      "kind" : "color",
+      "name" : "text-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color input.",
+      "kind" : "color",
+      "name" : "text-input"
+    },
+    {
+      "category" : "Typography",
+      "description" : "Font .title3. Scales with Dynamic Type.",
+      "name" : "text-lg"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color muted.",
+      "kind" : "color",
+      "name" : "text-muted"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color muted-foreground.",
+      "kind" : "color",
+      "name" : "text-muted-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color mutedForeground.",
+      "kind" : "color",
+      "name" : "text-mutedForeground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color onAccent.",
+      "kind" : "color",
+      "name" : "text-onAccent"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color onDestructive.",
+      "kind" : "color",
+      "name" : "text-onDestructive"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color onPrimary.",
+      "kind" : "color",
+      "name" : "text-onPrimary"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color primary.",
+      "kind" : "color",
+      "name" : "text-primary"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color primary-foreground.",
+      "kind" : "color",
+      "name" : "text-primary-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color ring.",
+      "kind" : "color",
+      "name" : "text-ring"
+    },
+    {
+      "category" : "Typography",
+      "description" : "Font .subheadline. Scales with Dynamic Type.",
+      "name" : "text-sm"
+    },
+    {
+      "category" : "Typography",
+      "description" : "Leading multiline text alignment.",
+      "name" : "text-start"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color surface.",
+      "kind" : "color",
+      "name" : "text-surface"
+    },
+    {
+      "category" : "Color",
+      "description" : "Foreground color: theme color tint.",
+      "kind" : "color",
+      "name" : "text-tint"
+    },
+    {
+      "category" : "Typography",
+      "description" : "Font .title2. Scales with Dynamic Type.",
+      "name" : "text-xl"
+    },
+    {
+      "category" : "Typography",
+      "description" : "Font .caption. Scales with Dynamic Type.",
+      "name" : "text-xs"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "textarea"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color accent.",
+      "kind" : "color",
+      "name" : "tint-accent"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color accent-foreground.",
+      "kind" : "color",
+      "name" : "tint-accent-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color background.",
+      "kind" : "color",
+      "name" : "tint-background"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color border.",
+      "kind" : "color",
+      "name" : "tint-border"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color card.",
+      "kind" : "color",
+      "name" : "tint-card"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color card-foreground.",
+      "kind" : "color",
+      "name" : "tint-card-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color destructive.",
+      "kind" : "color",
+      "name" : "tint-destructive"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color destructive-foreground.",
+      "kind" : "color",
+      "name" : "tint-destructive-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color foreground.",
+      "kind" : "color",
+      "name" : "tint-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color input.",
+      "kind" : "color",
+      "name" : "tint-input"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color muted.",
+      "kind" : "color",
+      "name" : "tint-muted"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color muted-foreground.",
+      "kind" : "color",
+      "name" : "tint-muted-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color mutedForeground.",
+      "kind" : "color",
+      "name" : "tint-mutedForeground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color onAccent.",
+      "kind" : "color",
+      "name" : "tint-onAccent"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color onDestructive.",
+      "kind" : "color",
+      "name" : "tint-onDestructive"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color onPrimary.",
+      "kind" : "color",
+      "name" : "tint-onPrimary"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color primary.",
+      "kind" : "color",
+      "name" : "tint-primary"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color primary-foreground.",
+      "kind" : "color",
+      "name" : "tint-primary-foreground"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color ring.",
+      "kind" : "color",
+      "name" : "tint-ring"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color surface.",
+      "kind" : "color",
+      "name" : "tint-surface"
+    },
+    {
+      "category" : "Color",
+      "description" : "Native control tint: theme color tint.",
+      "kind" : "color",
+      "name" : "tint-tint"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "toast"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "toggle"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "toggle-selected"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "toggle-unselected"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "tooltip"
+    },
+    {
+      "category" : "Recipes",
+      "description" : "swiftcn recipe used by components. Redefine it with TWGlobalRules(named:).",
+      "name" : "typography"
+    },
+    {
+      "category" : "Size",
+      "description" : "Fill the available width.",
+      "name" : "w-full"
+    }
+  ],
+  "patterns" : [
+    {
+      "description" : "Padding in theme units (4 pt each).",
+      "label" : "p-{n} px-{n} py-{n} pt-{n} pb-{n} ps-{n} pe-{n}",
+      "regex" : "^(p|px|py|pt|pb|ps|pe|pl|pr)-\\d+(\\.\\d+)?$",
+      "snippet" : "p-${1:4}"
+    },
+    {
+      "description" : "Width, height, or minimum height in theme units (4 pt each).",
+      "label" : "w-{n} h-{n} min-h-{n}",
+      "regex" : "^(w|h|min-h)-\\d+(\\.\\d+)?$",
+      "snippet" : "w-${1:12}"
+    },
+    {
+      "description" : "Opacity as a percentage.",
+      "label" : "opacity-{0…100}",
+      "regex" : "^opacity-(\\d{1,2}(\\.\\d+)?|100)$",
+      "snippet" : "opacity-${1:80}"
+    },
+    {
+      "description" : "Border width in points.",
+      "label" : "border-{n}",
+      "regex" : "^border-\\d+(\\.\\d+)?$",
+      "snippet" : "border-${1:2}"
+    },
+    {
+      "description" : "Native line limit.",
+      "label" : "line-clamp-{n}",
+      "regex" : "^line-clamp-[1-9]\\d*$",
+      "snippet" : "line-clamp-${1:2}"
+    },
+    {
+      "description" : "Animation duration in milliseconds.",
+      "label" : "duration-{ms}",
+      "regex" : "^duration-\\d+(\\.\\d+)?$",
+      "snippet" : "duration-${1:200}"
+    },
+    {
+      "description" : "Animation delay in milliseconds.",
+      "label" : "delay-{ms}",
+      "regex" : "^delay-\\d+(\\.\\d+)?$",
+      "snippet" : "delay-${1:100}"
+    },
+    {
+      "description" : "Declare a named group.",
+      "label" : "group/{name}",
+      "regex" : "^group/[A-Za-z0-9_.-]+$",
+      "snippet" : "group/${1:hero}"
+    },
+    {
+      "description" : "Match a shared element within the nearest or a named group.",
+      "label" : "shared-[{id}]",
+      "regex" : "^shared-\\[[A-Za-z0-9_.-]+\\](/[A-Za-z0-9_.-]+)?$",
+      "snippet" : "shared-[${1:cover}]"
+    },
+    {
+      "description" : "Width in points.",
+      "label" : "w-[…]",
+      "regex" : "^w-\\[.+\\]$",
+      "snippet" : "w-[${1:240}]"
+    },
+    {
+      "description" : "Height in points.",
+      "label" : "h-[…]",
+      "regex" : "^h-\\[.+\\]$",
+      "snippet" : "h-[${1:80}]"
+    },
+    {
+      "description" : "Width and height in points.",
+      "label" : "size-[…]",
+      "regex" : "^size-\\[.+\\]$",
+      "snippet" : "size-[${1:44}]"
+    },
+    {
+      "description" : "Minimum width in points.",
+      "label" : "min-w-[…]",
+      "regex" : "^min-w-\\[.+\\]$",
+      "snippet" : "min-w-[${1:80}]"
+    },
+    {
+      "description" : "Maximum width in points.",
+      "label" : "max-w-[…]",
+      "regex" : "^max-w-\\[.+\\]$",
+      "snippet" : "max-w-[${1:300}]"
+    },
+    {
+      "description" : "Minimum height in points.",
+      "label" : "min-h-[…]",
+      "regex" : "^min-h-\\[.+\\]$",
+      "snippet" : "min-h-[${1:44}]"
+    },
+    {
+      "description" : "Maximum height in points.",
+      "label" : "max-h-[…]",
+      "regex" : "^max-h-\\[.+\\]$",
+      "snippet" : "max-h-[${1:200}]"
+    },
+    {
+      "description" : "Padding in points.",
+      "label" : "p-[…]",
+      "regex" : "^p-\\[.+\\]$",
+      "snippet" : "p-[${1:13}]"
+    },
+    {
+      "description" : "Horizontal padding in points.",
+      "label" : "px-[…]",
+      "regex" : "^px-\\[.+\\]$",
+      "snippet" : "px-[${1:12}]"
+    },
+    {
+      "description" : "Vertical padding in points.",
+      "label" : "py-[…]",
+      "regex" : "^py-\\[.+\\]$",
+      "snippet" : "py-[${1:8}]"
+    },
+    {
+      "description" : "Top padding in points.",
+      "label" : "pt-[…]",
+      "regex" : "^pt-\\[.+\\]$",
+      "snippet" : "pt-[${1:4}]"
+    },
+    {
+      "description" : "Bottom padding in points.",
+      "label" : "pb-[…]",
+      "regex" : "^pb-\\[.+\\]$",
+      "snippet" : "pb-[${1:4}]"
+    },
+    {
+      "description" : "Leading padding in points.",
+      "label" : "ps-[…]",
+      "regex" : "^ps-\\[.+\\]$",
+      "snippet" : "ps-[${1:4}]"
+    },
+    {
+      "description" : "Trailing padding in points.",
+      "label" : "pe-[…]",
+      "regex" : "^pe-\\[.+\\]$",
+      "snippet" : "pe-[${1:4}]"
+    },
+    {
+      "description" : "Leading padding in points.",
+      "label" : "pl-[…]",
+      "regex" : "^pl-\\[.+\\]$",
+      "snippet" : "pl-[${1:4}]"
+    },
+    {
+      "description" : "Trailing padding in points.",
+      "label" : "pr-[…]",
+      "regex" : "^pr-\\[.+\\]$",
+      "snippet" : "pr-[${1:4}]"
+    },
+    {
+      "description" : "Corner radius in points.",
+      "label" : "rounded-[…]",
+      "regex" : "^rounded-\\[.+\\]$",
+      "snippet" : "rounded-[${1:14}]"
+    },
+    {
+      "description" : "Border width in points, or a color.",
+      "label" : "border-[…]",
+      "regex" : "^border-\\[.+\\]$",
+      "snippet" : "border-[${1:1.5}]"
+    },
+    {
+      "description" : "Font size in points, or a color.",
+      "label" : "text-[…]",
+      "regex" : "^text-\\[.+\\]$",
+      "snippet" : "text-[${1:18}]"
+    },
+    {
+      "description" : "Background color: #hex or a theme color.",
+      "label" : "bg-[…]",
+      "regex" : "^bg-\\[.+\\]$",
+      "snippet" : "bg-[${1:#6366f1}]"
+    },
+    {
+      "description" : "Control tint: #hex or a theme color.",
+      "label" : "tint-[…]",
+      "regex" : "^tint-\\[.+\\]$",
+      "snippet" : "tint-[${1:#ff7a59}]"
+    },
+    {
+      "description" : "Liquid Glass tint: #hex or a theme color.",
+      "label" : "glass-tint-[…]",
+      "regex" : "^glass-tint-\\[.+\\]$",
+      "snippet" : "glass-tint-[${1:#ff7a59}]"
+    },
+    {
+      "description" : "Opacity from 0 to 1.",
+      "label" : "opacity-[…]",
+      "regex" : "^opacity-\\[.+\\]$",
+      "snippet" : "opacity-[${1:0.8}]"
+    },
+    {
+      "description" : "Character tracking in points.",
+      "label" : "tracking-[…]",
+      "regex" : "^tracking-\\[.+\\]$",
+      "snippet" : "tracking-[${1:0.5}]"
+    },
+    {
+      "description" : "Gap between lines in points.",
+      "label" : "line-spacing-[…]",
+      "regex" : "^line-spacing-\\[.+\\]$",
+      "snippet" : "line-spacing-[${1:4}]"
+    },
+    {
+      "description" : "Line limit.",
+      "label" : "line-clamp-[…]",
+      "regex" : "^line-clamp-\\[.+\\]$",
+      "snippet" : "line-clamp-[${1:2}]"
+    },
+    {
+      "description" : "x,y offset in points.",
+      "label" : "offset-[…]",
+      "regex" : "^offset-\\[.+\\]$",
+      "snippet" : "offset-[${1:12,-4}]"
+    },
+    {
+      "description" : "Uniform or x,y scale.",
+      "label" : "scale-[…]",
+      "regex" : "^scale-\\[.+\\]$",
+      "snippet" : "scale-[${1:1.05}]"
+    },
+    {
+      "description" : "Rotation in degrees (or rad).",
+      "label" : "rotate-[…]",
+      "regex" : "^rotate-\\[.+\\]$",
+      "snippet" : "rotate-[${1:3deg}]"
+    },
+    {
+      "description" : "Blur radius in points.",
+      "label" : "blur-[…]",
+      "regex" : "^blur-\\[.+\\]$",
+      "snippet" : "blur-[${1:2}]"
+    },
+    {
+      "description" : "Duration (ms or s).",
+      "label" : "duration-[…]",
+      "regex" : "^duration-\\[.+\\]$",
+      "snippet" : "duration-[${1:400ms}]"
+    },
+    {
+      "description" : "Delay (ms or s).",
+      "label" : "delay-[…]",
+      "regex" : "^delay-\\[.+\\]$",
+      "snippet" : "delay-[${1:75ms}]"
+    },
+    {
+      "description" : "An interpolated native Animation.",
+      "label" : "animate-[…]",
+      "regex" : "^animate-\\[.+\\]$",
+      "snippet" : "animate-[${1:\\\\(animation)}]"
+    },
+    {
+      "description" : "Native modifiers that swiftcn components register.",
+      "label" : "cn-…-[…]",
+      "regex" : "^(cn-aspect|cn-avatar-crop|cn-avatar-image|cn-mono|cn-shimmer|cn-spin|cn-tint)-\\[.+\\]$",
+      "snippet" : ""
+    }
+  ],
+  "variants" : [
+    {
+      "category" : "Variants",
+      "description" : "Apply while the view is hover.",
+      "name" : "hover"
+    },
+    {
+      "category" : "Variants",
+      "description" : "Apply while the view is focus.",
+      "name" : "focus"
+    },
+    {
+      "category" : "Variants",
+      "description" : "Apply while the view is pressed.",
+      "name" : "active"
+    },
+    {
+      "category" : "Variants",
+      "description" : "Apply while the view is pressed.",
+      "name" : "pressed"
+    },
+    {
+      "category" : "Variants",
+      "description" : "Apply while the view is disabled.",
+      "name" : "disabled"
+    },
+    {
+      "category" : "Variants",
+      "description" : "Apply when the nearest group (or group/{name}) is hover.",
+      "name" : "group-hover"
+    },
+    {
+      "category" : "Variants",
+      "description" : "Apply when the nearest group (or group/{name}) is focus.",
+      "name" : "group-focus"
+    },
+    {
+      "category" : "Variants",
+      "description" : "Apply when the nearest group (or group/{name}) is pressed.",
+      "name" : "group-active"
+    },
+    {
+      "category" : "Variants",
+      "description" : "Apply when the nearest group (or group/{name}) is pressed.",
+      "name" : "group-pressed"
+    },
+    {
+      "category" : "Variants",
+      "description" : "Apply when the nearest group (or group/{name}) is disabled.",
+      "name" : "group-disabled"
+    }
+  ],
+  "version" : 1
+}
