@@ -164,13 +164,87 @@ struct AdaptiveSurfaceRenderingTests {
 
     @Test func nativeButtonLabelsReceiveLayoutWithoutAnotherBackground() throws {
         // A red background class must not paint over the native control.
-        let plain = try render(Button("Save") {}.buttonStyle(.twNative("glass")), glass: false)
-        let styled = try render(Button("Save") {}.buttonStyle(.twNative("glass bg-[#ff0000] px-6")), glass: false)
+        let plain = try render(Button("Save") {}.buttonStyle(.tw("glass")), glass: false)
+        let styled = try render(Button("Save") {}.buttonStyle(.tw("glass bg-[#ff0000] px-6")), glass: false)
         #expect(styled.width > plain.width)
         for x in stride(from: 0, to: styled.width, by: 2) {
             let sample = try pixel(styled, x: x, y: styled.height / 2)
             #expect(!(sample.red > 0.9 && sample.green < 0.1 && sample.blue < 0.1))
         }
+    }
+
+    @Test(arguments: [("button-primary", TWColor.primary, TWColor.onPrimary, true), ("button-secondary", .muted, .foreground, true),
+                      ("button-outline", .foreground, .foreground, false), ("button-destructive", .destructive, .onDestructive, true)])
+    func variantsRenderAsTheNativeStyleWithTheThemeTint(classes: String, tint: TWColor, label: TWColor, prominent: Bool) throws {
+        let theme = TWTheme.standard
+        let native = Button(action: {}) {
+            Text("Save").font(theme.font(.sm).weight(.semibold)).foregroundStyle(theme.color(label, scheme: .light))
+        }
+        .buttonBorderShape(.roundedRectangle(radius: theme.radius(.md)))
+        .tint(theme.color(tint, scheme: .light))
+        let expected = try capture(Group {
+            if prominent { native.buttonStyle(.borderedProminent) } else { native.buttonStyle(.bordered) }
+        })
+        let actual = try capture(Button("Save") {}.buttonStyle(.tw(classes)))
+        #expect(actual.size == expected.size)
+        #expect(actual.tiffRepresentation == expected.tiffRepresentation, "\(classes) must be Apple's style, not a painted one.")
+    }
+
+    @Test func toggleSelectionChangesOnlyTheTintAndKeepsTheLabel() {
+        let model = SurfaceModel()
+        let (host, window) = host(ToggleButtonProbe(model: model))
+        defer { window.contentView = nil }
+        for _ in 0..<4 { model.expanded.toggle(); settle(host) }
+        #expect(!model.identities.isEmpty)
+        #expect(Set(model.identities).count == 1, "Selecting a toggle must not replace its native button.")
+    }
+
+    @Test func stateTintsKeepTheNativeButtonAndItsLabel() {
+        // A tint present in only one state must not change the button's structure.
+        let model = SurfaceModel()
+        let (host, window) = host(StateTintProbe(model: model))
+        defer { window.contentView = nil }
+        for _ in 0..<4 { model.expanded.toggle(); settle(host) }
+        #expect(!model.identities.isEmpty)
+        #expect(Set(model.identities).count == 1)
+    }
+
+    @Test(arguments: [ControlActiveState.key, .inactive])
+    func prominentLabelsFollowTheWindowState(state: ControlActiveState) throws {
+        // AppKit draws an inactive window's prominent bezel gray, so a white theme label would disappear.
+        let bitmap = try capture(Button("Save changes") {}.buttonStyle(.tw("button-primary")), state: state)
+        var luminances: [Double] = []
+        for y in (bitmap.pixelsHigh * 2 / 5)..<(bitmap.pixelsHigh * 3 / 5) {
+            for x in (bitmap.pixelsWide / 4)..<(bitmap.pixelsWide * 3 / 4) {
+                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB), color.alphaComponent > 0.5 else { continue }
+                luminances.append(0.2126 * color.redComponent + 0.7152 * color.greenComponent + 0.0722 * color.blueComponent)
+            }
+        }
+        let darkest = try #require(luminances.min()), brightest = try #require(luminances.max())
+        if state == .inactive {
+            #expect(darkest < 0.45, "The inactive label must use the dark system label color.")
+        } else {
+            // Before macOS 26 AppKit draws the bezel from the real window state, so only the label is asserted.
+            #expect(brightest > 0.9, "The key-window label must use the theme's light label color.")
+        }
+    }
+
+    @Test(arguments: ["button-outline", "button-ghost", "button-secondary"])
+    func disabledLabelsUseTheSystemDisabledColor(classes: String) throws {
+        // A theme label color must not hide the native disabled appearance.
+        func darkest(_ bitmap: NSBitmapImageRep) -> Double {
+            var value = 1.0
+            for y in 0..<bitmap.pixelsHigh {
+                for x in 0..<bitmap.pixelsWide {
+                    guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB), color.alphaComponent > 0.5 else { continue }
+                    value = min(value, 0.2126 * color.redComponent + 0.7152 * color.greenComponent + 0.0722 * color.blueComponent)
+                }
+            }
+            return value
+        }
+        let enabled = try capture(Button("Save changes") {}.buttonStyle(.tw(classes)))
+        let disabled = try capture(Button("Save changes") {}.buttonStyle(.tw(classes)).disabled(true))
+        #expect(darkest(disabled) > darkest(enabled) + 0.2, "\(classes) must dim its disabled label.")
     }
 
     @Test func interruptedGroupTransitionsSettleOnTheFinalState() throws {
@@ -240,7 +314,13 @@ struct AdaptiveSurfaceRenderingTests {
         let center = CGPoint(x: host.bounds.midX, y: host.bounds.midY)
         var hit = host.hitTest(host.convert(center, to: host.superview))
         while let view = hit {
-            if let button = view as? NSButton { button.performClick(nil); return }
+            if let button = view as? NSButton {
+                // Before macOS 26, AppKit buttons track the mouse modally, which synthesized events never end.
+                // SwiftUI's AppKit-backed buttons on macOS 26 and later take synthesized events; their activation
+                // API stops this CLI fixture's main run loop.
+                if #available(macOS 26, *) { break }
+                button.performClick(nil); return
+            }
             hit = view.superview
         }
         let point = host.convert(center, to: nil)
@@ -250,6 +330,15 @@ struct AdaptiveSurfaceRenderingTests {
                 context: nil, eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
             window.sendEvent(event)
         }
+    }
+    private func capture<V: View>(_ view: V, state: ControlActiveState = .key) throws -> NSBitmapImageRep {
+        let (host, window) = host(view.padding(8).environment(\.controlActiveState, state).environment(\.colorScheme, .light))
+        defer { window.contentView = nil }
+        host.appearance = NSAppearance(named: .aqua)
+        settle(host)
+        let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        return bitmap
     }
     private func descendants(_ root: NSView) -> [NSView] { root.subviews.flatMap { [$0] + descendants($0) } }
 }
@@ -297,8 +386,28 @@ private struct NativeButtonProbe: View {
         Button { model.taps += 1 } label: {
             HStack { Text("Tap"); IdentityProbe(model: model) }
         }
-            .buttonStyle(.twNative("glass px-4 text-sm"))
+            .buttonStyle(.tw("glass px-4 text-sm"))
             .environment(\._accessibilityReduceTransparency, model.reduceTransparency)
+            .padding(8)
+    }
+}
+
+private struct ToggleButtonProbe: View {
+    let model: SurfaceModel
+    var body: some View {
+        Toggle(isOn: Binding(get: { model.expanded }, set: { model.expanded = $0 })) {
+            HStack { Text("Bold"); IdentityProbe(model: model) }
+        }
+        .toggleStyle(CNButtonToggleStyle())
+        .padding(8)
+    }
+}
+
+private struct StateTintProbe: View {
+    let model: SurfaceModel
+    var body: some View {
+        Button(action: {}) { HStack { Text("Save"); IdentityProbe(model: model) } }
+            .buttonStyle(.tw("bezel-bordered focus:tint-primary", state: .init(isFocused: model.expanded)))
             .padding(8)
     }
 }

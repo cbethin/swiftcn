@@ -287,7 +287,7 @@ State a surface's role. swiftcn picks the best native appearance for the running
 
 ```swift
 Button("Continue") {}
-    .buttonStyle(.twNative("glass-prominent px-4"))
+    .buttonStyle(.tw("glass-prominent px-4"))
 
 TWSurfaceGroup(spacing: 12) {
     HStack { tools }.tw("px-3 py-2 surface-floating glass-interactive")
@@ -300,7 +300,7 @@ ContentView()
 `surface-floating` uses Liquid Glass on iOS 26 and macOS 26, a material with a themed edge on earlier systems, and a solid themed surface under Reduce Transparency.
 `surface-solid` always uses the theme, and `glass` asks for glass explicitly with the same fallbacks.
 Each surface resolves to one fill; `bg-*` never stacks under glass or a material.
-`.twNative` keeps a native `Button` and selects `.glass` or `.glassProminent` where available, `.bordered` or `.borderedProminent` otherwise.
+On a button, `glass` and `glass-prominent` select `.glass` or `.glassProminent` where available, `.bordered` or `.borderedProminent` otherwise.
 `twPresentationSurface()` keeps the system sheet where it uses glass.
 Accessibility and policy changes keep editors, bindings, and focus. Surface classes never install gestures.
 See [adaptive surfaces](website/content/docs/adaptive-surfaces.mdx).
@@ -334,7 +334,7 @@ Use `CNFieldControl` to decorate other controls, including sliders, pickers, or 
 Your application owns validation, native accessibility labels, focus, and actions.
 See [composable components](website/content/docs/components.mdx) for a complete compiled form and customization examples.
 
-## Native buttons and state variants
+## Native buttons
 
 ```swift
 Button("Save", action: save)
@@ -343,14 +343,32 @@ Button("Save", action: save)
 
 Button("Delete", role: .destructive, action: delete)
     .buttonStyle(.tw(.destructiveButton))
+
+Button("Cancel", action: cancel)
+    .buttonStyle(.tw("button-outline control-lg rounded-full"))
 ```
 
-Built-in recipes include `card`, `primaryButton`, `secondaryButton`, `outlineButton`, and `destructiveButton`.
-The button adapter uses `ButtonStyle.Configuration.isPressed`.
+Apple draws every button whose classes choose a native style. swiftcn converts the classes into native modifiers:
+
+| Classes | Native style |
+| --- | --- |
+| `button-primary`, `button-secondary`, `button-destructive`, `bezel-prominent` | `.borderedProminent` |
+| `button-outline`, `bezel-bordered` | `.bordered` |
+| `button-ghost`, `bezel-borderless` | `.borderless` |
+| `button-link`, `bezel-link` | `.link` on macOS, `.borderless` on iOS |
+| `glass`, `glass-prominent` | `.glass` or `.glassProminent` with Liquid Glass, the bordered styles otherwise |
+
+`tint-*` sets `.tint`, `control-mini` through `control-xl` set `.controlSize`, and `rounded-*` sets `.buttonBorderShape`.
+The theme supplies each variant's tint and label color. Other classes shape the label: spacing, size, and type.
+Background, border, and shadow classes never paint over the native control.
+Apple owns the press, hover, focus, and disabled appearance. Hover and focus variants change only the label, and no state variant changes the native style, so the button keeps its structure. `pressed:` and `active:` apply only to plain buttons, because a native style keeps the pressed state to itself.
+On macOS, prominent labels use the system label color while the window is inactive, as AppKit draws the bezel gray.
+Ghost and link buttons have no bezel to size them, so their labels keep a minimum height of 44 points on iOS and 32 points on macOS.
+
+Button recipes describe native buttons. On other views they set no background, so use `bg-*`, `text-*`, or a surface class there.
+Classes without a native style keep a plain button whose label carries the classes, including `pressed:` and `hover:` states. Menu items, command items, and calendar days use it.
 SwiftUI retains the button's action, semantic role, and activation behavior.
 Appearance variants do not set semantic roles.
-Button recipes use a minimum height of 44 points on iOS and 32 points on macOS.
-Large text can increase that height.
 
 ```swift
 TWStyle(
@@ -386,15 +404,16 @@ TextField("Email", text: $email)
 Use animation classes to animate changes to the modifiers that `.tw` owns:
 
 ```swift
-Button("Save", action: save)
-    .buttonStyle(.tw("button-primary active:opacity-80 animate-spring duration-150"))
+Button("Rename", action: rename)
+    .buttonStyle(.tw("dropdown-item active:opacity-80 animate-spring duration-150"))
 
 Text("Details")
     .tw("\(expanded ? "p-6 rounded-xl" : "p-3 rounded-md") bg-surface animate-ease-out duration-200", value: expanded)
 ```
 
 SwiftUI owns the state and interpolates the native modifier values.
-Button press and release, hover, explicit focus, and computed strings use the same animation rules.
+Plain button press and release, hover, explicit focus, and computed strings use the same animation rules.
+Apple animates native button styles itself.
 You do not need an extra `.animation(..., value:)` call for these styled values.
 The modifier structure stays stable during these changes.
 
@@ -439,7 +458,7 @@ let rules = TWGlobalRules(
 ContentView().twRules(rules)
 // Inside ContentView:
 Text("Details").tw("motion-card")
-Button("Save", action: save).buttonStyle(.tw("button-primary animate-press"))
+Button("Rename", action: rename).buttonStyle(.tw("dropdown-item animate-press"))
 ```
 
 Preset factories receive the resolved duration in seconds.
@@ -512,7 +531,7 @@ Supported variants are `group-hover`, `group-focus`, `group-active`, `group-pres
 Append `/name` to select a named ancestor. Combine them with ordinary variants such as `active:group-hover/hero:opacity-50`.
 
 Groups publish native hover and disabled state plus explicit `TWState` values.
-Button styles publish native press state. Pass focus through `TWState` with your native `@FocusState`.
+Plain button styles publish native press state. Pass focus through `TWState` with your native `@FocusState`.
 
 Use `.twShared` with your own `@Namespace` when you need native control:
 
@@ -634,7 +653,7 @@ let emphasis = isImportant ? "bg-primary text-primary-foreground" : "bg-accent t
 
 Text("Status").tw("px-4 py-2 rounded-md \(emphasis)")
 Button("Save") { save() }
-    .buttonStyle(.tw("button-primary px-6 hover:opacity-90 disabled:opacity-40"))
+    .buttonStyle(.tw("button-primary px-6 \(isCompact ? "control-sm" : "control-lg")"))
 ```
 
 Strings and typed utilities use the same resolver. Later classes replace earlier values for the same property.
@@ -652,7 +671,8 @@ Supported classes include:
 | Typography | `text-xs` through `text-3xl`, `font-medium`, `font-semibold`, `font-bold` |
 | Colors | `bg-primary`, `text-foreground`, `text-muted-foreground`, `text-primary-foreground` |
 | Decoration | `rounded-md`, `rounded-full`, `border`, `border-2`, `border-primary`, `shadow-sm`, `opacity-80` |
-| Recipes | `card`, `button-primary`, `button-secondary`, `button-outline`, `button-destructive` |
+| Recipes | `card`, `button-primary`, `button-secondary`, `button-outline`, `button-destructive`, `button-ghost`, `button-link` |
+| Native buttons | `bezel-prominent`, `bezel-bordered`, `bezel-borderless`, `bezel-link`, `tint-primary`, `control-sm`, `control-lg` |
 | Motion | `animate-spring`, `animate-ease-out`, `animate-none`, `duration-200`, `delay-100` |
 
 Numeric sizes use the theme spacing scale, as Tailwind does. Typed `.w()`, `.h()`, and `.minH()` continue to accept points.
@@ -672,7 +692,7 @@ let rules = TWGlobalRules(
     view: "text-sm",
     button: "min-h-12",
     named: [
-        "brand-button": TWStyle(.primaryButton, .bg(brand), .rounded(.full)),
+        "brand-button": TWStyle(.primaryButton, .tint(brand), .rounded(.full)),
         "compact-card": "card p-3"
     ]
 )

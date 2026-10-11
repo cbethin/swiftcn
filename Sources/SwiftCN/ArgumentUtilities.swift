@@ -8,12 +8,12 @@ enum TWArgumentUtilities {
             return nil
         }
         let (hint, value) = argument.hinted
-        if ["text", "bg", "border", "glass-tint"].contains(prefix), hint == nil || hint == "color" {
+        if ["text", "bg", "border", "glass-tint", "tint"].contains(prefix), hint == nil || hint == "color" {
             if let color = value.hexColor {
                 switch prefix {
                 case "text": return .fgColor(color)
                 case "bg": return .bgColor(color)
-                case "glass-tint": return .glassTintColor(color)
+                case "glass-tint", "tint": return .glassTintColor(color)
                 default: return TWStyle(rules: [TWRule(property: .borderColor(.color(color)))])
                 }
             }
@@ -22,7 +22,7 @@ enum TWArgumentUtilities {
                 switch prefix {
                 case "text": return .fg(token)
                 case "bg": return .bg(token)
-                case "glass-tint": return .glassTint(token)
+                case "glass-tint", "tint": return .glassTint(token)
                 default: return TWStyle(rules: [TWRule(property: .borderColor(.token(token)))])
                 }
             }

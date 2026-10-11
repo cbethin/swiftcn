@@ -141,7 +141,7 @@ struct NativeDrawerExample: View {
 
 State the role and let swiftcn choose the native appearance. surface-floating uses Liquid Glass on iOS 26 and macOS 26, a material with a themed edge on earlier systems, and a solid themed surface under Reduce Transparency. surface-solid always uses the theme. glass asks for glass explicitly and uses the same fallbacks. Each surface resolves to one fill, so bg-* selects the solid color and never stacks under glass or a material. .twAppearance(.automatic | .glass | .solid) sets the policy for a subtree; local classes still win.
 
-.buttonStyle(.twNative("glass")) keeps a native Button and selects .glass or .glassProminent where available, or .bordered and .borderedProminent before. Its classes add spacing and typography to the label, not another background. TWSurfaceGroup wraps GlassEffectContainer and twSurfaceID wraps glassEffectID, so grouping and morphing stay explicit. twPresentationSurface keeps the system sheet where it uses glass and applies the theme surface elsewhere.
+.buttonStyle(.tw("glass")) lets Apple draw the Button: it selects .glass or .glassProminent where available, or .bordered and .borderedProminent before. Its classes add spacing and typography to the label, not another background. TWSurfaceGroup wraps GlassEffectContainer and twSurfaceID wraps glassEffectID, so grouping and morphing stay explicit. twPresentationSurface keeps the system sheet where it uses glass and applies the theme surface elsewhere.
 
 Accessibility and policy changes alter values inside a fixed view structure, so editors, bindings, and focus remain. Keep a view's surface role constant; changing between a surface class and none rebuilds the content. glass-interactive enables Apple's touch and pointer feedback only. Classes never install gestures; custom drag and scroll handoff remains component code.
 
@@ -168,9 +168,9 @@ struct NativeSurfacesExample: View {
             }.pickerStyle(.segmented)
             HStack(spacing: 12) {
                 Button("Share") { shares += 1 }
-                    .buttonStyle(.twNative("glass px-1"))
+                    .buttonStyle(.tw("glass px-1"))
                 Button("Open note") { sheetOpen = true }
-                    .buttonStyle(.twNative("glass-prominent px-2 font-semibold"))
+                    .buttonStyle(.tw("glass-prominent px-2 font-semibold"))
             }
             TWSurfaceGroup(spacing: 12) {
                 HStack(spacing: 12) {
@@ -214,7 +214,7 @@ struct NativeSurfacesExample: View {
                     TextField("Write a note", text: $note)
                         .textFieldStyle(.tw("input"))
                     Button("Done") { sheetOpen = false }
-                        .buttonStyle(.twNative("glass-prominent"))
+                        .buttonStyle(.tw("glass-prominent"))
                 }
             }
             .presentationDetents([.medium, .large])

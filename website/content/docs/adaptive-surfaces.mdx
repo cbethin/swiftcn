@@ -17,7 +17,7 @@ struct AdaptiveSurfacesExample: View {
     var body: some View {
         VStack(spacing: 16) {
             Button("Continue") {}
-                .buttonStyle(.twNative("glass-prominent px-4 font-semibold"))
+                .buttonStyle(.tw("glass-prominent px-4 font-semibold"))
             TWSurfaceGroup(spacing: 12) {
                 HStack(spacing: 12) {
                     Button("Tools") { withAnimation(.smooth) { expanded.toggle() } }
@@ -77,11 +77,11 @@ Use `.twAppearance(.glass)` or the `glass` class to opt specific surfaces back i
 
 ## Native buttons
 
-`.buttonStyle(.twNative("glass"))` keeps the native `Button`.
-It selects `.glass` or `.glassProminent` on Liquid Glass systems, and `.bordered` or `.borderedProminent` otherwise.
+Every `.buttonStyle(.tw(...))` button whose classes choose a native style is drawn by Apple.
+On a button, `glass` and `glass-prominent` select `.glass` or `.glassProminent` on Liquid Glass systems, and `.bordered` or `.borderedProminent` otherwise.
 `surface-solid` always selects the bordered styles.
 Classes add spacing and typography to the label. Background, border, and shadow classes are ignored so nothing paints over the native control.
-Use `glass-tint-*` or the native `.tint` modifier for color.
+Use `tint-*` or the native `.tint` modifier for color.
 
 Accessibility settings never change the selected style type, so a button keeps its identity, focus, and pending activation.
 

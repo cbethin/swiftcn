@@ -16,6 +16,11 @@ struct TWResolvedStyle {
     var glassInteractive = false
     var glassTint: Color?
     var prominent = false
+    var bezel: TWButtonBezel?
+    /// The surface role and prominence that unconditioned classes set, which select a button's native style.
+    var buttonSurface: TWSurfaceRole?
+    var buttonProminent = false
+    var controlSize: ControlSize?
     /// Leaves the inherited foreground untouched: no rule in any state sets one,
     /// or a native control adapter supplies the label color.
     var inheritsForeground = false
@@ -42,6 +47,9 @@ struct TWResolvedStyle {
     var sharedProperties = TWSharedProperties.frame
     var sharedSource = true
     var nativeSlots: [TWNativeSlot] = []
+
+    /// The native button style, if any. A glass surface without a bezel class keeps the bordered glass style.
+    var buttonBezel: TWButtonBezel? { bezel ?? (buttonSurface == nil ? nil : buttonProminent ? .prominent : .bordered) }
 }
 
 enum TWStyleResolver {
@@ -115,10 +123,17 @@ enum TWStyleResolver {
             case .borderColor(let source): result.border = color(source, theme: theme, scheme: scheme)
             case .borderWidth(let width): result.borderWidth = width
             case .shadow(let token): result.shadow = theme.shadow(token)
-            case .surface(let role): result.surface = role
+            case .surface(let role):
+                result.surface = role
+                if entry.element.conditionCount == 0 { result.buttonSurface = role }
             case .glassInteractive(let value): result.glassInteractive = value
             case .glassTint(let source): result.glassTint = color(source, theme: theme, scheme: scheme)
-            case .prominent(let value): result.prominent = value
+            case .prominent(let value):
+                result.prominent = value
+                if entry.element.conditionCount == 0 { result.buttonProminent = value }
+            // The bezel selects the native style type, so only unconditioned classes choose it.
+            case .bezel(let value): if entry.element.conditionCount == 0 { result.bezel = value }
+            case .controlSize(let value): result.controlSize = value
             case .opacity(let opacity): result.opacity = opacity
             case .tracking(let value): result.tracking = value
             case .lineSpacing(let value): result.lineSpacing = value
