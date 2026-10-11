@@ -1,7 +1,8 @@
 name: iPhone Duo
 
+# Capture-only evidence on the Duo simulator: it compares no references and costs four
+# runtime downloads, so run it on demand when Duo layout or the iOS SDK changes.
 on:
-  pull_request:
   workflow_dispatch:
 
 permissions:
