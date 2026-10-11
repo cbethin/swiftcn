@@ -307,16 +307,22 @@ struct AdaptiveSurfaceRenderingTests {
 
     @Test func buttonsWithoutATintClassKeepTheInheritedTint() throws {
         // `.tint(nil)` resets the tint to the default, so a button without a tint class must not apply one.
-        func bezel(_ classes: String) throws -> SurfacePixel {
+        // Counts strongly green and strongly red pixels across the bezel's middle row; bezel sizes differ by system.
+        func hues(_ classes: String) throws -> (green: Int, red: Int) {
             let bitmap = try capture(Button("Save changes") {}.buttonStyle(.tw(classes)).tint(Color(red: 0, green: 0.8, blue: 0)))
-            // The left of the bezel, clear of the label. The capture is padded by 8 points.
-            let color = try #require(bitmap.colorAt(x: bitmap.pixelsWide * 10 / Int(bitmap.size.width), y: bitmap.pixelsHigh / 2)?.usingColorSpace(.sRGB))
-            return SurfacePixel(red: color.redComponent, green: color.greenComponent, blue: color.blueComponent, alpha: color.alphaComponent)
+            var green = 0, red = 0
+            for x in 0..<bitmap.pixelsWide {
+                guard let color = bitmap.colorAt(x: x, y: bitmap.pixelsHigh / 2)?.usingColorSpace(.sRGB),
+                      color.alphaComponent > 0.9 else { continue }
+                if color.greenComponent > max(color.redComponent, color.blueComponent) + 0.3 { green += 1 }
+                if color.redComponent > max(color.greenComponent, color.blueComponent) + 0.3 { red += 1 }
+            }
+            return (green, red)
         }
-        let inherited = try bezel("bezel-prominent")
-        #expect(inherited.green > inherited.red + 0.3 && inherited.green > inherited.blue + 0.3, "\(inherited)")
-        let local = try bezel("bezel-prominent tint-destructive")
-        #expect(local.red > local.green + 0.3, "A tint class still wins: \(local)")
+        let inherited = try hues("bezel-prominent")
+        #expect(inherited.green > 4 && inherited.red == 0, "The bezel must use the ancestor's tint: \(inherited)")
+        let local = try hues("bezel-prominent tint-destructive")
+        #expect(local.red > 4 && local.green == 0, "A tint class still wins: \(local)")
     }
 
     @Test func toggleSelectionChangesOnlyTheTintAndKeepsTheLabel() {

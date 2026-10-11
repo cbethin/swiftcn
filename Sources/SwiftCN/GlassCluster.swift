@@ -104,6 +104,7 @@ enum TWGlassClusterRendering: Sendable, Hashable {
 /// The UIKit engine sets the frames directly in one `UIGlassContainerEffect`, adding and removing pieces by
 /// identifier; the SwiftUI engine places `glassEffect` pieces in a `GlassEffectContainer`. Without glass, and under
 /// Reduce Transparency, each piece is a themed fill with an edge. The cluster only draws: it takes no touches.
+/// A repeated identifier draws once, with its first piece.
 public struct TWGlassCluster: View {
     private let spacing: CGFloat?
     private let pieces: [TWGlassPiece]
@@ -114,7 +115,9 @@ public struct TWGlassCluster: View {
 
     public init(spacing: CGFloat? = nil, pieces: [TWGlassPiece]) {
         self.spacing = spacing
-        self.pieces = pieces
+        // ForEach needs unique identifiers, and the UIKit container keeps one view per identifier.
+        var seen = Set<AnyHashable>()
+        self.pieces = pieces.filter { seen.insert($0.id).inserted }
     }
 
     public var body: some View {

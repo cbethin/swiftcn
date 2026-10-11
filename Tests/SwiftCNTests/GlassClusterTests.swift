@@ -67,6 +67,17 @@ struct GlassClusterRenderingTests {
         #expect(try pixel(image, x: 25, y: 35).alpha < 0.01, "Nothing is drawn outside a piece.")
     }
 
+    @Test func aRepeatedIdentifierDrawsItsFirstPieceOnce() throws {
+        let image = try render(TWGlassCluster(pieces: [
+            TWGlassPiece(id: 0, frame: CGRect(x: 0, y: 0, width: 20, height: 20), shape: .rounded(0)),
+            TWGlassPiece(id: 0, frame: CGRect(x: 60, y: 0, width: 20, height: 20), shape: .rounded(0)),
+        ])
+        .frame(width: 80, height: 20)
+        .environment(\._accessibilityReduceTransparency, true))
+        #expect(try pixel(image, x: 10, y: 10).alpha > 0.99)
+        #expect(try pixel(image, x: 70, y: 10).alpha < 0.01, "The repeated identifier is ignored.")
+    }
+
     @Test func glassFramesReceiveTheValueAndTheContentSize() throws {
         let probe = FramesProbe()
         let view = Color.clear.frame(width: 120, height: 40)
