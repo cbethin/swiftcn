@@ -140,9 +140,7 @@ struct LintTests {
         let sources = try files.map { ($0.path, try String(contentsOf: $0, encoding: .utf8)) }
         for source in sources { linter.learn(from: source.1) }
         let diagnostics = sources.flatMap { linter.lint(source: $0.1, path: $0.0) }
-        // `h-full` is a real problem in NativeArrangementExample: swiftcn only defines `w-full`, so those
-        // surfaces currently render unstyled. Remove this exception when the example is fixed.
-        #expect(diagnostics.filter { $0.token != "h-full" }.map(\.xcodeFormatted) == [])
+        #expect(diagnostics.map(\.xcodeFormatted) == [])
         #expect(files.count > 50)
     }
 }

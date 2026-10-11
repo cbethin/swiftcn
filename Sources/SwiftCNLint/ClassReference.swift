@@ -37,6 +37,7 @@ public enum ClassReference {
 
         \(catalog.families.prefix(2).map { "- `\($0.pattern)`: \($0.summary) Examples: \(list($0.examples))." }.joined(separator: "\n"))
         - `w-full`: fill the available width.
+        - `h-full`: fill the available height.
 
         ## Typography
 

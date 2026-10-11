@@ -24,6 +24,7 @@ Group variants accept a group name: `group-hover/hero:opacity-70`.
 - `p-{n} px-{n} py-{n} pt-{n} pb-{n} ps-{n} pe-{n}`: Padding in theme units (4 points each by default). ps and pe use leading and trailing edges; pl and pr are aliases. Examples: `p-4` `px-6` `py-2.5`.
 - `w-{n} h-{n} min-h-{n}`: Width, height, and minimum height in theme units. Examples: `w-12` `h-10` `min-h-11`.
 - `w-full`: fill the available width.
+- `h-full`: fill the available height.
 
 ## Typography
 
