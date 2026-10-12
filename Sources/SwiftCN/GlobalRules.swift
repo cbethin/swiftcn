@@ -4,14 +4,19 @@ import SwiftUI
 public struct TWGlobalRules: Sendable {
     public var view: TWStyle
     public var button: TWStyle
-    public var named: [String: TWStyle]
-    public var animations: [String: TWAnimation]
-    public var utilities: [String: TWUtility]
+    public var named: [String: TWStyle] { didSet { revision = TWRevision.next() } }
+    public var animations: [String: TWAnimation] { didSet { revision = TWRevision.next() } }
+    public var utilities: [String: TWUtility] { didSet { revision = TWRevision.next() } }
     public var modifiers: [String: TWNativeUtility] {
-        didSet { nativeSlots = Self.orderedSlots(modifiers) }
+        didSet {
+            nativeSlots = Self.orderedSlots(modifiers)
+            revision = TWRevision.next()
+        }
     }
     // Prepare order when the registry changes, rather than sorting it on every styled render.
     var nativeSlots: [TWNativeSlot]
+    /// Identifies the inputs to class expansion. `view` and `button` defaults do not affect it.
+    private(set) var revision: UInt64
 
     public init(view: TWStyle = TWStyle(), button: TWStyle = TWStyle(), named: [String: TWStyle] = [:],
                 animations: [String: TWAnimation] = [:], utilities: [String: TWUtility] = [:],
@@ -23,6 +28,8 @@ public struct TWGlobalRules: Sendable {
         self.utilities = utilities
         self.modifiers = modifiers
         self.nativeSlots = Self.orderedSlots(modifiers)
+        let isStandard = named.isEmpty && animations.isEmpty && utilities.isEmpty && modifiers.isEmpty
+        self.revision = isStandard ? TWRevision.standard : TWRevision.next()
     }
 
     private static func orderedSlots(_ modifiers: [String: TWNativeUtility]) -> [TWNativeSlot] {
