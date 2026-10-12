@@ -33,6 +33,7 @@ Build with Xcode 26 or later. Apps deploy to iOS 17 or macOS 14 and later.
 
 Add this repository in Xcode with **File → Add Package Dependencies**.
 Select the `main` branch and add the `SwiftCN` product.
+Then add **SwiftCNLintPlugin** under the app target's **Build Phases → Run Build Tool Plug-ins**, so an invalid class fails the build.
 
 For a Swift package, add:
 
@@ -42,11 +43,17 @@ dependencies: [
 ]
 ```
 
-Add the product to your target:
+Add the product and the build plugin to your target:
 
 ```swift
-.product(name: "SwiftCN", package: "swiftcn")
+.target(
+    name: "App",
+    dependencies: [.product(name: "SwiftCN", package: "swiftcn")],
+    plugins: [.plugin(name: "SwiftCNLintPlugin", package: "swiftcn")]
+)
 ```
+
+The plugin checks every class string before the target compiles. To check without building, run `swift run swiftcn-lint Sources`.
 
 You can also copy `Sources/SwiftCN` into your application or a local package that you own.
 Copy all Swift files in that directory.
@@ -232,6 +239,19 @@ Utility order resolves properties; it does not reorder the rendering pipeline.
 Separate `.tw(...)` calls create separate styled surfaces.
 For example, `.tw(.p(2)).tw(.p(3))` adds both layers of padding.
 Native modifiers retain their order around each surface.
+
+## Build-time checks
+
+An invalid class leaves its surface undecorated at run time. With the build plugin from [Install](#install), the build fails first, and Xcode reports each invalid class on its line with the closest valid class:
+
+```text
+PlayerView.swift:9:44: error: Unknown swiftcn class 'text-muted-foregrund'. Did you mean 'text-muted-foreground'?
+```
+
+The check uses the swiftcn parser and learns the recipes, modifiers, utilities, animations, and colors that your sources register.
+Run it without building with `swift package swiftcn-lint`, or `swift run swiftcn-lint Sources --format json` for coding agents.
+[`classes.md`](https://cbethin.github.io/swiftcn/classes.md) lists every valid class.
+See [build-time checks](website/content/docs/build-time-checks.mdx) for Xcode projects, configuration, and suppression.
 
 ## Theme
 
