@@ -15,7 +15,7 @@ breakpoints, flex or grid utilities, percentages, `rem`, `calc`, or CSS variable
 
 Prefix a class with `variant:`. Combine variants, as in `disabled:hover:opacity-20`.
 
-`hover:` `focus:` `active:` `pressed:` `disabled:` `group-hover:` `group-focus:` `group-active:` `group-pressed:` `group-disabled:`
+`hover:` `focus:` `active:` `pressed:` `disabled:` `motion-reduce:` `motion-safe:` `group-hover:` `group-focus:` `group-active:` `group-pressed:` `group-disabled:`
 
 Group variants accept a group name: `group-hover/hero:opacity-70`.
 
@@ -100,6 +100,8 @@ degrees. Underscores stand for spaces. Interpolation keeps native Swift values: 
 | `pl-[…]` | `pl-[4]` |
 | `pr-[…]` | `pr-[4]` |
 | `rounded-[…]` | `rounded-[14]` |
+| `rounded-t-[…]` | `rounded-t-[20]` |
+| `rounded-b-[…]` | `rounded-b-[12]` |
 | `border-[…]` | `border-[1.5]` |
 | `text-[…]` | `text-[18]` |
 | `bg-[…]` | `bg-[#6366f1]` |

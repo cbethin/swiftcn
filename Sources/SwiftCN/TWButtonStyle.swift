@@ -46,10 +46,18 @@ private struct TWButtonBody: View {
     @Environment(\.twTheme) private var theme
     @Environment(\.twRules) private var rules
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// The state, with Reduce Motion, for `motion-reduce:` and `motion-safe:` classes.
+    private var resolvedState: TWState {
+        var state = self.state
+        state.prefersReducedMotion = state.prefersReducedMotion || reduceMotion
+        return state
+    }
 
     var body: some View {
         let appearance = TWStyleResolver.resolve(TWStyle(rules.view, rules.button, style), theme: theme, scheme: scheme,
-                                                 state: state, globalRules: rules)
+                                                 state: resolvedState, globalRules: rules)
         // The bezel is part of the button's design, so it selects a structure once, like a surface role.
         if let bezel = appearance.buttonBezel {
             let glass = appearance.buttonSurface.map(inputs.context.usesGlass) ?? false

@@ -25,7 +25,7 @@ import SwiftUI
         ])
     }
 
-    public static let variants = ["hover", "focus", "active", "pressed", "disabled",
+    public static let variants = ["hover", "focus", "active", "pressed", "disabled", "motion-reduce", "motion-safe",
                                   "group-hover", "group-focus", "group-active", "group-pressed", "group-disabled"]
 
     /// Theme colors and their aliases, as class suffixes.
@@ -53,7 +53,7 @@ import SwiftUI
         ("min-w", "min-w-[80]"), ("max-w", "max-w-[300]"), ("min-h", "min-h-[44]"), ("max-h", "max-h-[200]"),
         ("p", "p-[13]"), ("px", "px-[12]"), ("py", "py-[8]"), ("pt", "pt-[4]"), ("pb", "pb-[4]"),
         ("ps", "ps-[4]"), ("pe", "pe-[4]"), ("pl", "pl-[4]"), ("pr", "pr-[4]"),
-        ("rounded", "rounded-[14]"), ("border", "border-[1.5]"),
+        ("rounded", "rounded-[14]"), ("rounded-t", "rounded-t-[20]"), ("rounded-b", "rounded-b-[12]"), ("border", "border-[1.5]"),
         ("text", "text-[18]"), ("bg", "bg-[#6366f1]"), ("tint", "tint-[#ff7a59]"), ("glass-tint", "glass-tint-[#ff7a59]"),
         ("opacity", "opacity-[0.8]"), ("tracking", "tracking-[0.5]"), ("line-spacing", "line-spacing-[4]"),
         ("line-clamp", "line-clamp-[2]"), ("offset", "offset-[12,-4]"), ("scale", "scale-[1.05]"),
@@ -68,6 +68,7 @@ import SwiftUI
         var names = surfaces + bezels + controlSizes + sharedElements + standalone + recipes
         names += fontSizes.map { "text-\($0)" } + weights.map { "font-\($0)" }
         names += radii.map { "rounded-\($0)" } + shadows.map { "shadow-\($0)" }
+        names += radii.map { "rounded-t-\($0)" } + radii.map { "rounded-b-\($0)" }
         names += animationPresets.map { "animate-\($0)" }
         for color in colors {
             names += ["text-", "bg-", "border-", "tint-", "glass-tint-"].map { $0 + color }

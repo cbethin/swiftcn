@@ -55,6 +55,7 @@ struct TWModifier: ViewModifier {
         var activeState = state
         activeState.isDisabled = activeState.isDisabled || !isEnabled
         activeState.isHovered = activeState.isHovered || isHovered
+        activeState.prefersReducedMotion = activeState.prefersReducedMotion || reduceMotion
         let combined = TWStyle(rules.view, isButton ? rules.button : TWStyle(), style)
         var appearance = TWStyleResolver.resolve(combined, theme: theme, scheme: scheme, state: activeState,
             globalRules: rules, groupStates: groups.states, target: target)

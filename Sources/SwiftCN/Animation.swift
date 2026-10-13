@@ -68,10 +68,13 @@ struct TWResolvedMotion {
     var preset: TWAnimation?
     var duration: TimeInterval = 0.3
     var delay: TimeInterval = 0
+    /// The animation came from a `motion-reduce:` class, so it is the one to run with Reduce Motion
+    /// on — a short fade, say — rather than none.
+    var runsWithReducedMotion = false
 
     func update(_ transaction: inout Transaction, reduceMotion: Bool) {
         guard let preset, !transaction.disablesAnimations else { return }
-        transaction.animation = reduceMotion ? nil : preset.resolve(duration: duration, delay: delay)
+        transaction.animation = reduceMotion && !runsWithReducedMotion ? nil : preset.resolve(duration: duration, delay: delay)
     }
 }
 
@@ -115,6 +118,7 @@ struct TWValueAnimationModifier<Value: Equatable>: ViewModifier {
         var activeState = state
         activeState.isDisabled = activeState.isDisabled || !isEnabled
         activeState.isHovered = activeState.isHovered || isHovered
+        activeState.prefersReducedMotion = activeState.prefersReducedMotion || reduceMotion
         let motion = TWStyleResolver.resolve(TWStyle(rules.view, style), theme: theme,
             scheme: scheme, state: activeState, globalRules: rules, groupStates: groups.states, target: nil).motion
         let animated = content.transaction(value: value) { transaction in
