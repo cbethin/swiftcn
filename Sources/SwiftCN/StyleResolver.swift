@@ -8,6 +8,15 @@ struct TWResolvedStyle {
     var foreground: Color?
     var background: Color?
     var radius: CGFloat = 0
+    /// Set by `rounded-t-*` and `rounded-b-*`; the other corners keep `radius`.
+    var topRadius: CGFloat?
+    var bottomRadius: CGFloat?
+
+    /// The top and bottom corners' radii when `rounded-t-*` or `rounded-b-*` makes them differ; nil otherwise.
+    var edgeRadii: (top: CGFloat, bottom: CGFloat)? {
+        let top = topRadius ?? radius, bottom = bottomRadius ?? radius
+        return top == bottom ? nil : (top, bottom)
+    }
     var hasRadius = false
     var border: Color?
     var borderWidth: CGFloat = 0
@@ -124,6 +133,18 @@ enum TWStyleResolver {
                 case .token(let token): result.radius = theme.radius(token)
                 case .points(let points): result.radius = points
                 }
+            case .radiusTop(let source):
+                result.hasRadius = true
+                switch source {
+                case .token(let token): result.topRadius = theme.radius(token)
+                case .points(let points): result.topRadius = points
+                }
+            case .radiusBottom(let source):
+                result.hasRadius = true
+                switch source {
+                case .token(let token): result.bottomRadius = theme.radius(token)
+                case .points(let points): result.bottomRadius = points
+                }
             case .border(let source, let width):
                 result.border = color(source, theme: theme, scheme: scheme)
                 result.borderWidth = width
@@ -158,7 +179,10 @@ enum TWStyleResolver {
             case .maximumHeight(let value): result.maximumHeight = value
             case .fullWidth: result.width = nil; result.expandsWidth = true
             case .fullHeight: result.height = nil; result.expandsHeight = true
-            case .animation(let preset): result.motion.preset = preset
+            case .animation(let preset):
+                result.motion.preset = preset
+                // An animation written for reduced motion is the one to run under it.
+                if entry.element.conditions.contains(.reducedMotion) { result.motion.runsWithReducedMotion = true }
             case .animationDuration(let duration): result.motion.duration = duration
             case .animationDelay(let delay): result.motion.delay = delay
             case .group(let name): result.group = name

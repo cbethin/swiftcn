@@ -116,6 +116,7 @@ Text("Room for ideas")
 | `min-w-[80]`, `max-w-[300]`, `min-h-[44]`, `max-h-[200]` | Native size limits |
 | `p-[13]`, `px-[12]`, `py-[8]`, `pt-[4]`, `pb-[4]`, `ps-[4]`, `pe-[4]` | Padding in native points |
 | `rounded-[14]`, `border-[1.5]` | Corner radius or border width |
+| `rounded-t-[28]`, `rounded-b-[12]` | The top or the bottom corners' radius alone, as on a sheet. Also `rounded-t-xl`, `rounded-b-none` |
 | `text-[18]`, `text-[length:18px]` | Fixed native font size in points |
 | `text-[#fff]`, `bg-[#6366f1]`, `border-[color:#6366f180]` | Hex colors in RGB or RGBA order |
 | `text-[color:brand]`, `bg-[brand]`, `border-[color:brand]` | Registered adaptive theme colors |
@@ -405,6 +406,14 @@ Ghost and link buttons have no bezel to size them, so their labels keep a minimu
 
 Button recipes describe native buttons. On other views they set no background, so use `bg-*`, `text-*`, or a surface class there.
 Classes without a native style keep a plain button whose label carries the classes, including `pressed:` and `hover:` states. Menu items, command items, and calendar days use it.
+
+With Reduce Motion on, `motion-reduce:` classes apply and `motion-safe:` classes don't, as in Tailwind. They combine with the state variants, so a press can scale with full motion and only fade with reduced motion:
+
+```swift
+.buttonStyle(.tw("pressed:bg-accent pressed:scale-[0.94] motion-reduce:pressed:scale-[1] animate-snappy motion-reduce:animate-smooth motion-reduce:duration-[120ms]"))
+```
+
+Reduce Motion drops a class's animation, unless the animation itself is a `motion-reduce:` class: then that animation runs, so a change can cross-fade instead of snapping.
 SwiftUI retains the button's action, semantic role, and activation behavior.
 Appearance variants do not set semantic roles.
 

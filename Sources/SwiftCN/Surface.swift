@@ -226,13 +226,18 @@ struct TWSurfaceModifier: ViewModifier {
 
     /// The same glass for UIKit.
     private var uiKitGlass: TWGlassStyle {
-        TWGlassStyle(tint: appearance.glassTint, interactive: appearance.glassInteractive,
-                     shape: appearance.hasRadius ? .rounded(appearance.radius) : .capsule)
+        let shape: TWGlassShape
+        if let corners = appearance.edgeRadii { shape = .edges(top: corners.top, bottom: corners.bottom) }
+        else { shape = appearance.hasRadius ? .rounded(appearance.radius) : .capsule }
+        return TWGlassStyle(tint: appearance.glassTint, interactive: appearance.glassInteractive, shape: shape)
     }
 
-    /// Floating surfaces default to a capsule, like native glass. Radius classes select a rounded rectangle.
-    private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: appearance.hasRadius ? appearance.radius : 10_000, style: .continuous)
+    /// Floating surfaces default to a capsule, like native glass. Radius classes select a rounded rectangle,
+    /// and `rounded-t-*` / `rounded-b-*` separate top and bottom corners, as on a sheet.
+    private var shape: TWSurfaceShape {
+        if let corners = appearance.edgeRadii { return TWSurfaceShape(top: corners.top, bottom: corners.bottom) }
+        let radius = appearance.hasRadius ? appearance.radius : 10_000
+        return TWSurfaceShape(top: radius, bottom: radius)
     }
 
     private func fillStyle(_ fill: TWSurfaceFill) -> AnyShapeStyle {
@@ -258,6 +263,31 @@ struct TWSurfaceModifier: ViewModifier {
 }
 
 /// One surface's glass, as UIKit draws it.
+/// A surface's outline: a continuous rounded rectangle, with the top and bottom corners' radii apart when
+/// `rounded-t-*` or `rounded-b-*` sets them. Equal radii draw exactly a `RoundedRectangle`.
+struct TWSurfaceShape: InsettableShape {
+    var top: CGFloat
+    var bottom: CGFloat
+    var inset: CGFloat = 0
+
+    func path(in rect: CGRect) -> Path {
+        let rect = rect.insetBy(dx: inset, dy: inset)
+        let top = max(0, self.top - inset), bottom = max(0, self.bottom - inset)
+        if top == bottom { return RoundedRectangle(cornerRadius: top, style: .continuous).path(in: rect) }
+        // Clamped as a rounded rectangle clamps: no corner reaches past half the shorter side.
+        let limit = min(rect.width, rect.height) / 2
+        return UnevenRoundedRectangle(topLeadingRadius: min(top, limit), bottomLeadingRadius: min(bottom, limit),
+                                      bottomTrailingRadius: min(bottom, limit), topTrailingRadius: min(top, limit),
+                                      style: .continuous).path(in: rect)
+    }
+
+    func inset(by amount: CGFloat) -> TWSurfaceShape {
+        var shape = self
+        shape.inset += amount
+        return shape
+    }
+}
+
 struct TWGlassStyle: Hashable {
     var tint: Color?
     var interactive = false
