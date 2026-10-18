@@ -446,6 +446,22 @@ TextField("Email", text: $email)
         state: TWState(isFocused: emailFocused))
 ```
 
+## Native macOS windows
+
+Use `.cnWindowStyle()` on a macOS `WindowGroup` or `Window` and `.cnWindowContent()` on its root view.
+The title bar disappears while the native traffic lights keep their normal behavior.
+`CNWindowHeader` supplies a themed header with space for those controls.
+Its empty background supports window dragging on macOS 15 and later.
+
+Use `CNWindowControlsSpacer(axis: .vertical)` above a sidebar header.
+Set `CNWindowHeader(reservesWindowControls: false)` while that sidebar is visible.
+Reserve the controls again when the sidebar is hidden or uses a compact drawer.
+The content modifier preserves iOS safe areas, and the spacers collapse on iOS.
+
+The gallery includes a native **Settings…** window on **⌘,**, built with SwiftCN controls.
+Appearance, the default view mode, and preview-grid visibility save automatically.
+See the [complete native window example](website/content/docs/native-windows.mdx).
+
 ## Native animation classes
 
 Use animation classes to animate changes to the modifiers that `.tw` owns:

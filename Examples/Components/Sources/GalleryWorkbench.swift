@@ -29,7 +29,7 @@ struct ComponentGalleryView: View {
     }()
     @State private var visibility: NavigationSplitViewVisibility = .all
     @State private var mobilePresented = false
-    @State private var mode: GalleryWorkspaceMode = .split
+    @State private var mode = GalleryPreferences.defaultMode()
     @FocusState private var searchFocused: Bool
     @Binding var dark: Bool
 
@@ -67,7 +67,6 @@ struct ComponentGalleryView: View {
         .preferredColorScheme(dark ? .dark : .light)
         .cnPopoverHost().cnPresentationHost()
         #if os(macOS)
-        .ignoresSafeArea(.container, edges: .top)
         .frame(minWidth: 680, minHeight: 560)
         .onChange(of: dark, initial: true) { _, dark in
             NSApplication.shared.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
@@ -146,21 +145,8 @@ private struct GalleryWindowHeader<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        content
-            .padding(.leading, leadingInset)
-            .padding(.trailing, 20)
-            .frame(height: 58)
-            .tw("bg-surface")
+        CNWindowHeader(reservesWindowControls: sidebar.isCompact || !sidebar.isPresented) { content }
             .galleryChrome()
-    }
-
-    private var leadingInset: CGFloat {
-        #if os(macOS)
-        // Native window buttons sit over this header when the sidebar is hidden.
-        sidebar.isCompact || !sidebar.isPresented ? 88 : 20
-        #else
-        20
-        #endif
     }
 }
 
@@ -181,6 +167,7 @@ private struct GalleryNavigation: View {
     }
 
     var body: some View {
+        CNWindowControlsSpacer(axis: .vertical)
         CNSidebarHeader("p-5 pb-3") {
             HStack(spacing: 10) {
                 brandMark.accessibilityHidden(true)
@@ -198,9 +185,6 @@ private struct GalleryNavigation: View {
                 .font(.system(size: 10)).tw("text-mutedForeground").padding(.top, 4)
                 .accessibilityIdentifier("gallery-result-count")
         }
-        #if os(macOS)
-        .padding(.top, 28)
-        #endif
         CNSidebarContent("px-3 py-2") {
             ForEach(results.groups) { group in
                 CNSidebarGroup {
@@ -245,6 +229,9 @@ private struct GalleryNavigation: View {
         }
         CNSidebarFooter("px-4 pb-4 pt-2") {
             CNSeparator().padding(.bottom, 6)
+            #if os(macOS)
+            GallerySettingsButton()
+            #endif
             CNButton(variant: .ghost, classes: "w-full px-2", action: {
                 openURL(URL(string: "https://cbethin.github.io/swiftcn/docs/component-library/")!)
             }) {
@@ -301,6 +288,7 @@ private struct GalleryWorkspace: View {
     @Binding var mode: GalleryWorkspaceMode
     let isWide: Bool
     @State private var revision = 0
+    @AppStorage(GalleryPreferences.previewGridKey) private var previewGrid = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -370,7 +358,7 @@ private struct GalleryWorkspace: View {
             selection.example.id(revision)
                 .padding(28)
                 .frame(maxWidth: .infinity, minHeight: 390, alignment: .center)
-                .background { GalleryPreviewGrid() }
+                .background { if previewGrid { GalleryPreviewGrid() } }
             CNSeparator()
             HStack(spacing: 6) {
                 Image(systemName: "cursorarrow.rays")

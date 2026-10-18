@@ -51,6 +51,7 @@ jobs:
           bash Scripts/check-presentation.sh
           swift test --filter TouchTargetInteractionTests
           SWIFTCN_GALLERY_APPEARANCE_TESTS=1 swift test --filter GalleryAppearanceTests
+          SWIFTCN_WINDOW_CHROME_TESTS=1 swift test --filter WindowChromeTests
           SWIFTCN_ARRANGEMENT_TESTS=1 swift test --filter NativeArrangementTests
           SWIFTCN_SPLIT_SIZING_TESTS=1 swift test --filter NativeSplitSizingTests
           SWIFTCN_MOTION_ARTIFACTS="$PWD/artifacts/motion-size" \

@@ -5,11 +5,12 @@ import AppKit
 #endif
 
 @main struct SwiftCNComponentGalleryApp: App {
-    @State private var dark = false
+    @AppStorage(GalleryPreferences.darkKey) private var dark = false
     init() {
         #if os(macOS)
         // Native panels inherit the app appearance before SwiftUI installs their content.
-        NSApplication.shared.appearance = NSAppearance(named: .aqua)
+        NSApplication.shared.appearance = NSAppearance(named:
+            UserDefaults.standard.bool(forKey: GalleryPreferences.darkKey) ? .darkAqua : .aqua)
         if let iconURL = Bundle.main.url(forResource: "SwiftCNAppIcon", withExtension: "icns"),
            let icon = NSImage(contentsOf: iconURL) {
             NSApplication.shared.applicationIconImage = icon
@@ -18,9 +19,11 @@ import AppKit
     }
     var body: some Scene {
         #if os(macOS)
-        WindowGroup("SwiftCN Component Gallery") { ComponentGalleryView(dark: $dark) }
-            .windowStyle(.hiddenTitleBar)
+        WindowGroup("SwiftCN Component Gallery") { ComponentGalleryView(dark: $dark).cnWindowContent() }
+            .cnWindowStyle()
             .defaultSize(width: 1280, height: 860)
+        Settings { GallerySettingsView(dark: $dark) }
+            .windowResizability(.contentSize)
         WindowGroup("Native navigation", id: "native-navigation") {
             NativeNavigationGalleryWindow(dark: dark)
         }.defaultSize(width: 840, height: 560)

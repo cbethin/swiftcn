@@ -1,0 +1,64 @@
+---
+title: Native macOS windows
+description: Build an integrated header while keeping native window controls and SwiftUI scenes.
+---
+
+Use `cnWindowStyle()` on a macOS `WindowGroup` or `Window` to hide its title bar.
+Use `cnWindowContent()` on its root view to extend content into that space.
+The native close, minimize, and fullscreen buttons keep their normal behavior.
+
+`CNWindowHeader` supplies a themed header and reserves room for the native buttons.
+On macOS 15 and later, drag the empty header background to move the window.
+Its buttons and other controls keep their own interactions.
+
+## A complete window
+
+```swift title="IntegratedWindowExample.swift"
+import SwiftUI
+import SwiftCN
+
+#if os(macOS)
+struct IntegratedWindowExample: Scene {
+    var body: some Scene {
+        WindowGroup("Workbench") {
+            VStack(spacing: 0) {
+                CNWindowHeader {
+                    HStack {
+                        Text("Workbench").font(.headline)
+                        Spacer()
+                        CNButton("Add item", action: {})
+                    }
+                }
+                CNSeparator()
+                Text("Your workspace")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .tw("bg-background text-foreground")
+            }
+            .frame(minWidth: 480, minHeight: 320)
+            .cnWindowContent()
+        }
+        .cnWindowStyle()
+        .defaultSize(width: 900, height: 600)
+    }
+}
+#endif
+```
+
+Apply both modifiers to the same window. Keep ordinary child views inside that root.
+SwiftUI's `Settings` scene keeps its standard window style and registers the native **Settings…** command with **⌘,**.
+Build its content with `CNCard`, `CNField`, `CNSelect`, and `CNSwitch`.
+
+## Sidebars and compact windows
+
+Place `CNWindowControlsSpacer(axis: .vertical)` above a custom sidebar header.
+It reserves a row for the traffic lights.
+Set the detail header's `reservesWindowControls` to `false` while the desktop sidebar is visible.
+Set it to `true` when the sidebar is hidden or uses a compact drawer.
+Read `cnSidebarContext` in the detail header to follow those transitions.
+
+For a custom horizontal header, `CNWindowControlsSpacer()` reserves the buttons' leading space instead.
+The spacers collapse outside a `cnWindowContent()` root.
+On iOS, `cnWindowContent()` preserves the screen's safe areas and the spacers collapse.
+
+Use the `height` and `classes` arguments on `CNWindowHeader` to change its size and appearance.
+It supports the same theme and utility classes as the rest of SwiftCN.

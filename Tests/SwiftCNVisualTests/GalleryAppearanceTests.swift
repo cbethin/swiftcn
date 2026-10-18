@@ -13,12 +13,30 @@ struct GalleryAppearanceTests {
     @Test func firstPanelInheritsLightAppearanceBeforePresentation() throws {
         let app = NSApplication.shared
         let saved = app.appearance
-        defer { app.appearance = saved }
+        let savedPreference = UserDefaults.standard.object(forKey: GalleryPreferences.darkKey)
+        defer {
+            app.appearance = saved
+            UserDefaults.standard.set(savedPreference, forKey: GalleryPreferences.darkKey)
+        }
+        UserDefaults.standard.set(false, forKey: GalleryPreferences.darkKey)
         app.appearance = NSAppearance(named: .darkAqua)
         #expect(newPanelAppearance() == .darkAqua)
         _ = SwiftCNComponentGalleryApp()
         #expect(newPanelAppearance() == .aqua,
                 "The first native panel must already be light before SwiftUI installs a preferred color scheme.")
+    }
+
+    @Test func firstPanelUsesTheSavedDarkPreference() {
+        let app = NSApplication.shared
+        let saved = app.appearance
+        let savedPreference = UserDefaults.standard.object(forKey: GalleryPreferences.darkKey)
+        defer {
+            app.appearance = saved
+            UserDefaults.standard.set(savedPreference, forKey: GalleryPreferences.darkKey)
+        }
+        UserDefaults.standard.set(true, forKey: GalleryPreferences.darkKey)
+        _ = SwiftCNComponentGalleryApp()
+        #expect(newPanelAppearance() == .darkAqua)
     }
 
     @Test func galleryToggleUpdatesTheSourceOfFutureNativePanels() {

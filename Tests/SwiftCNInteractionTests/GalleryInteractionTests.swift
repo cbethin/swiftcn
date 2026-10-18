@@ -164,6 +164,38 @@ final class GalleryInteractionTests: XCTestCase {
     }
 
     #if os(macOS)
+    @MainActor func testCommandCommaOpensOneSettingsWindowAndPersistsPreferences() {
+        let app = launch("card")
+        defer { capture(app); app.terminate() }
+        app.typeKey(",", modifierFlags: .command)
+        let settings = app.windows["com_apple_SwiftUI_Settings_window"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 5))
+        activate(settings.buttons["Restore defaults"])
+        activate(settings.buttons["Use dark appearance"])
+        XCTAssertTrue(settings.buttons["Use dark appearance"].isSelected)
+        let grid = settings.descendants(matching: .any).matching(identifier: "gallery-preview-grid").firstMatch
+        let originalGrid = String(describing: grid.value ?? "")
+        activate(grid)
+        XCTAssertTrue(wait(for: NSPredicate { object, _ in
+            String(describing: (object as? XCUIElement)?.value ?? "") != originalGrid
+        }, on: grid))
+        let changedGrid = String(describing: grid.value ?? "")
+        activate(settings.popUpButtons["Default view"])
+        activate(app.menuItems["Preview"])
+        app.typeKey(",", modifierFlags: .command)
+        XCTAssertEqual(app.windows.matching(identifier: "com_apple_SwiftUI_Settings_window").count, 1)
+        app.terminate()
+        app.launch()
+        let gallery = app.windows.containing(.button, identifier: "Preview mode").firstMatch
+        XCTAssertTrue(gallery.buttons["Preview mode"].isSelected)
+        XCTAssertTrue(gallery.buttons["Use dark appearance"].isSelected)
+        app.typeKey(",", modifierFlags: .command)
+        XCTAssertTrue(settings.waitForExistence(timeout: 5))
+        XCTAssertEqual(settings.popUpButtons["Default view"].value as? String, "Preview")
+        XCTAssertEqual(String(describing: grid.value ?? ""), changedGrid)
+        activate(settings.buttons["Restore defaults"])
+    }
+
     @MainActor func testGalleryKeepsPreviewEditsAcrossModesAndSearch() {
         let app = launch("card")
         defer { capture(app); app.terminate() }
