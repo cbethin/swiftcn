@@ -168,7 +168,7 @@ final class GalleryInteractionTests: XCTestCase {
         let app = launch("card")
         defer { capture(app); app.terminate() }
         app.typeKey(",", modifierFlags: .command)
-        let settings = app.windows["com_apple_SwiftUI_Settings_window"]
+        let settings = app.windows.containing(.button, identifier: "Restore defaults").firstMatch
         XCTAssertTrue(settings.waitForExistence(timeout: 5))
         activate(settings.buttons["Restore defaults"])
         activate(settings.buttons["Use dark appearance"])
@@ -183,7 +183,7 @@ final class GalleryInteractionTests: XCTestCase {
         activate(settings.popUpButtons["Default view"])
         activate(app.menuItems["Preview"])
         app.typeKey(",", modifierFlags: .command)
-        XCTAssertEqual(app.windows.matching(identifier: "com_apple_SwiftUI_Settings_window").count, 1)
+        XCTAssertEqual(app.windows.containing(.button, identifier: "Restore defaults").count, 1)
         app.terminate()
         app.launch()
         let gallery = app.windows.containing(.button, identifier: "Preview mode").firstMatch
