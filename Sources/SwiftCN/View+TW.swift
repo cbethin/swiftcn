@@ -193,7 +193,7 @@ struct TWDecorationModifier: ViewModifier {
     let scheme: ColorScheme
     func body(content: Content) -> some View {
         content.background {
-                RoundedRectangle(cornerRadius: appearance.radius, style: .continuous)
+                appearance.outline
                     .fill(appearance.background ?? .clear)
                     .shadow(
                         color: appearance.shadow?.color.resolve(scheme) ?? .clear,
@@ -203,7 +203,7 @@ struct TWDecorationModifier: ViewModifier {
                     )
             }
             .overlay {
-                RoundedRectangle(cornerRadius: appearance.radius, style: .continuous)
+                appearance.outline
                     .strokeBorder(appearance.border ?? .clear, lineWidth: appearance.borderWidth)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)

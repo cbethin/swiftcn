@@ -32,11 +32,13 @@ public struct TWShadowValue: Sendable {
 
 /// Value-type design tokens. Changing this environment value updates its descendants.
 public struct TWTheme: Sendable {
-    public var spacingUnit: CGFloat
-    public var colors: [TWColor: TWAdaptiveColor]
-    public var typography: [TWText: Font]
-    public var radii: [TWRadius: CGFloat]
-    public var shadows: [TWShadow: TWShadowValue]
+    public var spacingUnit: CGFloat { didSet { revision = TWRevision.next() } }
+    public var colors: [TWColor: TWAdaptiveColor] { didSet { revision = TWRevision.next() } }
+    public var typography: [TWText: Font] { didSet { revision = TWRevision.next() } }
+    public var radii: [TWRadius: CGFloat] { didSet { revision = TWRevision.next() } }
+    public var shadows: [TWShadow: TWShadowValue] { didSet { revision = TWRevision.next() } }
+    /// Identifies this theme's content for cached class expansion. Copies share it.
+    private(set) var revision: UInt64
 
     public init(
         spacingUnit: CGFloat = 4,
@@ -51,6 +53,8 @@ public struct TWTheme: Sendable {
         self.typography = Self.defaultTypography.merging(typography) { _, override in override }
         self.radii = Self.defaultRadii.merging(radii) { _, override in override }
         self.shadows = Self.defaultShadows.merging(shadows) { _, override in override }
+        let isStandard = spacingUnit == 4 && colors.isEmpty && typography.isEmpty && radii.isEmpty && shadows.isEmpty
+        self.revision = isStandard ? TWRevision.standard : TWRevision.next()
     }
 
     public static let standard = TWTheme()

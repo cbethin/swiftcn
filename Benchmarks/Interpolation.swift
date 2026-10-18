@@ -46,6 +46,11 @@ struct InterpolationBenchmark {
             let classes: TWClasses = "w-[\(CGFloat(100 + index % 100))] opacity-[\(0.8)]"
             return Double(try classes.tokens().count)
         }
+        measure("runtime String resolve, cold cache") { index in
+            TWExpansionCache.shared.removeAll()
+            let classes: String = "p-4 rounded-lg bg-surface text-primary w-[\(100 + index % 100)] opacity-[0.8]"
+            return resolve(.classes(classes), rules)
+        }
         measure("runtime String resolve") { index in
             let classes: String = "p-4 rounded-lg bg-surface text-primary w-[\(100 + index % 100)] opacity-[0.8]"
             return resolve(.classes(classes), rules)

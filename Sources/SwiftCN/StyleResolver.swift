@@ -17,6 +17,9 @@ struct TWResolvedStyle {
         let top = topRadius ?? radius, bottom = bottomRadius ?? radius
         return top == bottom ? nil : (top, bottom)
     }
+    var outline: TWSurfaceShape {
+        TWSurfaceShape(top: topRadius ?? radius, bottom: bottomRadius ?? radius)
+    }
     var hasRadius = false
     var border: Color?
     var borderWidth: CGFloat = 0
@@ -129,6 +132,8 @@ enum TWStyleResolver {
             case .background(let source): result.background = color(source, theme: theme, scheme: scheme)
             case .radius(let source):
                 result.hasRadius = true
+                result.topRadius = nil
+                result.bottomRadius = nil
                 switch source {
                 case .token(let token): result.radius = theme.radius(token)
                 case .points(let points): result.radius = points
@@ -191,6 +196,13 @@ enum TWStyleResolver {
             case .sharedSource(let source): result.sharedSource = source
             case .classes, .interpolated: break // Expansion removes these before resolution.
             }
+        }
+        // Keep a shared radius when both edges agree, including two explicit edge overrides.
+        let top = result.topRadius ?? result.radius, bottom = result.bottomRadius ?? result.radius
+        if top == bottom {
+            result.radius = top
+            result.topRadius = nil
+            result.bottomRadius = nil
         }
         if result.borderWidth > 0, result.border == nil { result.border = theme.color(.border, scheme: scheme) }
         result.nativeSlots = globalRules.nativeSlots.map { slot in

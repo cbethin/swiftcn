@@ -235,9 +235,7 @@ struct TWSurfaceModifier: ViewModifier {
     /// Floating surfaces default to a capsule, like native glass. Radius classes select a rounded rectangle,
     /// and `rounded-t-*` / `rounded-b-*` separate top and bottom corners, as on a sheet.
     private var shape: TWSurfaceShape {
-        if let corners = appearance.edgeRadii { return TWSurfaceShape(top: corners.top, bottom: corners.bottom) }
-        let radius = appearance.hasRadius ? appearance.radius : 10_000
-        return TWSurfaceShape(top: radius, bottom: radius)
+        appearance.hasRadius ? appearance.outline : TWSurfaceShape(top: 10_000, bottom: 10_000)
     }
 
     private func fillStyle(_ fill: TWSurfaceFill) -> AnyShapeStyle {
@@ -262,13 +260,21 @@ struct TWSurfaceModifier: ViewModifier {
     }
 }
 
-/// One surface's glass, as UIKit draws it.
 /// A surface's outline: a continuous rounded rectangle, with the top and bottom corners' radii apart when
 /// `rounded-t-*` or `rounded-b-*` sets them. Equal radii draw exactly a `RoundedRectangle`.
 struct TWSurfaceShape: InsettableShape {
     var top: CGFloat
     var bottom: CGFloat
     var inset: CGFloat = 0
+
+    var animatableData: AnimatablePair<AnimatablePair<CGFloat, CGFloat>, CGFloat> {
+        get { AnimatablePair(AnimatablePair(top, bottom), inset) }
+        set {
+            top = newValue.first.first
+            bottom = newValue.first.second
+            inset = newValue.second
+        }
+    }
 
     func path(in rect: CGRect) -> Path {
         let rect = rect.insetBy(dx: inset, dy: inset)
@@ -288,6 +294,7 @@ struct TWSurfaceShape: InsettableShape {
     }
 }
 
+/// One surface's glass, as UIKit draws it.
 struct TWGlassStyle: Hashable {
     var tint: Color?
     var interactive = false
