@@ -32,7 +32,6 @@ struct ComponentGalleryView: View {
     @State private var mobilePresented = false
     @State private var mode: GalleryWorkspaceMode = .split
     @FocusState private var searchFocused: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var dark: Bool
 
     var body: some View {
@@ -86,12 +85,7 @@ struct ComponentGalleryView: View {
                 CNBreadcrumbPage(LocalizedStringKey(selection.title))
             }.lineLimit(1)
             Spacer(minLength: 8)
-            CNToggle(isOn: $dark, classes: "px-2") {
-                Image(systemName: dark ? "moon" : "sun.max")
-                    .contentTransition(reduceMotion ? .identity : .symbolEffect(.replace))
-            }
-            .accessibilityLabel("Dark appearance")
-            .help("Toggle dark appearance")
+            GalleryAppearanceControl(dark: $dark)
         }
         .padding(.horizontal, 20).frame(height: 58)
         .tw("bg-surface")
