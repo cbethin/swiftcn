@@ -78,7 +78,8 @@ public struct CNDatePicker: View {
             Image(systemName: "calendar").accessibilityHidden(true)
         }
         .focused($triggerFocused)
-        .buttonStyle(.tw("button-ghost px-2 py-0 text-mutedForeground"))
+        // An input adornment, not a standalone button: it keeps a plain button inside the field.
+        .buttonStyle(.tw("px-2 py-0 text-mutedForeground hover:text-foreground"))
         .accessibilityLabel("Choose date")
         .accessibilityValue(calendarPresented ? Text("Expanded") : Text("Collapsed"))
     }

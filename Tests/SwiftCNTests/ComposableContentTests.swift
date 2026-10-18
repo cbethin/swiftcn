@@ -87,6 +87,10 @@ struct ComposableContentTests {
         var hit = host.hitTest(host.convert(center, to: host.superview))
         while let view = hit {
             if let button = view as? NSButton {
+                // Before macOS 26, AppKit buttons track the mouse modally, which synthesized events never end.
+                // SwiftUI's AppKit-backed buttons on macOS 26 and later take synthesized events; their activation
+                // API stops this CLI fixture's main run loop.
+                if #available(macOS 26, *) { break }
                 if button.isEnabled { button.performClick(nil) }
                 return
             }

@@ -5,7 +5,8 @@ description: "Add SwiftCN as a package, or copy the source into your project."
 
 ## Requirements
 
-Use Swift 6 with iOS 17 or macOS 14 and later.
+Build with Xcode 26 or later (Swift 6.2). Apps deploy to iOS 17 or macOS 14 and later.
+The package checks for Liquid Glass at run time and uses native fallbacks on earlier systems.
 
 ## Xcode
 
@@ -17,9 +18,14 @@ https://github.com/cbethin/swiftcn.git
 
 Select the `main` branch and add the `SwiftCN` product to your app target. The project has no stable release tag yet.
 
+Then open the app target's **Build Phases**, expand **Run Build Tool Plug-ins**, and add **SwiftCNLintPlugin**.
+Every build then checks your class strings before Swift compiles, and an invalid class fails the build on its line.
+Xcode asks you to trust the plugin the first time it runs.
+
 ## Swift Package Manager
 
-Add the package dependency and its product to your target.
+Add the package dependency, its product, and the build plugin to your target.
+The plugin checks class strings before the target compiles, so an invalid class fails the build.
 This complete manifest uses a library target named `ProjectUI`:
 
 ```swift title="Package.swift"
@@ -36,7 +42,8 @@ let package = Package(
     targets: [
         .target(
             name: "ProjectUI",
-            dependencies: [.product(name: "SwiftCN", package: "swiftcn")]
+            dependencies: [.product(name: "SwiftCN", package: "swiftcn")],
+            plugins: [.plugin(name: "SwiftCNLintPlugin", package: "swiftcn")]
         )
     ]
 )
@@ -67,6 +74,7 @@ cp ../swiftcn-source/LICENSE Vendor/SwiftCN/LICENSE
 ```
 
 Add `Vendor/SwiftCN` to your Xcode project and select your app target for all Swift files.
+Check class strings with the clone: `swift run --package-path ../swiftcn-source swiftcn-lint .`
 Review source changes when you update your copy.
 Keep your app's recipes in a separate file to simplify those updates.
 

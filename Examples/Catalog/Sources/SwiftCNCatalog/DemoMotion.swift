@@ -86,8 +86,8 @@ private struct DemoNumber: ViewModifier {
     }
 }
 
-/// The native button configuration still supplies press state and activation.
-struct DemoButtonStyle: ButtonStyle {
+/// The native button keeps activation and its own press appearance; the demo adds a hover lift.
+struct DemoButtonStyle: PrimitiveButtonStyle {
     let base: TWButtonStyle
     var feedbackEnabled = true
 
@@ -98,13 +98,13 @@ struct DemoButtonStyle: ButtonStyle {
 
 private struct DemoButtonBody: View {
     let base: TWButtonStyle
-    let configuration: ButtonStyleConfiguration
+    let configuration: PrimitiveButtonStyleConfiguration
     let feedbackEnabled: Bool
     private var motion = DemoMotion()
     @Environment(\.isEnabled) private var isEnabled
     @State private var hovered = false
 
-    init(base: TWButtonStyle, configuration: ButtonStyleConfiguration, feedbackEnabled: Bool) {
+    init(base: TWButtonStyle, configuration: PrimitiveButtonStyleConfiguration, feedbackEnabled: Bool) {
         self.base = base
         self.configuration = configuration
         self.feedbackEnabled = feedbackEnabled
@@ -113,16 +113,15 @@ private struct DemoButtonBody: View {
     private var moves: Bool { motion.isEnabled && isEnabled && feedbackEnabled }
 
     var body: some View {
-        base.makeBody(configuration: configuration)
-            .scaleEffect(moves ? (configuration.isPressed ? 0.98 : hovered ? 1.008 : 1) : 1)
-            .offset(y: moves && hovered && !configuration.isPressed ? -0.75 : 0)
-            .animation(moves ? motion.feedback : nil, value: configuration.isPressed)
+        Button(configuration).buttonStyle(base)
+            .scaleEffect(moves && hovered ? 1.008 : 1)
+            .offset(y: moves && hovered ? -0.75 : 0)
             .animation(moves ? motion.soft : nil, value: hovered)
             .onHover { hovered = $0 }
     }
 }
 
-extension ButtonStyle where Self == DemoButtonStyle {
+extension PrimitiveButtonStyle where Self == DemoButtonStyle {
     static func demo(_ classes: String, feedback: Bool = true) -> DemoButtonStyle {
         DemoButtonStyle(base: TWButtonStyle(classes), feedbackEnabled: feedback)
     }

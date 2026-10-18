@@ -22,13 +22,13 @@ public enum TWClassError: Error, Equatable, CustomStringConvertible {
 
 enum TWClassParser {
     // These tables do not depend on the theme, registry, or interpolated values.
-    private static let fonts: [String: TWText] = ["xs": .xs, "sm": .sm, "base": .base, "lg": .lg,
+    static let fonts: [String: TWText] = ["xs": .xs, "sm": .sm, "base": .base, "lg": .lg,
                                                  "xl": .xl, "2xl": .xxl, "3xl": .xxxl]
-    private static let weights: [String: Font.Weight] = ["regular": .regular, "normal": .regular, "medium": .medium,
+    static let weights: [String: Font.Weight] = ["regular": .regular, "normal": .regular, "medium": .medium,
                                                        "semibold": .semibold, "bold": .bold, "light": .light]
-    private static let radii: [String: TWRadius] = ["none": .none, "sm": .sm, "md": .md, "lg": .lg, "xl": .xl, "full": .full]
-    private static let shadows: [String: TWShadow] = ["none": .none, "sm": .sm, "md": .md, "lg": .lg]
-    private static let aliases: [String: TWColor] = ["primary-foreground": .onPrimary, "accent-foreground": .onAccent,
+    static let radii: [String: TWRadius] = ["none": .none, "sm": .sm, "md": .md, "lg": .lg, "xl": .xl, "full": .full]
+    static let shadows: [String: TWShadow] = ["none": .none, "sm": .sm, "md": .md, "lg": .lg]
+    static let aliases: [String: TWColor] = ["primary-foreground": .onPrimary, "accent-foreground": .onAccent,
                                                    "destructive-foreground": .onDestructive, "card": .surface,
                                                    "card-foreground": .foreground, "muted-foreground": .mutedForeground]
 
@@ -124,6 +124,20 @@ enum TWClassParser {
         case "shared-size": return TWStyle(rules: [TWRule(property: .sharedProperties(.size))])
         case "shared-source": return TWStyle(rules: [TWRule(property: .sharedSource(true))])
         case "shared-follower": return TWStyle(rules: [TWRule(property: .sharedSource(false))])
+        case "surface-floating": return .surfaceFloating
+        case "surface-solid": return .surfaceSolid
+        case "glass": return .glass
+        case "glass-prominent": return .glassProminent
+        case "glass-interactive": return .glassInteractive
+        case "bezel-prominent": return .bezel(.prominent)
+        case "bezel-bordered": return .bezel(.bordered)
+        case "bezel-borderless": return .bezel(.borderless)
+        case "bezel-link": return .bezel(.link)
+        case "control-mini": return .controlSize(.mini)
+        case "control-sm": return .controlSize(.small)
+        case "control-md": return .controlSize(.regular)
+        case "control-lg": return .controlSize(.large)
+        case "control-xl": return .controlSize(.extraLarge)
         default: break
         }
         if let (prefix, decoded) = argument(name) {
@@ -153,12 +167,16 @@ enum TWClassParser {
             return prefix == "duration-" ? .duration(seconds) : .delay(seconds)
         }
         if name == "w-full" { return .fullWidth }
+        if name == "h-full" { return .fullHeight }
         if name == "border" { return .border(.border) }
         if name == "rounded" { return .rounded(.md) }
         if name == "shadow" { return .shadow(.sm) }
         func color(_ value: String) -> TWColor? {
             let token = aliases[value] ?? TWColor(value)
             return theme.colors[token] == nil ? nil : token
+        }
+        for prefix in ["glass-tint-", "tint-"] where name.hasPrefix(prefix) {
+            return color(String(name.dropFirst(prefix.count))).map { .glassTint($0) }
         }
         for prefix in ["text-", "bg-", "border-", "rounded-", "shadow-", "font-"] where name.hasPrefix(prefix) {
             let value = String(name.dropFirst(prefix.count))

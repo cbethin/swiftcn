@@ -104,8 +104,10 @@ Each failure includes the reference, the new image, and their difference.
 
 ## Continuous integration
 
-The continuous integration (CI) job selects macOS 15 and Xcode 16.4.
-The committed macOS references use `Tests/SwiftCNVisualTests/__Snapshots__/macos-15-xcode-16.4`.
+The continuous integration (CI) job selects macOS 15 and Xcode 26.3.
+The committed macOS references use `Tests/SwiftCNVisualTests/__Snapshots__/macos-15-xcode-26.3`.
+Xcode 26.3 builds with the 26 SDKs. The macOS 15 host and the iOS 18.5 runtime render the pre-Liquid Glass fallbacks, so these references cover the earlier appearance.
+The `glass-surfaces` job runs the adaptive surface tests on macOS 26 and uploads glass captures as evidence.
 The iOS references use `Tests/SwiftCNVisualTests/__Snapshots__/ios-18.5-iphone-16`.
 The normal CI job verifies these references on each main push and pull request.
 The job uploads visual evidence even when verification fails.
@@ -141,7 +143,7 @@ You can also start that workflow manually for a selected branch.
 
 ## Component library coverage
 
-The component suite records every catalog example in light and dark appearances on iOS. The macOS suite covers 63 entries in both appearances. Both suites also check eight representative examples at narrow widths with large text. CI pins macOS 15 with Xcode 16.4 and iOS 18.5 on iPhone 16. Verification fails on a missing or changed reference; CI never updates references automatically.
+The component suite records every catalog example in light and dark appearances on iOS. The macOS suite covers 63 entries in both appearances. Both suites also check eight representative examples at narrow widths with large text. CI pins macOS 15 with Xcode 26.3 and iOS 18.5 on iPhone 16. Verification fails on a missing or changed reference; CI never updates references automatically.
 
 AppKit bitmap capture cannot composite the native TabView strip correctly, including an unstyled SwiftUI TabView. The macOS tab test checks native selection and item identity instead. The running gallery also supports manual keyboard and pointer review. The Tabs documentation uses native iOS captures, where the complete control renders correctly.
 

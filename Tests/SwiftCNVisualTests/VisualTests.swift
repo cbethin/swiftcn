@@ -80,19 +80,29 @@ private struct VisualFixture: View {
 
     private var buttons: some View {
         VStack(alignment: .leading, spacing: 12) {
-            ForEach(["button-primary", "button-secondary", "button-outline", "button-destructive"], id: \.self) { name in
-                Text(name).font(.caption)
-                // State previews exercise the same resolver without synthetic gesture recognition.
-                ForEach(0..<5) { index in
-                    let states: [TWState] = [.init(), .init(isHovered: true), .init(isFocused: true),
-                                             .init(isPressed: true), .init(isDisabled: true)]
-                    let labels = ["Rest", "Hover", "Focus", "Press", "Disabled"]
-                    Text(labels[index]).tw("\(name) focus:border-2 focus:border-primary animate-spring duration-150", state: states[index])
+            // Apple draws each variant; the theme supplies its tint and label color.
+            ForEach(["button-primary", "button-secondary", "button-outline", "button-destructive", "button-ghost", "button-link"],
+                    id: \.self) { name in
+                HStack(spacing: 8) {
+                    Button(name) {}.buttonStyle(.tw(name))
+                    Button("Disabled") {}.buttonStyle(.tw(name)).disabled(true)
                   }
               }
-            Button("Native activation") {}.buttonStyle(.tw("button-primary animate-spring duration-150"))
-            Button("Native disabled") {}.buttonStyle(.tw("button-primary animate-none")).disabled(true)
+            HStack(spacing: 8) {
+                Button("Small") {}.buttonStyle(.tw("button-primary control-sm"))
+                Button("Large") {}.buttonStyle(.tw("button-primary control-lg"))
+                Button("Pill") {}.buttonStyle(.tw("button-outline rounded-full"))
+              }
             Button("Typed style") {}.buttonStyle(.tw(.primaryButton, .px(6), .animation(.snappy)))
+            Text("Plain button states").font(.caption)
+            // Classes without a native style keep a plain button; state previews use the same resolver.
+            ForEach(0..<5) { index in
+                let states: [TWState] = [.init(), .init(isHovered: true), .init(isFocused: true),
+                                         .init(isPressed: true), .init(isDisabled: true)]
+                let labels = ["Rest", "Hover", "Focus", "Press", "Disabled"]
+                Text(labels[index]).tw("px-4 py-2 rounded-md bg-muted hover:bg-accent focus:border-2 focus:border-primary " +
+                                       "pressed:opacity-80 disabled:opacity-45 animate-spring duration-150", state: states[index])
+              }
         }
     }
 
@@ -168,6 +178,8 @@ private struct VisualFixture: View {
                 CNCardTitle("Your theme, everywhere")
                 CNCardDescription("Shared surfaces, native controls, and quiet interaction states.")
             }
+            // The content's native controls show the theme as a key window does; the footer's
+            // native buttons keep the snapshot window's real state, which AppKit draws before macOS 26.
             CNCardContent {
                 CNInput("Project name", text: .constant("Design system"))
                 CNInput("Unavailable", text: .constant("Disabled field")).disabled(true)
@@ -181,12 +193,12 @@ private struct VisualFixture: View {
                 CNProgress("Setup progress", value: 0.65)
                 CNCommand([CNOption("design", title: "Design system"), CNOption("app", title: "Mobile app")],
                           selection: .constant("design"), classes: "h-[180]")
-            }
+            }.environment(\.controlActiveState, .active)
             CNCardFooter {
                 CNButton("Cancel", variant: .secondary) {}
                 CNButton("Create project") {}
             }
-        }.twTheme(theme).environment(\.controlActiveState, .active)
+        }.twTheme(theme)
     }
 }
 #endif

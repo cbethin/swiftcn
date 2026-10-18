@@ -72,6 +72,14 @@ struct ClassTests {
         #expect(result.padding.leading == 12.5)
     }
 
+    @Test func fullClassesExpandBothAxes() throws {
+        let result = resolve(try .parse("w-full h-full bg-surface"))
+        #expect(result.expandsWidth)
+        #expect(result.expandsHeight)
+        #expect(result.background != nil)
+        #expect(throws: (any Error).self) { try TWStyle.parse("h-infinity") }
+    }
+
     @Test func borderColorAndWidthComposeIndependently() throws {
         let a = resolve(try .parse("border-2 border-primary"))
         let b = resolve(try .parse("border-primary border-2"))

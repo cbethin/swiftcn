@@ -11,6 +11,7 @@
     "native-modifiers",
     "---Design system---",
     "theme",
+    "adaptive-surfaces",
     "global-rules",
     "native-controls",
     "native-composition",
@@ -21,6 +22,7 @@
     "animations",
     "shared-elements",
     "---Development---",
+    "build-time-checks",
     "visual-testing",
     "troubleshooting"
   ]
