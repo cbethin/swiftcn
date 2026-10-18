@@ -42,16 +42,21 @@ public struct TWState: Equatable, Sendable {
     public var isFocused: Bool
     public var isPressed: Bool
     public var isDisabled: Bool
+    /// The person asked for reduced motion (Reduce Motion). Views read it from the environment;
+    /// `motion-reduce:` and `motion-safe:` classes match on it.
+    public var prefersReducedMotion: Bool
 
     public init(
         isHovered: Bool = false,
         isFocused: Bool = false,
         isPressed: Bool = false,
-        isDisabled: Bool = false
+        isDisabled: Bool = false,
+        prefersReducedMotion: Bool = false
     ) {
         self.isHovered = isHovered
         self.isFocused = isFocused
         self.isPressed = isPressed
         self.isDisabled = isDisabled
+        self.prefersReducedMotion = prefersReducedMotion
     }
 }

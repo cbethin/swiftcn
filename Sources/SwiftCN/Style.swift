@@ -42,6 +42,9 @@ public struct TWStyle: Sendable, ExpressibleByStringInterpolation {
 
 enum TWCondition: Int, Hashable, Sendable {
     case hovered = 1, focused, pressed, disabled
+    /// `motion-reduce:` and `motion-safe:`. Ranked above the interaction states, so
+    /// `motion-reduce:pressed:scale-100` wins over `pressed:scale-[0.94]`.
+    case reducedMotion, fullMotion
 
     func matches(_ state: TWState) -> Bool {
         switch self {
@@ -49,6 +52,8 @@ enum TWCondition: Int, Hashable, Sendable {
         case .focused: state.isFocused
         case .pressed: state.isPressed
         case .disabled: state.isDisabled
+        case .reducedMotion: state.prefersReducedMotion
+        case .fullMotion: !state.prefersReducedMotion
         }
     }
 }
@@ -87,6 +92,8 @@ enum TWProperty: Sendable {
     case foreground(TWColorSource)
     case background(TWColorSource)
     case radius(TWRadiusSource)
+    /// `rounded-t-*` and `rounded-b-*`: the top corners' or the bottom corners' radius alone.
+    case radiusTop(TWRadiusSource), radiusBottom(TWRadiusSource)
     case border(TWColorSource, CGFloat)
     case borderColor(TWColorSource), borderWidth(CGFloat)
     case shadow(TWShadow)

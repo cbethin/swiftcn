@@ -55,6 +55,7 @@ struct TWModifier: ViewModifier {
         var activeState = state
         activeState.isDisabled = activeState.isDisabled || !isEnabled
         activeState.isHovered = activeState.isHovered || isHovered
+        activeState.prefersReducedMotion = activeState.prefersReducedMotion || reduceMotion
         let combined = TWStyle(rules.view, isButton ? rules.button : TWStyle(), style)
         var appearance = TWStyleResolver.resolve(combined, theme: theme, scheme: scheme, state: activeState,
             globalRules: rules, groupStates: groups.states, target: target)
@@ -192,7 +193,7 @@ struct TWDecorationModifier: ViewModifier {
     let scheme: ColorScheme
     func body(content: Content) -> some View {
         content.background {
-                RoundedRectangle(cornerRadius: appearance.radius, style: .continuous)
+                appearance.outline
                     .fill(appearance.background ?? .clear)
                     .shadow(
                         color: appearance.shadow?.color.resolve(scheme) ?? .clear,
@@ -202,7 +203,7 @@ struct TWDecorationModifier: ViewModifier {
                     )
             }
             .overlay {
-                RoundedRectangle(cornerRadius: appearance.radius, style: .continuous)
+                appearance.outline
                     .strokeBorder(appearance.border ?? .clear, lineWidth: appearance.borderWidth)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)

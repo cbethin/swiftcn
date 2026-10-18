@@ -43,6 +43,7 @@ struct LintTests {
         Text("Title").tw("text-2xl font-bold text-muted-foreground px-[12] hover:bg-accent group-hover/hero:opacity-70")
         Button("Save") {}.buttonStyle(.tw("tint-[#ff5a36] glass-prominent control-xl rounded-full"))
         VStack {}.tw("p-7 surface-floating rounded-[44] animate-bouncy duration-200 shared-[cover]/hero")
+        VStack {}.tw("glass rounded-t-[28] rounded-b-lg motion-reduce:pressed:scale-[1] motion-safe:pressed:scale-[0.94]")
         """).isEmpty)
     }
 

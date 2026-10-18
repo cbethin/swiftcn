@@ -24,6 +24,18 @@ extension TWStyle {
         precondition(points.isFinite && points >= 0)
         return property(.radius(.points(points)))
     }
+    /// The top corners' radius, as `rounded-t-*`.
+    public static func roundedTop(_ token: TWRadius) -> Self { property(.radiusTop(.token(token))) }
+    /// The bottom corners' radius, as `rounded-b-*`.
+    public static func roundedBottom(_ token: TWRadius) -> Self { property(.radiusBottom(.token(token))) }
+    public static func radiusTop(_ points: CGFloat) -> Self {
+        precondition(points.isFinite && points >= 0)
+        return property(.radiusTop(.points(points)))
+    }
+    public static func radiusBottom(_ points: CGFloat) -> Self {
+        precondition(points.isFinite && points >= 0)
+        return property(.radiusBottom(.points(points)))
+    }
     public static func border(_ token: TWColor, width: CGFloat = 1) -> Self {
         precondition(width.isFinite && width >= 0)
         return property(.border(.token(token), width))

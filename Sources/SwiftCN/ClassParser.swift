@@ -106,6 +106,8 @@ enum TWClassParser {
             case "focus": conditions.insert(.focused)
             case "active", "pressed": conditions.insert(.pressed)
             case "disabled": conditions.insert(.disabled)
+            case "motion-reduce": conditions.insert(.reducedMotion)
+            case "motion-safe": conditions.insert(.fullMotion)
             default: throw TWClassError.unknownVariant(variant)
             }
         }
@@ -204,6 +206,10 @@ enum TWClassParser {
         func color(_ value: String) -> TWColor? {
             let token = aliases[value] ?? TWColor(value)
             return theme.colors[token] == nil ? nil : token
+        }
+        for prefix in ["rounded-t-", "rounded-b-"] where name.hasPrefix(prefix) {
+            guard let radius = radii[String(name.dropFirst(prefix.count))] else { return nil }
+            return prefix == "rounded-t-" ? .roundedTop(radius) : .roundedBottom(radius)
         }
         for prefix in ["glass-tint-", "tint-"] where name.hasPrefix(prefix) {
             return color(String(name.dropFirst(prefix.count))).map { .glassTint($0) }

@@ -79,6 +79,8 @@ enum TWArgumentUtilities {
         case "min-h": return .minH(points)
         case "max-h": return .maxH(points)
         case "rounded": return .radius(points)
+        case "rounded-t": return .radiusTop(points)
+        case "rounded-b": return .radiusBottom(points)
         case "border": return TWStyle(rules: [TWRule(property: .borderWidth(points))])
         case "text": return points > 0 ? .fontSize(points) : nil
         case "line-spacing": return .lineSpacing(points)
