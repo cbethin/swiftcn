@@ -24,15 +24,16 @@ extension TWStyle {
 
     /// Built-in classes stay editable when you copy these source files.
     static let defaultClasses: [String: Self] = {
+        let button = Self(.px(4), .py(2), .minH(buttonMinimumHeight), .rounded(.md), .text(.sm), .weight(.medium),
+                          .focus(.border(.ring, width: 2)), .disabled(.opacity(0.5)), .classes("animate-none"))
         var recipes: [String: Self] = ["card": Self(.p(6), .bg(.surface), .fg(.foreground), .rounded(.lg), .border(.border), .shadow(.sm)),
-         // Apple draws every button variant. The theme supplies the tint and label color.
-         "button-primary": Self(.bezel(.prominent), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.primary), .fg(.onPrimary)),
-         "button-secondary": Self(.bezel(.prominent), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.muted), .fg(.foreground)),
-         "button-outline": Self(.bezel(.bordered), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.foreground), .fg(.foreground)),
-         "button-destructive": Self(.bezel(.prominent), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.destructive), .fg(.onDestructive)),
-         // Borderless buttons have no bezel to size them, so the label keeps the platform's touch target.
-         "button-ghost": Self(.bezel(.borderless), .px(3), .rounded(.md), .text(.sm), .weight(.semibold), .fg(.foreground), .minH(controlMinimumHeight)),
-         "button-link": Self(.bezel(.link), .text(.sm), .weight(.medium), .fg(.primary), .minH(controlMinimumHeight)),
+         // SwiftCN draws the variant; SwiftUI's Button keeps activation, roles, focus, and accessibility.
+         "button-primary": Self(button, .bg(.primary), .fg(.onPrimary), .tint(.primary), .hover(.opacity(0.9)), .pressed(.opacity(0.8))),
+         "button-secondary": Self(button, .bg(.muted), .fg(.foreground), .tint(.muted), .hover(.bg(.accent)), .pressed(.opacity(0.8))),
+         "button-outline": Self(button, .bg(.surface), .border(.input), .fg(.foreground), .tint(.foreground), .hover(.bg(.accent)), .pressed(.opacity(0.8))),
+         "button-destructive": Self(button, .bg(.destructive), .fg(.onDestructive), .tint(.destructive), .hover(.opacity(0.9)), .pressed(.opacity(0.8))),
+         "button-ghost": Self(button, .fg(.foreground), .hover(.bg(.accent)), .pressed(.bg(.accent)), .pressed(.opacity(0.8))),
+         "button-link": Self(button, .fg(.primary), .hover(.opacity(0.7)), .pressed(.opacity(0.6))),
          "card-header": Self(.p(6), .pb(0)),
          "card-content": Self(.p(6)),
          "card-footer": Self(.p(6), .pt(0)),
@@ -181,6 +182,14 @@ extension TWStyle {
         44
         #else
         32
+        #endif
+    }
+
+    private static var buttonMinimumHeight: CGFloat {
+        #if os(iOS)
+        44
+        #else
+        36
         #endif
     }
 

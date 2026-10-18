@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// A native Button. When its classes choose a native style (a button variant, `bezel-*`, or a glass surface),
+/// A native Button. When its classes choose a native style (`bezel-*` or a glass surface),
 /// Apple draws the bezel and the classes shape only the label. Other classes style the label of a plain button,
 /// as list rows, menu items and calendar days need. Recognition, roles and activation remain with SwiftUI.
 public struct TWButtonStyle: PrimitiveButtonStyle {

@@ -288,9 +288,9 @@ struct AdaptiveSurfaceRenderingTests {
         }
     }
 
-    @Test(arguments: [("button-primary", TWColor.primary, TWColor.onPrimary, true), ("button-secondary", .muted, .foreground, true),
-                      ("button-outline", .foreground, .foreground, false), ("button-destructive", .destructive, .onDestructive, true)])
-    func variantsRenderAsTheNativeStyleWithTheThemeTint(classes: String, tint: TWColor, label: TWColor, prominent: Bool) throws {
+    @Test(arguments: [("tint-primary text-onPrimary bezel-prominent", TWColor.primary, TWColor.onPrimary, true), ("tint-muted text-foreground bezel-prominent", .muted, .foreground, true),
+                      ("tint-foreground text-foreground bezel-bordered", .foreground, .foreground, false), ("tint-destructive text-onDestructive bezel-prominent", .destructive, .onDestructive, true)])
+    func explicitBezelsRenderAsTheNativeStyleWithTheThemeTint(classes: String, tint: TWColor, label: TWColor, prominent: Bool) throws {
         let theme = TWTheme.standard
         let native = Button(action: {}) {
             Text("Save").font(theme.font(.sm).weight(.semibold)).foregroundStyle(theme.color(label, scheme: .light))
@@ -300,9 +300,36 @@ struct AdaptiveSurfaceRenderingTests {
         let expected = try capture(Group {
             if prominent { native.buttonStyle(.borderedProminent) } else { native.buttonStyle(.bordered) }
         })
-        let actual = try capture(Button("Save") {}.buttonStyle(.tw(classes)))
+        let actual = try capture(Button("Save") {}.buttonStyle(.tw(cn("rounded-md text-sm font-semibold", TWClasses(classes)))))
         #expect(actual.size == expected.size)
         #expect(actual.tiffRepresentation == expected.tiffRepresentation, "\(classes) must be Apple's style, not a painted one.")
+    }
+
+    @Test(arguments: [ColorScheme.light, .dark], [ControlActiveState.key, .inactive])
+    func defaultButtonFillsAndLabelsKeepTheirThemeColors(scheme: ColorScheme, state: ControlActiveState) throws {
+        let theme = TWTheme.standard
+        for (variant, fill, label) in [("button-primary", TWColor.primary, TWColor.onPrimary),
+                                       ("button-secondary", .muted, .foreground),
+                                       ("button-outline", .surface, .foreground),
+                                       ("button-destructive", .destructive, .onDestructive)] {
+            let bitmap = try capture(Button("Save changes") {}.buttonStyle(.tw(variant)), state: state, scheme: scheme)
+            #expect(bitmap.size.height >= 36 + 16, "The default control must have room around its label.")
+            for token in [fill, label] {
+                // Use the same display color space as the button, including wide-gamut displays.
+                let swatch = try capture(theme.color(token, scheme: scheme).frame(width: 16, height: 16), scheme: scheme)
+                let expected = try #require(swatch.colorAt(x: swatch.pixelsWide / 2, y: swatch.pixelsHigh / 2)?.usingColorSpace(.sRGB))
+                var nearest = Double.infinity
+                for y in 0..<bitmap.pixelsHigh {
+                    for x in 0..<bitmap.pixelsWide {
+                        guard let pixel = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB), pixel.alphaComponent > 0.95 else { continue }
+                        nearest = min(nearest, Double(max(abs(pixel.redComponent - expected.redComponent),
+                                                         abs(pixel.greenComponent - expected.greenComponent),
+                                                         abs(pixel.blueComponent - expected.blueComponent))))
+                    }
+                }
+                #expect(nearest < 0.08, "\(variant) must render its \(token) color in \(scheme), \(state).")
+            }
+        }
     }
 
     @Test func buttonsWithoutATintClassKeepTheInheritedTint() throws {
@@ -350,7 +377,7 @@ struct AdaptiveSurfaceRenderingTests {
     @Test(arguments: [ControlActiveState.key, .inactive])
     func prominentLabelsFollowTheWindowState(state: ControlActiveState) throws {
         // AppKit draws an inactive window's prominent bezel gray, so a white theme label would disappear.
-        let bitmap = try capture(Button("Save changes") {}.buttonStyle(.tw("button-primary")), state: state)
+        let bitmap = try capture(Button("Save changes") {}.buttonStyle(.tw("bezel-prominent tint-primary text-onPrimary rounded-md text-sm font-semibold")), state: state)
         var luminances: [Double] = []
         for y in (bitmap.pixelsHigh * 2 / 5)..<(bitmap.pixelsHigh * 3 / 5) {
             for x in (bitmap.pixelsWide / 4)..<(bitmap.pixelsWide * 3 / 4) {
@@ -367,7 +394,7 @@ struct AdaptiveSurfaceRenderingTests {
         }
     }
 
-    @Test(arguments: ["button-outline", "button-ghost", "button-secondary"])
+    @Test(arguments: ["bezel-bordered text-foreground", "bezel-borderless text-foreground", "bezel-prominent tint-muted text-foreground"])
     func disabledLabelsUseTheSystemDisabledColor(classes: String) throws {
         // A theme label color must not hide the native disabled appearance.
         func darkest(_ bitmap: NSBitmapImageRep) -> Double {
@@ -469,10 +496,10 @@ struct AdaptiveSurfaceRenderingTests {
             window.sendEvent(event)
         }
     }
-    private func capture<V: View>(_ view: V, state: ControlActiveState = .key) throws -> NSBitmapImageRep {
-        let (host, window) = host(view.padding(8).environment(\.controlActiveState, state).environment(\.colorScheme, .light))
+    private func capture<V: View>(_ view: V, state: ControlActiveState = .key, scheme: ColorScheme = .light) throws -> NSBitmapImageRep {
+        let (host, window) = host(view.padding(8).environment(\.controlActiveState, state).environment(\.colorScheme, scheme))
         defer { window.contentView = nil }
-        host.appearance = NSAppearance(named: .aqua)
+        host.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
         settle(host)
         let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
         host.cacheDisplay(in: host.bounds, to: bitmap)
