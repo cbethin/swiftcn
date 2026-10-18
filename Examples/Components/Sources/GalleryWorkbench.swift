@@ -27,7 +27,6 @@ struct ComponentGalleryView: View {
         #endif
         return .component(.button)
     }()
-    @State private var query = ""
     @State private var visibility: NavigationSplitViewVisibility = .all
     @State private var mobilePresented = false
     @State private var mode: GalleryWorkspaceMode = .split
@@ -37,7 +36,7 @@ struct ComponentGalleryView: View {
     var body: some View {
         CNSidebar(visibility: $visibility, mobilePresented: $mobilePresented,
                   collapsible: .offcanvas, width: 248, compactBreakpoint: 740) {
-            GalleryNavigation(selection: $selection, query: $query, searchFocused: $searchFocused,
+            GalleryNavigation(selection: $selection, searchFocused: $searchFocused,
                               onSearch: focusSearch)
                 .galleryChrome()
         } detail: {
@@ -144,7 +143,8 @@ struct ComponentGalleryView: View {
 
 private struct GalleryNavigation: View {
     @Binding var selection: CNGallerySelection
-    @Binding var query: String
+    @State private var results = GallerySearchResults()
+    @State private var searchReset = 0
     var searchFocused: FocusState<Bool>.Binding
     let onSearch: () -> Void
     @Environment(\.cnSidebarContext) private var sidebar
@@ -152,17 +152,8 @@ private struct GalleryNavigation: View {
     @Environment(\.twTheme) private var theme
     @Environment(\.colorScheme) private var scheme
 
-    private var search: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
-    private var matches: [CNComponentGallery] {
-        CNComponentGallery.allCases.filter { $0.matches(search) }
-    }
-    private var nativeMatches: [CNNativeComposition] {
-        CNNativeComposition.allCases.filter {
-            search.isEmpty || $0.title.localizedStandardContains(search) || "Native composition".localizedStandardContains(search)
-        }
-    }
     private var resultLabel: String {
-        let count = matches.count + nativeMatches.count
+        let count = results.count
         return count == 1 ? "1 result" : "\(count) results"
     }
 
@@ -180,55 +171,34 @@ private struct GalleryNavigation: View {
                 Spacer(minLength: 0)
                 if sidebar.isCompact { CNSidebarTrigger() }
             }.padding(.bottom, 16)
-            CNInputGroup("px-2 rounded-lg hover:border-foreground animate-smooth duration-120 motion-reduce:animate-none", focus: searchFocused) {
-                CNButton(variant: .ghost, size: .small, classes: "px-0", action: onSearch) {
-                    Image(systemName: "magnifyingglass").tw("text-mutedForeground")
-                }.keyboardShortcut("k", modifiers: .command).accessibilityLabel("Search components")
-                CNInputGroupField("Search components…", text: $query)
-                    .accessibilityIdentifier("gallery-search")
-                if !query.isEmpty {
-                    CNButton(variant: .ghost, size: .small, classes: "px-0", action: { query = "" }) {
-                        Image(systemName: "xmark.circle.fill").tw("text-mutedForeground")
-                    }.accessibilityLabel("Clear search")
-                }
-            }
-            .onSubmit {
-                if let first = matches.first { select(.component(first)) }
-                else if let first = nativeMatches.first { select(.native(first)) }
-            }
-            .onKeyPress(.escape) {
-                guard !query.isEmpty else { return .ignored }
-                query = ""; return .handled
-            }
-            Text(search.isEmpty ? "\(CNComponentGallery.allCases.count) components · \(CNNativeComposition.allCases.count) compositions"
+            GallerySearchField(focus: searchFocused, reset: searchReset, onSearch: onSearch,
+                               onFilter: filter, onSubmit: submit)
+            Text(results.query.isEmpty ? "\(CNComponentGallery.allCases.count) components · \(CNNativeComposition.allCases.count) compositions"
                  : resultLabel)
                 .font(.system(size: 10)).tw("text-mutedForeground").padding(.top, 4)
                 .accessibilityIdentifier("gallery-result-count")
         }
         CNSidebarContent("px-3 py-2") {
-            ForEach(GalleryCategory.allCases) { category in
-                let components = matches.filter { $0.category == category }
-                if !components.isEmpty {
-                    CNSidebarGroup {
-                        CNSidebarGroupLabel(LocalizedStringKey(category.rawValue), classes: "text-[10] font-semibold")
-                        CNSidebarMenu {
-                            ForEach(components) { component in
-                                CNSidebarMenuButton(component.title, systemImage: component.icon,
-                                    isSelected: selection == .component(component),
-                                    classes: "py-1 text-[12] rounded-lg",
-                                    action: { select(.component(component)) })
-                                    .background(selection == .component(component) ? theme.color(.accent, scheme: scheme) : .clear,
-                                                in: RoundedRectangle(cornerRadius: 8))
-                            }
+            ForEach(results.groups) { group in
+                CNSidebarGroup {
+                    CNSidebarGroupLabel(LocalizedStringKey(group.category.rawValue), classes: "text-[10] font-semibold")
+                    CNSidebarMenu {
+                        ForEach(group.components) { component in
+                            CNSidebarMenuButton(component.title, systemImage: component.icon,
+                                isSelected: selection == .component(component),
+                                classes: "py-1 text-[12] rounded-lg",
+                                action: { select(.component(component)) })
+                                .background(selection == .component(component) ? theme.color(.accent, scheme: scheme) : .clear,
+                                            in: RoundedRectangle(cornerRadius: 8))
                         }
                     }
                 }
             }
-            if !nativeMatches.isEmpty {
+            if !results.compositions.isEmpty {
                 CNSidebarGroup {
                     CNSidebarGroupLabel("Native composition", classes: "text-[10] font-semibold")
                     CNSidebarMenu {
-                        ForEach(nativeMatches) { composition in
+                        ForEach(results.compositions) { composition in
                             CNSidebarMenuButton(composition.title, systemImage: "macwindow",
                                 isSelected: selection == .native(composition), classes: "py-1 text-[12] rounded-lg",
                                 action: { select(.native(composition)) })
@@ -238,12 +208,15 @@ private struct GalleryNavigation: View {
                     }
                 }
             }
-            if matches.isEmpty && nativeMatches.isEmpty {
+            if results.count == 0 {
                 CNEmpty("p-3 border-0") {
                     Image(systemName: "magnifyingglass").tw("text-mutedForeground")
                     CNEmptyTitle("No results", classes: "text-sm")
                     CNEmptyDescription("Try a component name.")
-                    CNButton("Clear search", variant: .outline, size: .small, action: { query = "" })
+                    CNButton("Clear search", variant: .outline, size: .small, action: {
+                        filter("")
+                        searchReset += 1
+                    })
                 }
             }
         }
@@ -259,6 +232,19 @@ private struct GalleryNavigation: View {
                 }.tw("text-xs text-mutedForeground")
             }
         }
+    }
+
+    private func filter(_ query: String) {
+        guard query != results.query else { return }
+        results = GallerySearchResults(query)
+    }
+
+    private func submit(_ draft: String) {
+        // Return uses the current draft even if its debounce has not fired.
+        let current = GallerySearchResults(draft)
+        results = current
+        if let first = current.components.first { select(.component(first)) }
+        else if let first = current.compositions.first { select(.native(first)) }
     }
 
     private func select(_ destination: CNGallerySelection) {

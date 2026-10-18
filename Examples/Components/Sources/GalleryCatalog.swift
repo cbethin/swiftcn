@@ -83,8 +83,12 @@ extension CNComponentGallery {
     func matches(_ query: String) -> Bool {
         query.isEmpty || title.localizedStandardContains(query)
             || category.rawValue.localizedStandardContains(query)
-            || CNGallerySelection.component(self).symbol.localizedStandardContains(query)
+            || (Self.searchSymbols[rawValue]?.localizedStandardContains(query) ?? false)
     }
+
+    // Extract source-derived names once, rather than parsing every example while the user types.
+    private static let searchSymbols: [String: String] = Dictionary(uniqueKeysWithValues:
+        allCases.map { ($0.rawValue, CNGallerySelection.component($0).symbol) })
 
     var summary: String {
         switch self {
