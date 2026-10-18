@@ -1,3 +1,4 @@
+import Dispatch
 import SwiftUI
 import Testing
 @testable import SwiftCN
@@ -64,6 +65,33 @@ struct ExpansionCacheTests {
         for width in [CGFloat(120), 240, 360] {
             let classes: TWClasses = "p-4 w-[\(width)]"
             #expect(resolve(.classes(classes)).width == width)
+        }
+    }
+
+    @Test func customUtilitiesRefreshAfterThemeMutation() {
+        let rules = TWGlobalRules(utilities: ["cache-gap": TWUtility { argument, theme in
+            guard let units = argument.number else { return nil }
+            return .paddingPoints(theme.space(CGFloat(units)))
+        }])
+        var theme = TWTheme.standard
+        #expect(resolve("cache-gap-[2]", rules: rules, theme: theme).padding.top == 8)
+        theme.spacingUnit = 7
+        #expect(resolve("cache-gap-[2]", rules: rules, theme: theme).padding.top == 14)
+    }
+
+    @Test func cachedNativeClassesStillValidateTheirSourceTarget() throws {
+        let rules = TWGlobalRules(modifiers: ["cache-bold": .text { text, active in active ? text.bold() : text }])
+        _ = try TWStyle.parse("cache-bold", rules: rules, target: .text)
+        #expect(throws: TWClassError.unsupportedTarget("cache-bold", expected: .text)) {
+            try TWStyle.parse("cache-bold", rules: rules, target: .view)
+        }
+    }
+
+    @Test func concurrentResolutionsKeepTheirOwnState() {
+        DispatchQueue.concurrentPerform(iterations: 1000) { index in
+            let state = TWState(isHovered: index.isMultiple(of: 2))
+            let result = TWStyleResolver.resolve("hover:p-4 p-2", theme: .standard, scheme: .light, state: state)
+            #expect(result.padding.top == (state.isHovered ? 16 : 8))
         }
     }
 
