@@ -160,10 +160,7 @@ private struct GalleryNavigation: View {
     var body: some View {
         CNSidebarHeader("p-5 pb-3") {
             HStack(spacing: 10) {
-                Image(systemName: "square.stack.3d.up.fill")
-                    .font(.system(size: 18, weight: .medium))
-                    .frame(width: 36, height: 36).tw("bg-primary text-onPrimary rounded-lg")
-                    .accessibilityHidden(true)
+                brandMark.accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("SwiftCN").font(.system(size: 18, weight: .semibold)).tracking(-0.5)
                     Text("Native components").font(.system(size: 11)).tw("text-mutedForeground")
@@ -232,6 +229,25 @@ private struct GalleryNavigation: View {
                 }.tw("text-xs text-mutedForeground")
             }
         }
+    }
+
+    @ViewBuilder private var brandMark: some View {
+        #if os(macOS)
+        if Bundle.main.url(forResource: "SwiftCNAppIcon", withExtension: "icns") != nil {
+            Image(nsImage: NSApplication.shared.applicationIconImage).resizable().scaledToFit()
+                .frame(width: 44, height: 44)
+        } else {
+            fallbackMark
+        }
+        #else
+        fallbackMark
+        #endif
+    }
+
+    private var fallbackMark: some View {
+        Image(systemName: "square.stack.3d.up.fill")
+            .font(.system(size: 18, weight: .medium))
+            .frame(width: 36, height: 36).tw("bg-primary text-onPrimary rounded-lg")
     }
 
     private func filter(_ query: String) {

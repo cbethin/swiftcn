@@ -10,6 +10,10 @@ import AppKit
         #if os(macOS)
         // Native panels inherit the app appearance before SwiftUI installs their content.
         NSApplication.shared.appearance = NSAppearance(named: .aqua)
+        if let iconURL = Bundle.main.url(forResource: "SwiftCNAppIcon", withExtension: "icns"),
+           let icon = NSImage(contentsOf: iconURL) {
+            NSApplication.shared.applicationIconImage = icon
+        }
         #endif
     }
     var body: some Scene {

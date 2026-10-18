@@ -32,8 +32,12 @@ targets:
   GalleryMac:
     templates: [Gallery]
     platform: macOS
+    sources:
+      - path: Resources/SwiftCNAppIcon.icns
+        buildPhase: resources
     settings:
       base:
+        INFOPLIST_KEY_CFBundleIconFile: SwiftCNAppIcon.icns
         ENABLE_APP_SANDBOX: NO
         CODE_SIGNING_ALLOWED: YES
         CODE_SIGN_IDENTITY: "-"
