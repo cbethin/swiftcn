@@ -78,6 +78,28 @@ struct WindowChromeTests {
         #expect(window.styleMask == originalMask)
     }
 
+    @Test func radiusAndHoverChangesKeepTheNativeEditorAndItsDraft() throws {
+        let model = AutomaticContainerModel()
+        let host = NSHostingView(rootView: AutomaticContainerEditor(model: model))
+        host.frame = CGRect(x: 0, y: 0, width: 300, height: 100)
+        let window = NSWindow(contentRect: host.bounds, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = host
+        defer { window.contentView = nil }
+        settle(host)
+        let editor = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
+        editor.stringValue = "Keep this edit"
+        editor.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: editor))
+        for (classes, hover) in [("p-1 rounded-xl", false), ("p-1 rounded-none hover:rounded-xl", true),
+                                  ("p-1 rounded-none hover:rounded-xl", false), ("p-1 rounded-container", false),
+                                  ("p-1", false)] {
+            model.classes = classes
+            model.hover = hover
+            settle(host)
+            #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)
+            #expect(editor.stringValue == "Keep this edit")
+        }
+    }
+
     private func settle(_ view: NSView) {
         view.layoutSubtreeIfNeeded()
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
@@ -135,5 +157,19 @@ private struct WindowChromeProbe: NSViewRepresentable {
         return view
     }
     func updateNSView(_ view: NSView, context: Context) {}
+}
+@MainActor private final class AutomaticContainerModel: ObservableObject {
+    @Published var classes = "p-1"
+    @Published var hover = false
+}
+
+private struct AutomaticContainerEditor: View {
+    @ObservedObject var model: AutomaticContainerModel
+    @State private var draft = "A working draft"
+
+    var body: some View {
+        VStack { TextField("Draft", text: $draft).textFieldStyle(.plain) }
+            .tw(model.classes, state: TWState(isHovered: model.hover))
+    }
 }
 #endif

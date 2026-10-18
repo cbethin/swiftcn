@@ -159,7 +159,7 @@ public struct SwiftCNLinter {
         }
 
         // Styled surfaces, containers, animation scopes, and named styles.
-        if token.isPunctuation("."), let name = at(1)?.identifier, ["tw", "twContainer", "twAnimation", "classes"].contains(name),
+        if token.isPunctuation("."), let name = at(1)?.identifier, ["tw", "twAnimation", "classes"].contains(name),
            at(2)?.isPunctuation("(") == true, let literal = at(3)?.literal, isWholeArgument(3) {
             return [literal]
         }

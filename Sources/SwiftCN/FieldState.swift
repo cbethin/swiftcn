@@ -18,6 +18,6 @@ public struct TWFieldControlModifier: ViewModifier {
     }
 
     public func body(content: Content) -> some View {
-        content.twContainer(TWStyle(style, isInvalid ? .classes("field-invalid") : TWStyle()), state: state)
+        content.tw(TWStyle(style, isInvalid ? .classes("field-invalid") : TWStyle()), state: state)
     }
 }

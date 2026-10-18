@@ -81,7 +81,7 @@ struct GallerySettingsView: View {
                     }.tw("p-1 bg-muted rounded-lg")
                 }.padding(16)
                 CNSeparator()
-                CNSwitch(isOn: $previewGrid, classes: "cn-tint-[primary]") {
+                CNSwitch(isOn: $previewGrid) {
                     settingLabel("Preview grid", detail: "A dot grid behind your live examples.")
                 }
                 .accessibilityLabel("Preview grid").accessibilityIdentifier("gallery-preview-grid")

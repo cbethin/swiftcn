@@ -16,6 +16,7 @@ struct GalleryCodePanel: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
+        let document = GalleryCodeDocument.cached(source)
         CNCard("shadow-none rounded-xl") {
             HStack(spacing: 8) {
                 Image(systemName: "swift").foregroundStyle(.orange).accessibilityHidden(true)
@@ -33,12 +34,12 @@ struct GalleryCodePanel: View {
             CNSeparator()
             ScrollView([.horizontal, .vertical]) {
                 HStack(alignment: .top, spacing: 18) {
-                    Text(lineNumbers)
+                    Text(document.lineNumbers)
                         .foregroundStyle(.secondary.opacity(0.5))
                         .multilineTextAlignment(.trailing)
                         .accessibilityHidden(true)
                         .textSelection(.disabled)
-                    Text(GallerySwiftSyntax.highlight(source, dark: scheme == .dark))
+                    Text(document.highlighted(dark: scheme == .dark))
                         .textSelection(.enabled)
                         .fixedSize(horizontal: true, vertical: true)
                         .accessibilityLabel(source)
@@ -50,7 +51,7 @@ struct GalleryCodePanel: View {
             .tw("bg-muted")
             CNSeparator()
             HStack(spacing: 6) {
-                Text("\(source.components(separatedBy: "\n").count) lines · Swift")
+                Text("\(document.lineCount) lines · Swift")
                 Spacer()
                 Text(copied ? "Copied to clipboard" : "Complete example")
             }.font(.system(size: 10)).tw("text-mutedForeground")
@@ -58,10 +59,6 @@ struct GalleryCodePanel: View {
         }
         .onDisappear { copyReset?.cancel() }
         .onChange(of: source) { _, _ in copyReset?.cancel(); copied = false }
-    }
-
-    private var lineNumbers: String {
-        (1...max(1, source.components(separatedBy: "\n").count)).map(String.init).joined(separator: "\n")
     }
 
     private func copy() {
@@ -81,12 +78,51 @@ struct GalleryCodePanel: View {
     }
 }
 
+/// Immutable source metadata and lazily cached color variants, shared across repeated renders.
+@MainActor
+final class GalleryCodeDocument {
+    private static let cache: NSCache<NSString, GalleryCodeDocument> = {
+        let cache = NSCache<NSString, GalleryCodeDocument>()
+        cache.countLimit = 96
+        return cache
+    }()
+    let source: String
+    let lineCount: Int
+    let lineNumbers: String
+    private var variants: [Bool: AttributedString] = [:]
+
+    static func cached(_ source: String) -> GalleryCodeDocument {
+        let key = source as NSString
+        if let document = cache.object(forKey: key) { return document }
+        let document = GalleryCodeDocument(source)
+        cache.setObject(document, forKey: key)
+        return document
+    }
+
+    private init(_ source: String) {
+        self.source = source
+        lineCount = source.components(separatedBy: "\n").count
+        lineNumbers = (1...max(1, lineCount)).map(String.init).joined(separator: "\n")
+    }
+
+    func highlighted(dark: Bool) -> AttributedString {
+        if let cached = variants[dark] { return cached }
+        let result = GallerySwiftSyntax.render(source, dark: dark)
+        variants[dark] = result
+        return result
+    }
+}
+
 // Lightweight display highlighting for complete examples; copied source stays unchanged.
 enum GallerySwiftSyntax {
     private static let tokens = try! NSRegularExpression(pattern:
         #"//[^\n]*|"(?:\\.|[^"\\])*"|\b(?:import|struct|class|enum|var|let|private|public|static|func|if|else|return|some|case|switch|true|false|nil|in)\b|@[A-Za-z]+|\b(?:CN[A-Za-z0-9_]+|View|Text|VStack|HStack|Spacer|Image|Binding|String|Int|Bool)\b"#)
 
-    static func highlight(_ source: String, dark: Bool) -> AttributedString {
+    @MainActor static func highlight(_ source: String, dark: Bool) -> AttributedString {
+        GalleryCodeDocument.cached(source).highlighted(dark: dark)
+    }
+
+    fileprivate static func render(_ source: String, dark: Bool) -> AttributedString {
         var result = AttributedString(source)
         for match in tokens.matches(in: source, range: NSRange(source.startIndex..., in: source)) {
             guard let stringRange = Range(match.range, in: source),

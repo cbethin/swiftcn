@@ -159,9 +159,6 @@ private struct GalleryNavigation: View {
     let onSearch: () -> Void
     @Environment(\.cnSidebarContext) private var sidebar
     @Environment(\.openURL) private var openURL
-    @Environment(\.twTheme) private var theme
-    @Environment(\.colorScheme) private var scheme
-
     private var resultLabel: String {
         let count = results.count
         return count == 1 ? "1 result" : "\(count) results"
@@ -192,12 +189,9 @@ private struct GalleryNavigation: View {
                     CNSidebarGroupLabel(LocalizedStringKey(group.category.rawValue), classes: "text-[10] font-semibold")
                     CNSidebarMenu {
                         ForEach(group.components) { component in
-                            CNSidebarMenuButton(component.title, systemImage: component.icon,
-                                isSelected: selection == .component(component),
-                                classes: "py-1 text-[12] rounded-lg",
-                                action: { select(.component(component)) })
-                                .background(selection == .component(component) ? theme.color(.accent, scheme: scheme) : .clear,
-                                            in: RoundedRectangle(cornerRadius: 8))
+                            GalleryNavigationRow(destination: .component(component), icon: component.icon,
+                                isSelected: selection == .component(component), selection: $selection,
+                                searchFocused: searchFocused).equatable()
                         }
                     }
                 }
@@ -207,11 +201,9 @@ private struct GalleryNavigation: View {
                     CNSidebarGroupLabel("Native composition", classes: "text-[10] font-semibold")
                     CNSidebarMenu {
                         ForEach(results.compositions) { composition in
-                            CNSidebarMenuButton(composition.title, systemImage: "macwindow",
-                                isSelected: selection == .native(composition), classes: "py-1 text-[12] rounded-lg",
-                                action: { select(.native(composition)) })
-                                .background(selection == .native(composition) ? theme.color(.accent, scheme: scheme) : .clear,
-                                            in: RoundedRectangle(cornerRadius: 8))
+                            GalleryNavigationRow(destination: .native(composition), icon: "macwindow",
+                                isSelected: selection == .native(composition), selection: $selection,
+                                searchFocused: searchFocused).equatable()
                         }
                     }
                 }
@@ -281,6 +273,27 @@ private struct GalleryNavigation: View {
         selection = destination
         searchFocused.wrappedValue = false
         if sidebar.isCompact { sidebar.dismiss() }
+    }
+}
+
+/// Only selection changes for the old and new rows need to rebuild their styled controls.
+private struct GalleryNavigationRow: View, Equatable {
+    let destination: CNGallerySelection
+    let icon: String
+    let isSelected: Bool
+    @Binding var selection: CNGallerySelection
+    var searchFocused: FocusState<Bool>.Binding
+
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.destination == rhs.destination && lhs.icon == rhs.icon && lhs.isSelected == rhs.isSelected
+    }
+
+    var body: some View {
+        CNSidebarMenuButton(destination.title, systemImage: icon, isSelected: isSelected,
+                            classes: "py-1 text-[12] rounded-lg", action: {
+            selection = destination
+            searchFocused.wrappedValue = false
+        })
     }
 }
 

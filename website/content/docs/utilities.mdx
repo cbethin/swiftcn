@@ -75,11 +75,12 @@ Use `HStack`, `VStack`, `Grid`, layout protocols, and native modifiers for layou
 
 ## Nested corners
 
-`CNCard` and `CNInputGroup` publish their outline as a native SwiftUI container shape.
+Rounded `.tw(...)` surfaces supply their outline to nested `rounded-container` artwork automatically.
+This includes `CNCard`, `CNInputGroup`, and custom styled parents.
 Use `rounded-container` (or `.roundedContainer`) on an inset fill or border to follow that outline.
 SwiftUI adjusts the corners for the child's position and padding, including right-to-left layouts.
-Use `.twContainer(...)` for a custom styled parent instead of `.tw(...)` to publish its outline.
-Ordinary text wrappers keep the enclosing container shape.
+Ordinary text and layout wrappers forward the enclosing shape automatically.
+Radius changes and hover states keep the same descendant views.
 Explicit radius classes still override `rounded-container` in their usual order.
 
 `CNInputGroupButton` supplies a square native button with a container-relative hover surface.

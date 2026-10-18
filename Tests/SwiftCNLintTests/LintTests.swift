@@ -44,13 +44,13 @@ struct LintTests {
         Button("Save") {}.buttonStyle(.tw("tint-[#ff5a36] glass-prominent control-xl rounded-full"))
         VStack {}.tw("p-7 surface-floating rounded-[44] animate-bouncy duration-200 shared-[cover]/hero")
         VStack {}.tw("glass rounded-t-[28] rounded-b-lg motion-reduce:pressed:scale-[1] motion-safe:pressed:scale-[0.94]")
-        VStack {}.twContainer("rounded-xl p-1 bg-surface")
+        VStack {}.tw("rounded-xl p-1 bg-surface")
         Text("Inset").tw("rounded-container hover:bg-accent")
         """).isEmpty)
     }
 
-    @Test func containerClassesReceiveTheSameTypoChecksAsOtherSurfaces() {
-        let diagnostics = lint(#"VStack {}.twContainer("rounded-contaner")"#)
+    @Test func containerCornerClassReceivesTypoSuggestions() {
+        let diagnostics = lint(#"VStack {}.tw("rounded-contaner")"#)
         #expect(diagnostics.count == 1)
         #expect(diagnostics.first?.suggestion == "rounded-container")
     }

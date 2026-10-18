@@ -36,7 +36,7 @@ struct ContainerShapeTests {
 @Suite("Rendered container corners", .serialized)
 @MainActor
 struct ContainerShapeRenderingTests {
-    @Test(arguments: ["card", "field", "custom"], [LayoutDirection.leftToRight, .rightToLeft])
+    @Test(arguments: ["card", "field", "custom", "hover", "disabled"], [LayoutDirection.leftToRight, .rightToLeft])
     func insetFillFollowsTheParentThemeAndPlacement(parent: String, direction: LayoutDirection) throws {
         for radius: CGFloat in [12, 24] {
             var theme = TWTheme.standard
@@ -52,9 +52,15 @@ struct ContainerShapeRenderingTests {
                     CNInputGroup("p-1 rounded-xl bg-[#ff0000] border-0") {
                         Spacer(minLength: 0); actualChild
                     }
+                } else if parent == "hover" {
+                    HStack(spacing: 8) { Spacer(minLength: 0); actualChild }
+                        .tw("p-1 rounded-none hover:rounded-xl bg-[#ff0000]", state: TWState(isHovered: true))
+                } else if parent == "disabled" {
+                    HStack(spacing: 8) { Spacer(minLength: 0); actualChild }
+                        .tw("p-1 rounded-md disabled:rounded-xl bg-[#ff0000]").disabled(true)
                 } else {
                     HStack(spacing: 8) { Spacer(minLength: 0); actualChild }
-                        .twContainer("p-1 rounded-xl bg-[#ff0000]")
+                        .tw("p-1 rounded-xl bg-[#ff0000]")
                 }
             }.frame(width: 160).twTheme(theme).environment(\.layoutDirection, direction)
             let expected = HStack(spacing: 8) {
@@ -68,6 +74,20 @@ struct ContainerShapeRenderingTests {
                 .environment(\.layoutDirection, direction)
             #expect(try pixels(actual) == pixels(expected))
         }
+    }
+
+    @Test func unroundedStyledWrappersPreserveRealCurvedCorners() throws {
+        let native = Color.clear.frame(width: 32, height: 32)
+            .background { ContainerRelativeShape().fill(Color(.sRGB, red: 1, green: 0, blue: 0, opacity: 1)) }
+            .padding(4).containerShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        let forwarded = Color.clear.frame(width: 32, height: 32)
+            .tw("rounded-container bg-[#ff0000]")
+            .tw("text-mutedForeground")
+            .tw("p-1")
+            .tw("rounded-[18]")
+        let rectangle = Color(.sRGB, red: 1, green: 0, blue: 0, opacity: 1).frame(width: 32, height: 32).padding(4)
+        #expect(try pixels(native) != pixels(rectangle))
+        #expect(try pixels(native) == pixels(forwarded))
     }
 
     private func pixels<V: View>(_ view: V) throws -> Data {

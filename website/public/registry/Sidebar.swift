@@ -140,7 +140,7 @@ public struct CNSidebarContent<Content: View>: View {
     private let content: Content
     public init(_ classes: TWClasses = "", @ViewBuilder content: () -> Content) { self.classes = classes; self.content = content() }
     public var body: some View {
-        ScrollView { VStack(alignment: .leading, spacing: 16) { content }.tw(cn("sidebar-content", classes)) }
+        ScrollView { LazyVStack(alignment: .leading, spacing: 16) { content }.tw(cn("sidebar-content", classes)) }
             .frame(maxHeight: .infinity)
     }
 }

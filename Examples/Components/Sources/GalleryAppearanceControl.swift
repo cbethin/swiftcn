@@ -27,14 +27,13 @@ struct GalleryAppearanceControl: View {
         .animation(reduceMotion ? nil : .snappy(duration: 0.2, extraBounce: 0), value: dark)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Appearance")
-        .twRules { rules in
-            // Keep the native CNButton action and focus; draw a quiet surface around the selected icon.
-            rules.named["button-ghost"] = .classes(
-                "p-0 rounded-full hover:opacity-80 pressed:opacity-60 focus:border-ring " +
-                "disabled:opacity-40 animate-none"
-            )
-        }
+        .twRules(Self.rules)
     }
+
+    private static let rules = TWGlobalRules(named: [
+        "button-ghost": .classes("p-0 rounded-full hover:opacity-80 pressed:opacity-60 focus:border-ring " +
+                                 "disabled:opacity-40 animate-none")
+    ])
 
     private func appearanceButton(isDark: Bool) -> some View {
         let selected = dark == isDark

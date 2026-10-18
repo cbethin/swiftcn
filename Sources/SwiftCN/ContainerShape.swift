@@ -1,34 +1,37 @@
 import SwiftUI
 
-extension View {
-    /// Style a container and publish its outline to `rounded-container` descendants.
-    public func twContainer(_ classes: TWClasses, state: TWState = TWState()) -> some View {
-        tw(classes, state: state).modifier(TWContainerShapeModifier(style: .classes(classes), state: state))
-    }
-    @_disfavoredOverload public func twContainer(_ classes: String, state: TWState = TWState()) -> some View {
-        twContainer(TWClasses(classes), state: state)
-    }
-    public func twContainer(_ styles: TWStyle..., state: TWState = TWState()) -> some View {
-        tw(styles, state: state).modifier(TWContainerShapeModifier(style: TWStyle(styles), state: state))
-    }
+struct TWContainerShapeContext {
+    let space: Namespace.ID
+    let outline: TWSurfaceShape
 }
 
-/// Publish a styled container's outline to native ContainerRelativeShape descendants.
-/// Container boundaries opt in explicitly so text wrappers do not reset the enclosing shape.
-struct TWContainerShapeModifier: ViewModifier {
-    let style: TWStyle
-    var state = TWState()
-    @Environment(\.twTheme) private var theme
-    @Environment(\.twRules) private var rules
-    @Environment(\.colorScheme) private var scheme
+extension EnvironmentValues {
+    @Entry var twContainerShapeContext: TWContainerShapeContext? = nil
+}
 
-    func body(content: Content) -> some View {
-        let appearance = TWStyleResolver.resolve(TWStyle(rules.view, style), theme: theme,
-                                                scheme: scheme, state: state, globalRules: rules)
-        if appearance.containerRelativeRadius {
-            content
-        } else {
-            content.containerShape(appearance.outline)
-        }
+/// Resolve inset artwork in the nearest rounded surface's coordinate space.
+/// Only decoration uses the geometry reader; editor layout and identity stay intact.
+struct TWContainerRelativeSurface<Content: View>: View {
+    @Environment(\.twContainerShapeContext) private var container
+    private let content: Content
+
+    init(@ViewBuilder content: () -> Content) { self.content = content() }
+
+    var body: some View {
+        GeometryReader { geometry in
+            if let container, let bounds = geometry.bounds(of: .named(container.space)) {
+                // Recreate the enclosing native shape around the artwork. SwiftUI then
+                // computes the inset corners, including asymmetric padding and placement.
+                content.frame(width: geometry.size.width, height: geometry.size.height)
+                    .padding(.leading, -bounds.minX).padding(.top, -bounds.minY)
+                    .frame(width: bounds.width, height: bounds.height, alignment: .topLeading)
+                    .containerShape(container.outline)
+                    .offset(x: bounds.minX, y: bounds.minY)
+                    .frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
+                    .environment(\.layoutDirection, .leftToRight)
+            } else {
+                content
+            }
+        }.allowsHitTesting(false).accessibilityHidden(true)
     }
 }

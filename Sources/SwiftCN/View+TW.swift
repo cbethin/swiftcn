@@ -46,6 +46,7 @@ struct TWModifier: ViewModifier {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.twGroups) private var groups
+    @Namespace private var containerNamespace
     @Namespace private var groupNamespace
     @State private var isHovered = false
     /// Once a text color installs the foreground modifier, it stays, so removing the color keeps child identity.
@@ -82,6 +83,17 @@ struct TWModifier: ViewModifier {
             .modifier(phase(.content, appearance: appearance))
             .modifier(phase(.layout, appearance: appearance))
             .modifier(phase(.decoration, appearance: appearance))
+            .coordinateSpace(name: containerNamespace)
+            .transformEnvironment(\.twContainerShapeContext) { inherited in
+                if decorates && !appearance.containerRelativeRadius {
+                    if appearance.hasRadius {
+                        inherited = TWContainerShapeContext(space: containerNamespace, outline: appearance.outline)
+                    } else if appearance.surface != nil {
+                        inherited = TWContainerShapeContext(space: containerNamespace,
+                                                            outline: TWSurfaceShape(top: 10_000, bottom: 10_000))
+                    }
+                }
+            }
             .modifier(phase(.effects, appearance: appearance))
             .transaction(value: animationValue) { transaction in
                 if animationValue != nil {
@@ -194,7 +206,7 @@ struct TWDecorationModifier: ViewModifier {
     func body(content: Content) -> some View {
         content.background {
                 if appearance.containerRelativeRadius {
-                    fill(ContainerRelativeShape())
+                    TWContainerRelativeSurface { fill(ContainerRelativeShape()) }
                 } else {
                     fill(appearance.outline)
                 }
@@ -202,7 +214,9 @@ struct TWDecorationModifier: ViewModifier {
             .overlay {
                 Group {
                     if appearance.containerRelativeRadius {
-                        ContainerRelativeShape().strokeBorder(appearance.border ?? .clear, lineWidth: appearance.borderWidth)
+                        TWContainerRelativeSurface {
+                            ContainerRelativeShape().strokeBorder(appearance.border ?? .clear, lineWidth: appearance.borderWidth)
+                        }
                     } else {
                         appearance.outline.strokeBorder(appearance.border ?? .clear, lineWidth: appearance.borderWidth)
                     }

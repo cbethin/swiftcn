@@ -5,18 +5,19 @@ extension View {
     /// The gallery's chrome uses editable SwiftCN recipes. Preview controls keep their original recipes.
     @ViewBuilder func galleryChrome() -> some View {
         #if os(macOS)
-        twRules { rules in
-            rules.named["button-ghost"] = GalleryInteractionStyle.button
-            rules.named["sidebar-menu-button"] = GalleryInteractionStyle.sidebar
-            rules.named["sidebar-menu-selected"] = GalleryInteractionStyle.selection
-        }
+        twRules(GalleryInteractionStyle.rules)
         #else
         self
         #endif
     }
 }
 
-private enum GalleryInteractionStyle {
+enum GalleryInteractionStyle {
+    // A stable revision keeps the shared class-expansion cache warm across updates.
+    static let rules = TWGlobalRules(named: [
+        "button-ghost": button, "sidebar-menu-button": sidebar, "sidebar-menu-selected": selection
+    ])
+
     // A native Button still owns activation, keyboard focus, cancellation, and disabled behavior.
     // A plain SwiftCN surface lets hover and press decorate the complete hit area on macOS.
     static let button = TWStyle(

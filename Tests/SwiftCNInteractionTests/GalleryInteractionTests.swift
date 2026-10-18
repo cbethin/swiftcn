@@ -185,6 +185,7 @@ final class GalleryInteractionTests: XCTestCase {
         XCTAssertEqual(app.windows.containing(.button, identifier: "Restore defaults").count, 1)
         app.terminate()
         app.launch()
+        ensureGalleryWindow(app)
         let gallery = app.windows.containing(.button, identifier: "Preview mode").firstMatch
         XCTAssertTrue(gallery.buttons["Preview mode"].isSelected)
         XCTAssertTrue(gallery.buttons["Use dark appearance"].isSelected)
@@ -312,7 +313,21 @@ final class GalleryInteractionTests: XCTestCase {
         if example == "date_picker" { app.launchArguments += ["-AppleLocale", "en_US"] }
         app.launchEnvironment["SWIFTCN_UI_EXAMPLE"] = example
         app.launch()
+        ensureGalleryWindow(app)
         return app
+    }
+
+    @MainActor private func ensureGalleryWindow(_ app: XCUIApplication) {
+        #if os(macOS)
+        // A terminated SwiftUI app can restore a session with no gallery window.
+        // Open the normal scene through its public menu before checking controls.
+        let gallery = app.windows.containing(.button, identifier: "Preview mode").firstMatch
+        if !gallery.waitForExistence(timeout: 5) {
+            app.menuBars.menuBarItems["File"].click()
+            app.menuItems["New SwiftCN Component Gallery Window"].click()
+            XCTAssertTrue(gallery.waitForExistence(timeout: 5))
+        }
+        #endif
     }
 
     /// macOS exposes Text as a value; iOS exposes it as a label.
