@@ -95,26 +95,31 @@ struct EdgeRadiusRenderingTests {
     private var red: Color { Color(.sRGB, red: 1, green: 0, blue: 0, opacity: 1) }
     private var blue: Color { Color(.sRGB, red: 0, green: 0, blue: 1, opacity: 1) }
 
-    @Test(arguments: ["", "surface-solid"])
-    func backgroundsAndBordersUseBothEdges(role: String) throws {
+    @Test(arguments: ["", "surface-solid"], [LayoutDirection.leftToRight, .rightToLeft])
+    func backgroundsAndBordersUseBothEdges(role: String, direction: LayoutDirection) throws {
         let shape = UnevenRoundedRectangle(topLeadingRadius: 28, bottomLeadingRadius: 12,
                                           bottomTrailingRadius: 12, topTrailingRadius: 28, style: .continuous)
+        // Equal leading/trailing corners keep the native LTR raster in either layout direction.
         let expected = Color.clear.frame(width: 200, height: 100)
-            .background(shape.fill(red))
-            .overlay(shape.strokeBorder(blue, lineWidth: 2))
+            .background(shape.fill(red).environment(\.layoutDirection, .leftToRight))
+            .overlay(shape.strokeBorder(blue, lineWidth: 2).environment(\.layoutDirection, .leftToRight))
+            .environment(\.layoutDirection, direction)
         let actual = Color.clear.frame(width: 200, height: 100)
             .tw("bg-[#ff0000] border-[#0000ff] border-[2] rounded-t-[28] rounded-b-[12] \(role)")
+            .environment(\.layoutDirection, direction)
         #expect(try pixels(actual) == pixels(expected))
     }
 
-    @Test(arguments: ["", "surface-solid"])
-    func equalEdgesRenderTheirSpecifiedRadius(role: String) throws {
+    @Test(arguments: ["", "surface-solid"], [LayoutDirection.leftToRight, .rightToLeft])
+    func equalEdgesRenderTheirSpecifiedRadius(role: String, direction: LayoutDirection) throws {
         let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
         let expected = Color.clear.frame(width: 200, height: 100)
             .background(shape.fill(red))
             .overlay(shape.strokeBorder(blue, lineWidth: 2))
+            .environment(\.layoutDirection, direction)
         let actual = Color.clear.frame(width: 200, height: 100)
             .tw("bg-[#ff0000] border-[#0000ff] border-[2] rounded-t-[14] rounded-b-[14] \(role)")
+            .environment(\.layoutDirection, direction)
         #expect(try pixels(actual) == pixels(expected))
     }
 

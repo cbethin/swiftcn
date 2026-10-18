@@ -267,6 +267,9 @@ struct TWSurfaceShape: InsettableShape {
     var bottom: CGFloat
     var inset: CGFloat = 0
 
+    // Both horizontal corners are equal. Match RoundedRectangle without mirroring its raster in RTL.
+    var layoutDirectionBehavior: LayoutDirectionBehavior { .fixed }
+
     var animatableData: AnimatablePair<AnimatablePair<CGFloat, CGFloat>, CGFloat> {
         get { AnimatablePair(AnimatablePair(top, bottom), inset) }
         set {
