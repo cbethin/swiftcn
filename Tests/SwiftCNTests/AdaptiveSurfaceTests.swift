@@ -355,13 +355,27 @@ struct AdaptiveSurfaceRenderingTests {
         #expect(local.red > 4 && local.green == 0, "A tint class still wins: \(local)")
     }
 
-    @Test func toggleSelectionChangesOnlyTheTintAndKeepsTheLabel() {
+    @Test func toggleSelectionKeepsTheButtonAndItsLabel() {
         let model = SurfaceModel()
         let (host, window) = host(ToggleButtonProbe(model: model))
         defer { window.contentView = nil }
         for _ in 0..<4 { model.expanded.toggle(); settle(host) }
         #expect(!model.identities.isEmpty)
         #expect(Set(model.identities).count == 1, "Selecting a toggle must not replace its native button.")
+    }
+
+    @Test(arguments: [ColorScheme.light, .dark])
+    func toggleSelectionChangesTheSurfaceWithoutChangingSize(scheme: ColorScheme) throws {
+        let off = try capture(CNToggle("Bold", isOn: .constant(false)), scheme: scheme)
+        let on = try capture(CNToggle("Bold", isOn: .constant(true)), scheme: scheme)
+        #expect(off.size == on.size)
+        #expect(on.size.height >= 36 + 16)
+        // Empty space inside the selected surface gains a fill; the off state stays transparent.
+        let x = on.pixelsWide / 2, y = 11 * on.pixelsHigh / Int(on.size.height)
+        let offPixel = try #require(off.colorAt(x: x, y: y))
+        let onPixel = try #require(on.colorAt(x: x, y: y))
+        #expect(offPixel.alphaComponent < 0.05)
+        #expect(onPixel.alphaComponent > 0.95)
     }
 
     @Test func stateTintsKeepTheNativeButtonAndItsLabel() {

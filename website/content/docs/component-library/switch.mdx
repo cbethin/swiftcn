@@ -174,8 +174,19 @@ public struct CNButtonToggleStyle: ToggleStyle {
     private let classes: TWClasses
     public init(classes: TWClasses = "") { self.classes = classes }
     public func makeBody(configuration: Configuration) -> some View {
+        CNButtonToggleBody(configuration: configuration, classes: classes)
+    }
+}
+private struct CNButtonToggleBody: View {
+    let configuration: ToggleStyleConfiguration
+    let classes: TWClasses
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
         Button { configuration.isOn.toggle() } label: { configuration.label }
-            .buttonStyle(.tw(cn("bezel-prominent rounded-md text-sm font-semibold", configuration.isOn ? "toggle-selected" : "toggle-unselected", classes)))
+            .focused($isFocused)
+            .buttonStyle(.tw(cn("toggle-button", configuration.isOn ? "toggle-selected" : "toggle-unselected", classes),
+                             state: .init(isFocused: isFocused)))
             .accessibilityValue(configuration.isOn ? Text("On") : Text("Off"))
             .accessibilityAddTraits(configuration.isOn ? .isSelected : [])
     }

@@ -22,6 +22,8 @@ SwiftUI retains the button's action, semantic role, and activation behavior.
 Appearance variants do not set semantic roles.
 Regular button labels keep a minimum height of 44 points on iOS and 36 points on macOS. Small, large, and icon sizes adjust their padding and minimum dimensions. All iOS sizes retain at least a 44-point hit target.
 
+`CNToggle` and `CNToggleGroup` use the same flat control sizing. An off toggle is transparent; a selected toggle uses the accent surface and matching text color. Selection changes preserve the button, its label, and keyboard focus. Use `toggle-button`, `toggle-selected`, and `toggle-unselected` to override these defaults through shared rules.
+
 Classes without a native style keep a plain button whose label uses `ButtonStyle.Configuration.isPressed`:
 
 ```swift

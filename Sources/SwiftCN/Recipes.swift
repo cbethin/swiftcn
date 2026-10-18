@@ -151,11 +151,11 @@ extension TWStyle {
             "resizable-handle": "text-mutedForeground hover:text-foreground control-motion",
             "tooltip": "text-xs",
             "hover-card": "p-4 bg-surface text-foreground border shadow-md rounded-lg",
-            // Selection changes only the tint, so the native style and the label keep their identity.
-            "toggle-selected": "tint-primary text-onPrimary",
-            "toggle-unselected": "tint-muted text-foreground"
+            "toggle-selected": "bg-accent text-onAccent hover:bg-accent pressed:opacity-80",
+            "toggle-unselected": "text-mutedForeground hover:bg-muted hover:text-foreground pressed:bg-accent pressed:text-foreground"
         ]
         for (name, classes) in components { recipes[name] = .classes(classes) }
+        recipes["toggle-button"] = Self(button, .px(3))
         recipes["input-group"] = Self(.px(3), .minH(inputMinimumHeight), .text(.sm), .fg(.foreground), .bg(.surface), .border(.input), .rounded(.md), .focus(.border(.ring, width: 2)), .disabled(.opacity(0.45)), .classes("control-motion"))
         recipes["input-group-button"] = Self(.w(controlMinimumHeight), .h(controlMinimumHeight), .text(.sm), .fg(.mutedForeground), .roundedContainer, .hover(.bg(.accent)), .pressed(.bg(.accent)), .focus(.border(.ring, width: 2)), .disabled(.opacity(0.45)), .classes("animate-none"))
         recipes["input-group-field"] = Self(.text(.sm), .py(2), .minH(inputMinimumHeight))
