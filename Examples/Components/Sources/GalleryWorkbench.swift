@@ -67,6 +67,7 @@ struct ComponentGalleryView: View {
         .preferredColorScheme(dark ? .dark : .light)
         .cnPopoverHost().cnPresentationHost()
         #if os(macOS)
+        .ignoresSafeArea(.container, edges: .top)
         .frame(minWidth: 680, minHeight: 560)
         .onChange(of: dark, initial: true) { _, dark in
             NSApplication.shared.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
@@ -75,20 +76,19 @@ struct ComponentGalleryView: View {
     }
 
     private var topBar: some View {
-        HStack(spacing: 12) {
-            CNSidebarTrigger().keyboardShortcut("b", modifiers: [.command, .shift])
-            CNSeparator(axis: .vertical).frame(height: 16)
-            CNBreadcrumb {
-                Text(selection.sectionTitle).tw("text-sm text-mutedForeground")
-                CNBreadcrumbSeparator()
-                CNBreadcrumbPage(LocalizedStringKey(selection.title))
-            }.lineLimit(1)
-            Spacer(minLength: 8)
-            GalleryAppearanceControl(dark: $dark)
+        GalleryWindowHeader {
+            HStack(spacing: 12) {
+                CNSidebarTrigger().keyboardShortcut("b", modifiers: [.command, .shift])
+                CNSeparator(axis: .vertical).frame(height: 16)
+                CNBreadcrumb {
+                    Text(selection.sectionTitle).tw("text-sm text-mutedForeground")
+                    CNBreadcrumbSeparator()
+                    CNBreadcrumbPage(LocalizedStringKey(selection.title))
+                }.lineLimit(1)
+                Spacer(minLength: 8)
+                GalleryAppearanceControl(dark: $dark)
+            }
         }
-        .padding(.horizontal, 20).frame(height: 58)
-        .tw("bg-surface")
-        .galleryChrome()
     }
 
     private var introduction: some View {
@@ -141,6 +141,29 @@ struct ComponentGalleryView: View {
     }
 }
 
+private struct GalleryWindowHeader<Content: View>: View {
+    @Environment(\.cnSidebarContext) private var sidebar
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        content
+            .padding(.leading, leadingInset)
+            .padding(.trailing, 20)
+            .frame(height: 58)
+            .tw("bg-surface")
+            .galleryChrome()
+    }
+
+    private var leadingInset: CGFloat {
+        #if os(macOS)
+        // Native window buttons sit over this header when the sidebar is hidden.
+        sidebar.isCompact || !sidebar.isPresented ? 88 : 20
+        #else
+        20
+        #endif
+    }
+}
+
 private struct GalleryNavigation: View {
     @Binding var selection: CNGallerySelection
     @State private var results = GallerySearchResults()
@@ -175,6 +198,9 @@ private struct GalleryNavigation: View {
                 .font(.system(size: 10)).tw("text-mutedForeground").padding(.top, 4)
                 .accessibilityIdentifier("gallery-result-count")
         }
+        #if os(macOS)
+        .padding(.top, 28)
+        #endif
         CNSidebarContent("px-3 py-2") {
             ForEach(results.groups) { group in
                 CNSidebarGroup {

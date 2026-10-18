@@ -19,6 +19,7 @@ import AppKit
     var body: some Scene {
         #if os(macOS)
         WindowGroup("SwiftCN Component Gallery") { ComponentGalleryView(dark: $dark) }
+            .windowStyle(.hiddenTitleBar)
             .defaultSize(width: 1280, height: 860)
         WindowGroup("Native navigation", id: "native-navigation") {
             NativeNavigationGalleryWindow(dark: dark)
