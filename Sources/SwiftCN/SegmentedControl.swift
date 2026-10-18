@@ -9,6 +9,7 @@ public struct CNSegmentedControl<Selection: Hashable, Content: View>: View {
     @Namespace private var indicator
     @FocusState private var focused: AnyHashable?
     @State private var segments: [CNSegmentDescriptor] = []
+    @State private var focusRequest = 0
     @Environment(\.layoutDirection) private var direction
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -28,10 +29,17 @@ public struct CNSegmentedControl<Selection: Hashable, Content: View>: View {
                 focused: $focused, indicator: indicator,
                 accepts: { $0.base is Selection },
                 select: { id in
-                    if let value = id.base as? Selection { selection = value; focused = id }
+                    if let value = id.base as? Selection { selection = value; focusRequest += 1 }
                 },
                 navigate: navigate))
             .onPreferenceChange(CNSegmentOrder.self) { segments = $0 }
+            .task(id: focusRequest) {
+                guard focusRequest > 0 else { return }
+                // macOS 15 must apply the new roving tab stop before receiving a focus request.
+                await Task.yield()
+                guard !Task.isCancelled else { return }
+                focused = AnyHashable(selection)
+            }
             .animation(animated && !reduceMotion ? .snappy(duration: 0.18) : nil, value: selection)
             .accessibilityElement(children: .contain)
     }
@@ -51,7 +59,7 @@ public struct CNSegmentedControl<Selection: Hashable, Content: View>: View {
         let next = enabled[(current + (forward ? 1 : enabled.count - 1)) % enabled.count].id
         guard let value = next.base as? Selection else { return .ignored }
         selection = value
-        focused = next
+        focusRequest += 1
         return .handled
     }
 }

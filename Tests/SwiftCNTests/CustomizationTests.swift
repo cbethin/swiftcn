@@ -29,10 +29,12 @@ struct CustomizationTests {
         var parent = TWClassCatalog.componentRules
         parent.animations["snappy"] = TWAnimation.none
         parent.named["brand"] = "rounded-xl"
+        parent.animations.removeValue(forKey: "smooth")
         let patch = TWRuleOverrides(named: ["card": "p-3"], replacing: ["button-primary": "text-destructive"])
         let result = patch.applying(to: parent)
         #expect(result.modifiers["cn-tint"] != nil)
         #expect(result.named["brand"] != nil)
+        #expect(result.animations["smooth"] == nil, "Unrelated overrides must preserve an intentionally removed preset.")
         #expect(result.animations["snappy"]?.resolve(duration: 0.2, delay: 0) == nil)
         let replaced = resolve("button-primary", rules: result)
         #expect(replaced.background == nil && replaced.minimumHeight == nil)

@@ -45,6 +45,7 @@ struct TWModifier: ViewModifier {
     @Environment(\.twRules) private var rules
     @Environment(\.colorScheme) private var scheme
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.isFocused) private var isFocused
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.twGroups) private var groups
     @Namespace private var containerNamespace
@@ -56,6 +57,7 @@ struct TWModifier: ViewModifier {
     func body(content: Content) -> some View {
         var activeState = state
         activeState.isDisabled = activeState.isDisabled || !isEnabled
+        activeState.isFocused = activeState.isFocused || isFocused
         activeState.isHovered = activeState.isHovered || isHovered
         activeState.prefersReducedMotion = activeState.prefersReducedMotion || reduceMotion
         let combined = TWStyle(rules.view, isButton ? rules.button : TWStyle(), style)
@@ -86,7 +88,7 @@ struct TWModifier: ViewModifier {
             .modifier(phase(.decoration, appearance: appearance))
             .coordinateSpace(name: containerNamespace)
             .transformEnvironment(\.twContainerShapeContext) { inherited in
-                if decorates && !appearance.containerRelativeRadius {
+                if decorates && (!appearance.containerRelativeRadius || appearance.surface != nil) {
                     if appearance.hasRadius {
                         inherited = TWContainerShapeContext(space: containerNamespace, outline: appearance.outline)
                     } else if appearance.surface != nil {

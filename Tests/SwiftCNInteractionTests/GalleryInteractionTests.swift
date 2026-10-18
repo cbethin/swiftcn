@@ -164,6 +164,26 @@ final class GalleryInteractionTests: XCTestCase {
     }
 
     #if os(macOS)
+    @MainActor func testDirectButtonStyleTracksNativeKeyboardFocus() throws {
+        let app = launch("button", probe: "flat-button-focus")
+        defer { capture(app); app.terminate() }
+        let target = app.buttons["Styled focus target"]
+        XCTAssertTrue(target.waitForExistence(timeout: 5))
+        activate(app.buttons["Focus styled button"])
+        let image = try XCTUnwrap(target.screenshot().image.cgImage(forProposedRect: nil, context: nil, hints: nil))
+        let width = image.width, height = image.height
+        let context = try XCTUnwrap(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+            bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        let bytes = try XCTUnwrap(context.data).assumingMemoryBound(to: UInt8.self)
+        let green = stride(from: 0, to: width * height * 4, by: 4).filter {
+            bytes[$0] < 50 && bytes[$0 + 1] > 200 && bytes[$0 + 2] < 50
+        }.count
+        XCTAssertGreaterThan(Double(green) / Double(width * height), 0.3,
+                             "Native keyboard focus must activate focus: classes without an explicit TWState.")
+    }
+
     @MainActor func testCommandCommaOpensOneSettingsWindowAndPersistsPreferences() {
         let app = launch("card")
         defer { capture(app); app.terminate() }
@@ -209,10 +229,10 @@ final class GalleryInteractionTests: XCTestCase {
         expectValue(editor, "Gallery draft")
         #if os(macOS)
         app.typeKey(.rightArrow, modifierFlags: [])
-        XCTAssertTrue(app.buttons["Code mode"].isSelected)
+        XCTAssertTrue(wait(for: NSPredicate(format: "selected == true"), on: app.buttons["Code mode"]))
         XCTAssertFalse(editor.exists)
         app.typeKey(.leftArrow, modifierFlags: [])
-        XCTAssertTrue(app.buttons["Preview mode"].isSelected)
+        XCTAssertTrue(wait(for: NSPredicate(format: "selected == true"), on: app.buttons["Preview mode"]))
         expectValue(editor, "Gallery draft")
         #endif
         app.typeKey("k", modifierFlags: .command)

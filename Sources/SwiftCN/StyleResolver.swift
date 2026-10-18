@@ -21,6 +21,7 @@ struct TWResolvedStyle {
     var outline: TWSurfaceShape {
         TWSurfaceShape(top: topRadius ?? radius, bottom: bottomRadius ?? radius)
     }
+    /// An explicit numeric radius. Container-relative artwork keeps native surface defaults.
     var hasRadius = false
     var border: Color?
     var borderWidth: CGFloat = 0
@@ -137,7 +138,7 @@ enum TWStyleResolver {
             case .foreground(let source): result.foreground = color(source, theme: theme, scheme: scheme)
             case .background(let source): result.background = color(source, theme: theme, scheme: scheme)
             case .containerRadius:
-                result.hasRadius = true
+                result.hasRadius = false
                 result.containerRelativeRadius = true
                 result.radius = 0
                 result.topRadius = nil

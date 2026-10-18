@@ -219,14 +219,18 @@ public struct CNSidebarMenuButton: View {
             if context.isCompact && dismissOnSelect { context.dismiss() }
         }) {
             if let customLabel { customLabel(context) }
-            else { HStack(spacing: 10) {
-                Image(systemName: systemImage).frame(width: context.isCollapsed ? 20 : iconWidth).accessibilityHidden(true)
-                if !context.isCollapsed {
-                    Text(title).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading).transition(.opacity)
-                    if let badge { Text(badge).tw("sidebar-menu-badge").transition(.opacity) }
-                }
-            }.frame(maxWidth: .infinity, alignment: context.isCollapsed ? .center : .leading) }
+            else { standardLabel }
         }
+    }
+
+    private var standardLabel: some View {
+        HStack(spacing: 10) {
+            Image(systemName: systemImage).frame(width: context.isCollapsed ? 20 : iconWidth).accessibilityHidden(true)
+            if !context.isCollapsed {
+                Text(title).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading).transition(.opacity)
+                if let badge { Text(badge).tw("sidebar-menu-badge").transition(.opacity) }
+            }
+        }.frame(maxWidth: .infinity, alignment: context.isCollapsed ? .center : .leading)
     }
 }
 /// Nested navigation remains mounted when the desktop rail collapses.

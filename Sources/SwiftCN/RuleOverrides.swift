@@ -31,15 +31,17 @@ public struct TWRuleOverrides: Sendable {
     public func applying(to parent: TWGlobalRules) -> TWGlobalRules {
         let key = TWRuleOverrideCache.Key(parent: parent.revision, patch: revision)
         var result = TWRuleOverrideCache.shared.value(for: key) {
-            var named = parent.named
-            for (name, patch) in self.named {
-                named[name] = TWStyle(named[name] ?? TWStyle.defaultClasses[name] ?? TWStyle(), patch)
+            var result = parent
+            if !named.isEmpty || !replacing.isEmpty {
+                for (name, patch) in named {
+                    result.named[name] = TWStyle(result.named[name] ?? TWStyle.defaultClasses[name] ?? TWStyle(), patch)
+                }
+                result.named.merge(replacing) { _, replacement in replacement }
             }
-            named.merge(replacing) { _, replacement in replacement }
-            return TWGlobalRules(named: named,
-                                 animations: parent.animations.merging(animations) { _, patch in patch },
-                                 utilities: parent.utilities.merging(utilities) { _, patch in patch },
-                                 modifiers: parent.modifiers.merging(modifiers) { _, patch in patch })
+            if !animations.isEmpty { result.animations.merge(animations) { _, patch in patch } }
+            if !utilities.isEmpty { result.utilities.merge(utilities) { _, patch in patch } }
+            if !modifiers.isEmpty { result.modifiers.merge(modifiers) { _, patch in patch } }
+            return result
         }
         // These defaults do not participate in registry revisions. Compose the current values,
         // rather than caching them with a potentially older parent's view or button defaults.

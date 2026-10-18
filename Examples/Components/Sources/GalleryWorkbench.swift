@@ -51,6 +51,11 @@ struct ComponentGalleryView: View {
                             if ProcessInfo.processInfo.environment["SWIFTCN_UI_PROBE"] == "native-button-labels" {
                                 NativeButtonLabelProbe()
                             }
+                            #if os(macOS)
+                            if ProcessInfo.processInfo.environment["SWIFTCN_UI_PROBE"] == "flat-button-focus" {
+                                NativeButtonFocusProbe()
+                            }
+                            #endif
                             #endif
                             GalleryWorkspace(selection: selection, mode: $mode,
                                              isWide: geometry.size.width >= 780)

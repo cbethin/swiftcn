@@ -8,6 +8,7 @@ struct ContainerShapeTests {
         let nested = TWStyleResolver.resolve("rounded-xl rounded-container", theme: .standard,
                                              scheme: .light, state: TWState())
         #expect(nested.containerRelativeRadius)
+        #expect(!nested.hasRadius, "Container-relative corners must not request square native bezels.")
         let fixed = TWStyleResolver.resolve("rounded-container rounded-lg", theme: .standard,
                                             scheme: .light, state: TWState())
         #expect(!fixed.containerRelativeRadius && fixed.radius == TWTheme.standard.radius(.lg))

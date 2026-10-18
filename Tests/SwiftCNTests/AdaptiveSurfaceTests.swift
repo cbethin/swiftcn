@@ -203,6 +203,23 @@ struct AdaptiveSurfaceRenderingTests {
         #expect(center.red > 0.9 && center.green < 0.1 && center.alpha > 0.99)
     }
 
+    @Test func relativeCornersKeepTheSemanticSurfaceDefault() throws {
+        let relative = try render(surface("p-2 surface-solid bg-[#ff0000] rounded-container"), glass: false)
+        let capsule = try render(surface("p-2 surface-solid bg-[#ff0000] rounded-full"), glass: false)
+        let square = try render(surface("p-2 surface-solid bg-[#ff0000] rounded-none"), glass: false)
+        let corner = try pixel(relative, x: 0, y: 0)
+        #expect(corner.alpha < 0.05)
+        #expect(try pixel(capsule, x: 0, y: 0).alpha < 0.05)
+        #expect(try pixel(square, x: 0, y: 0).alpha > 0.95)
+    }
+
+    @Test func relativeCornersKeepTheNativeBezelShape() throws {
+        let native = try capture(Button("Save") {}.buttonStyle(.tw("bezel-bordered")))
+        let relative = try capture(Button("Save") {}.buttonStyle(.tw("bezel-bordered rounded-container")))
+        #expect(relative.size == native.size)
+        #expect(relative.tiffRepresentation == native.tiffRepresentation)
+    }
+
     @Test func fallbacksDoNotStackTheBackgroundColor() throws {
         // A material ignores bg-*: the surface resolves to one fill, not a tinted layer under a material.
         let image = try render(surface("p-2 surface-floating bg-[#ff0000] rounded-none"), glass: false)
