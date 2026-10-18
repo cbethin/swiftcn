@@ -52,11 +52,12 @@ Build its content with `CNCard`, `CNField`, `CNSelect`, and `CNSwitch`.
 
 Place `CNWindowControlsSpacer(axis: .vertical)` above a custom sidebar header.
 It reserves a row for the traffic lights.
-Set the detail header's `reservesWindowControls` to `false` while the desktop sidebar is visible.
-Set it to `true` when the sidebar is hidden or uses a compact drawer.
-Read `cnSidebarContext` in the detail header to follow those transitions.
+Set the detail header's `reservesWindowControls` to `false` while a desktop sidebar occupies the physical left edge.
+Set it to `true` when that sidebar is hidden, uses a compact drawer, or sits on the right.
+Read `cnSidebarContext` and `layoutDirection` in the detail header to follow those transitions.
+`CNWindowHeader` always reserves the physical left edge, including in right-to-left layouts.
 
-For a custom horizontal header, `CNWindowControlsSpacer()` reserves the buttons' leading space instead.
+For a custom horizontal header, place `CNWindowControlsSpacer()` on the physical left, including in right-to-left layouts.
 The spacers collapse outside a `cnWindowContent()` root.
 On iOS, `cnWindowContent()` preserves the screen's safe areas and the spacers collapse.
 

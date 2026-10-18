@@ -9,9 +9,11 @@ import Testing
        .enabled(if: ProcessInfo.processInfo.environment["SWIFTCN_WINDOW_CHROME_TESTS"] == "1"))
 @MainActor
 struct WindowChromeTests {
-    @Test func controlsStayClearOfNativeButtonsWhileSidebarChangesPreserveTheEditor() throws {
+    @Test(arguments: [LayoutDirection.leftToRight, .rightToLeft])
+    func controlsStayClearOfNativeButtonsWhileSidebarChangesPreserveTheEditor(direction: LayoutDirection) throws {
         let model = WindowChromeModel()
-        let controller = NSHostingController(rootView: WindowChromeHarness(model: model).cnWindowContent())
+        let controller = NSHostingController(rootView: WindowChromeHarness(model: model).cnWindowContent()
+            .environment(\.layoutDirection, direction))
         let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 800, height: 460),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                               backing: .buffered, defer: false)
@@ -33,6 +35,8 @@ struct WindowChromeTests {
             let controls = buttons.map { $0.convert($0.bounds, to: nil) }.reduce(CGRect.null) { $0.union($1) }
             let probe = try #require(model.editorProbe)
             #expect(probe.convert(probe.bounds, to: nil).minX > controls.maxX)
+            let action = try #require(model.actionProbe)
+            #expect(action.convert(action.bounds, to: nil).minX > controls.maxX)
             if sidebarVisible {
                 let sidebar = try #require(model.sidebarProbe)
                 #expect(sidebar.convert(sidebar.bounds, to: nil).maxY < controls.minY)
@@ -57,11 +61,13 @@ struct WindowChromeTests {
     var sidebarVisible = false
     var draft = "Project"
     @ObservationIgnored weak var editorProbe: NSView?
+    @ObservationIgnored weak var actionProbe: NSView?
     @ObservationIgnored weak var sidebarProbe: NSView?
 }
 
 private struct WindowChromeHarness: View {
     @Bindable var model: WindowChromeModel
+    @Environment(\.layoutDirection) private var direction
 
     var body: some View {
         HStack(spacing: 0) {
@@ -74,11 +80,13 @@ private struct WindowChromeHarness: View {
                 }.frame(width: 248)
             }
             VStack(spacing: 0) {
-                CNWindowHeader(reservesWindowControls: !model.sidebarVisible) {
+                CNWindowHeader(reservesWindowControls: !model.sidebarVisible || direction == .rightToLeft) {
                     HStack {
                         TextField("Project", text: $model.draft).frame(width: 160)
                             .background { WindowChromeProbe { model.editorProbe = $0 } }
                         Spacer()
+                        Button("Action", action: {})
+                            .background { WindowChromeProbe { model.actionProbe = $0 } }
                     }
                 }
                 Spacer()

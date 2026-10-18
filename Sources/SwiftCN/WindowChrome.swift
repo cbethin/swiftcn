@@ -43,10 +43,11 @@ extension View {
 }
 
 /// A themed window header with space for native traffic lights.
-/// Set `reservesWindowControls` to false when a visible sidebar owns that space.
+/// Set `reservesWindowControls` to false when a sidebar occupies the physical left edge.
 /// On macOS 15 and later, dragging the empty header background moves the window.
 public struct CNWindowHeader<Content: View>: View {
     @Environment(\.cnIntegratedWindow) private var integrated
+    @Environment(\.layoutDirection) private var direction
     private let reservesWindowControls: Bool
     private let height: CGFloat
     private let classes: TWClasses
@@ -63,12 +64,17 @@ public struct CNWindowHeader<Content: View>: View {
 
     public var body: some View {
         content
-            .padding(.leading, integrated && reservesWindowControls ? CNWindowControlSpace.width : 20)
-            .padding(.trailing, 20)
+            .padding(contentInsets)
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: height)
             .background { dragArea }
             .tw(cn("bg-surface", classes))
+    }
+
+    private var contentInsets: EdgeInsets {
+        let left = integrated && reservesWindowControls ? CNWindowControlSpace.width : 20
+        return EdgeInsets(top: 0, leading: direction == .leftToRight ? left : 20,
+                          bottom: 0, trailing: direction == .rightToLeft ? left : 20)
     }
 
     @ViewBuilder private var dragArea: some View {
@@ -82,6 +88,7 @@ public struct CNWindowHeader<Content: View>: View {
 
 /// Reserve native window-control space in a custom sidebar or title bar.
 /// This spacer collapses outside a root with `cnWindowContent()`, including on iOS.
+/// Place a horizontal spacer on the physical left, including in right-to-left layouts.
 public struct CNWindowControlsSpacer: View {
     @Environment(\.cnIntegratedWindow) private var integrated
     private let axis: Axis

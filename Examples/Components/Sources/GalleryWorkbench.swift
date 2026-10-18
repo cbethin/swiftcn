@@ -142,10 +142,11 @@ struct ComponentGalleryView: View {
 
 private struct GalleryWindowHeader<Content: View>: View {
     @Environment(\.cnSidebarContext) private var sidebar
+    @Environment(\.layoutDirection) private var direction
     @ViewBuilder let content: Content
 
     var body: some View {
-        CNWindowHeader(reservesWindowControls: sidebar.isCompact || !sidebar.isPresented) { content }
+        CNWindowHeader(reservesWindowControls: sidebar.isCompact || !sidebar.isPresented || direction == .rightToLeft) { content }
             .galleryChrome()
     }
 }

@@ -454,8 +454,9 @@ The title bar disappears while the native traffic lights keep their normal behav
 Its empty background supports window dragging on macOS 15 and later.
 
 Use `CNWindowControlsSpacer(axis: .vertical)` above a sidebar header.
-Set `CNWindowHeader(reservesWindowControls: false)` while that sidebar is visible.
-Reserve the controls again when the sidebar is hidden or uses a compact drawer.
+Set `CNWindowHeader(reservesWindowControls: false)` while that sidebar occupies the physical left edge.
+Reserve the controls again when the sidebar is hidden, uses a compact drawer, or sits on the right.
+The header keeps native window-control space on the physical left in right-to-left layouts.
 The content modifier preserves iOS safe areas, and the spacers collapse on iOS.
 
 The gallery includes a native **Settings…** window on **⌘,**, built with SwiftCN controls.
