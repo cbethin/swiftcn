@@ -57,7 +57,8 @@ struct GallerySearchField: View {
                 do { try await Task.sleep(for: .milliseconds(120)) }
                 catch { return }
             }
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled,
+                  draft == query.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
             onFilter(draft)
         }
         .onSubmit { onSubmit(query) }

@@ -164,15 +164,41 @@ final class GalleryInteractionTests: XCTestCase {
     }
 
     #if os(macOS)
+    @MainActor func testGalleryKeepsPreviewEditsAcrossModesAndSearch() {
+        let app = launch("card")
+        defer { capture(app); app.terminate() }
+        let editor = app.textFields["Workspace name"]
+        activate(editor)
+        editor.typeKey("a", modifierFlags: .command)
+        editor.typeText("Gallery draft")
+        activate(app.buttons["Code mode"])
+        XCTAssertFalse(editor.exists, "Hidden previews must leave the accessibility tree.")
+        activate(app.buttons["Preview mode"])
+        expectValue(editor, "Gallery draft")
+        app.typeKey("k", modifierFlags: .command)
+        let search = app.textFields["gallery-search"]
+        search.typeText("zzzz-no-component")
+        XCTAssertTrue(app.staticTexts["No results"].waitForExistence(timeout: 5))
+        expectValue(editor, "Gallery draft")
+        activate(app.buttons["Clear search"].firstMatch)
+        XCTAssertTrue(wait(for: NSPredicate(format: "exists == false"), on: app.staticTexts["No results"]))
+        expectValue(editor, "Gallery draft")
+        activate(search)
+        search.typeText("CNInputOTP\n")
+        XCTAssertTrue(app.staticTexts["Input OTP"].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertFalse(editor.exists)
+    }
+
     @MainActor func testNativeSplitDividerDragsWithoutLosingTheEditorDraft() {
         let app = launch("native:split")
         defer { capture(app); app.terminate() }
+        activate(app.buttons["Preview mode"])
         let editor = app.textViews["Split editor draft"]
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
         activate(editor)
         editor.typeKey("a", modifierFlags: .command)
         editor.typeText("Draft after divider dragging")
-        let divider = app.splitters.element(boundBy: 1)
+        let divider = app.splitters.firstMatch
         XCTAssertTrue(divider.exists)
         let original = divider.frame.midX
         drag(divider, by: 130)
