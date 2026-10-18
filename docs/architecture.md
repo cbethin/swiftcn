@@ -38,6 +38,10 @@ For equal precedence, apply general rules before more specific rules.
 For equal specificity, apply rules in declaration order.
 Store directional padding independently.
 Resolve semantic tokens through the theme at render time.
+Cache top-level literal token expansions by token, target, rule revision, and theme revision.
+Theme and rule values take a new revision on any mutation; copies share theirs.
+Expand tokens with typed interpolation payloads on every resolution.
+Assume custom utilities and native validators are pure functions of their inputs.
 
 ## Rendering
 
