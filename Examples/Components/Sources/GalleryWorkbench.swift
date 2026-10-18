@@ -32,6 +32,7 @@ struct ComponentGalleryView: View {
     @State private var mobilePresented = false
     @State private var mode: GalleryWorkspaceMode = .split
     @FocusState private var searchFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var dark: Bool
 
     var body: some View {
@@ -39,6 +40,7 @@ struct ComponentGalleryView: View {
                   collapsible: .offcanvas, width: 248, compactBreakpoint: 740) {
             GalleryNavigation(selection: $selection, query: $query, searchFocused: $searchFocused,
                               onSearch: focusSearch)
+                .galleryChrome()
         } detail: {
             VStack(spacing: 0) {
                 topBar
@@ -86,12 +88,14 @@ struct ComponentGalleryView: View {
             Spacer(minLength: 8)
             CNToggle(isOn: $dark, classes: "px-2") {
                 Image(systemName: dark ? "moon" : "sun.max")
+                    .contentTransition(reduceMotion ? .identity : .symbolEffect(.replace))
             }
             .accessibilityLabel("Dark appearance")
             .help("Toggle dark appearance")
         }
         .padding(.horizontal, 20).frame(height: 58)
         .tw("bg-surface")
+        .galleryChrome()
     }
 
     private var introduction: some View {
@@ -134,7 +138,7 @@ struct ComponentGalleryView: View {
                 CNButton(LocalizedStringKey(component.title), variant: .ghost, size: .small,
                          classes: "text-xs px-2 text-mutedForeground", action: { selection = .component(component) })
             }
-        }
+        }.galleryChrome()
     }
 
     private func focusSearch() {
@@ -182,7 +186,7 @@ private struct GalleryNavigation: View {
                 Spacer(minLength: 0)
                 if sidebar.isCompact { CNSidebarTrigger() }
             }.padding(.bottom, 16)
-            CNInputGroup("px-2 rounded-lg", focus: searchFocused) {
+            CNInputGroup("px-2 rounded-lg hover:border-foreground animate-smooth duration-120 motion-reduce:animate-none", focus: searchFocused) {
                 CNButton(variant: .ghost, size: .small, classes: "px-0", action: onSearch) {
                     Image(systemName: "magnifyingglass").tw("text-mutedForeground")
                 }.keyboardShortcut("k", modifiers: .command).accessibilityLabel("Search components")
@@ -281,14 +285,16 @@ private struct GalleryWorkspace: View {
             HStack {
                 HStack(spacing: 2) {
                     ForEach(GalleryWorkspaceMode.allCases, id: \.self) { tab in
-                        CNButton(variant: mode == tab ? .outline : .ghost, size: .small,
-                                 classes: "text-xs px-3 rounded-md", action: { mode = tab }) {
+                        CNButton(variant: modeVariant(for: tab), size: .small,
+                                 classes: cn("text-xs px-3 rounded-md",
+                                     mode == tab ? "bg-surface border shadow-sm hover:bg-accent pressed:bg-border" : ""),
+                                 action: { mode = tab }) {
                             Label(tab.rawValue, systemImage: tab.icon).fixedSize()
                         }
                         .accessibilityLabel("\(tab.rawValue) mode")
                         .accessibilityAddTraits(mode == tab ? .isSelected : [])
                     }
-                }.tw("p-1 bg-muted rounded-lg")
+                }.tw("p-1 bg-muted rounded-lg").galleryChrome()
                 Spacer()
                 Text(selection.symbol).font(.system(size: 11, design: .monospaced))
                     .tw("text-mutedForeground").lineLimit(1).minimumScaleFactor(0.8)
@@ -320,6 +326,14 @@ private struct GalleryWorkspace: View {
         }
     }
 
+    private func modeVariant(for tab: GalleryWorkspaceMode) -> CNButtonVariant {
+        #if os(macOS)
+        .ghost
+        #else
+        mode == tab ? .outline : .ghost
+        #endif
+    }
+
     private var preview: some View {
         CNCard("shadow-none rounded-xl") {
             HStack(spacing: 8) {
@@ -328,7 +342,7 @@ private struct GalleryWorkspace: View {
                 Spacer()
                 CNButton(variant: .ghost, size: .small, classes: "px-2", action: { revision += 1 }) {
                     Image(systemName: "arrow.counterclockwise").font(.system(size: 11))
-                }.accessibilityLabel("Reset example").help("Reset example")
+                }.accessibilityLabel("Reset example").help("Reset example").galleryChrome()
             }.padding(.horizontal, 16).frame(height: 48)
             CNSeparator()
             selection.example.id(revision)

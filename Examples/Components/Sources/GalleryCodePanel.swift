@@ -13,6 +13,7 @@ struct GalleryCodePanel: View {
     @State private var copied = false
     @State private var copyReset: Task<Void, Never>?
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         CNCard("shadow-none rounded-xl") {
@@ -23,9 +24,11 @@ struct GalleryCodePanel: View {
                 Spacer(minLength: 0)
                 CNButton(variant: .ghost, size: .small, classes: "px-2", action: copy) {
                     Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 11))
+                        .contentTransition(reduceMotion ? .identity : .symbolEffect(.replace))
                 }
                 .accessibilityLabel(copied ? "Swift code copied" : "Copy Swift code")
                 .help(copied ? "Copied" : "Copy Swift code")
+                .galleryChrome()
             }.padding(.horizontal, 16).frame(height: 48)
             CNSeparator()
             ScrollView([.horizontal, .vertical]) {
