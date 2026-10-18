@@ -23,7 +23,7 @@ private enum GalleryInteractionStyle {
         .px(3), .rounded(.md), .text(.sm), .weight(.semibold), .fg(.foreground), .minH(32),
         .hover(.bg(.accent)), .pressed(.bg(.border), .opacity(0.8)),
         .focus(.border(.ring, width: 2)), .disabled(.opacity(0.4)),
-        .classes("animate-smooth duration-120 motion-reduce:animate-none")
+        .classes("animate-none")
     )
     // Navigation rows should track the pointer quietly, without trailing fades or a press flash.
     // An explicit base fill also avoids interpolating from a transparent surface.

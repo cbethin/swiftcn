@@ -92,6 +92,7 @@ enum TWProperty: Sendable {
     case foreground(TWColorSource)
     case background(TWColorSource)
     case radius(TWRadiusSource)
+    case containerRadius
     /// `rounded-t-*` and `rounded-b-*`: the top corners' or the bottom corners' radius alone.
     case radiusTop(TWRadiusSource), radiusBottom(TWRadiusSource)
     case border(TWColorSource, CGFloat)

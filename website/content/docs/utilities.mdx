@@ -26,6 +26,7 @@ Text("Project settings")
 | `.fg(.foreground)`, `.bg(.surface)` | Semantic theme colors |
 | `.fgColor(.blue)`, `.bgColor(.orange)` | Native color overrides |
 | `.rounded(.lg)`, `.radius(12)` | Corners for the surface background and border |
+| `.roundedContainer` | Match the enclosing container shape at this surface’s inset |
 | `.border(.border, width: 1)` | Semantic border color and width in points |
 | `.borderColor(.blue, width: 2)` | Native border color |
 | `.shadow(.sm)` | Shadow on the surface background |
@@ -48,7 +49,7 @@ Opacity inputs must lie between zero and one.
 | `w-20`, `h-12`, `w-full`, `h-full`, `min-h-10` | Theme size units or available width or height |
 | `text-xs` through `text-3xl`, `font-semibold`, `font-bold` | Native font roles and weights |
 | `text-foreground`, `text-muted-foreground`, `bg-surface`, `bg-primary` | Adaptive theme colors |
-| `rounded-none`, `rounded-sm`, `rounded-md`, `rounded-lg`, `rounded-xl`, `rounded-full` | Surface background and border corners |
+| `rounded-none`, `rounded-sm`, `rounded-md`, `rounded-lg`, `rounded-xl`, `rounded-full`, `rounded-container` | Surface background and border corners |
 | `border`, `border-2`, `border-border`, `shadow-sm`, `shadow-md`, `shadow-lg` | Surface border and background shadow |
 | `opacity-80`, `opacity-50` | Whole-surface opacity |
 | `hover:`, `focus:`, `active:`, `pressed:`, `disabled:` | Appearance conditions |
@@ -70,3 +71,41 @@ Not every Tailwind CSS utility has a SwiftUI mapping. CSS selectors, browser bre
 Corner utilities decorate backgrounds and borders. They do not clip content. Use native `.clipShape(...)` if clipping is your intent.
 
 Use `HStack`, `VStack`, `Grid`, layout protocols, and native modifiers for layout and behavior beyond the documented utilities.
+
+
+## Nested corners
+
+`CNCard` and `CNInputGroup` publish their outline as a native SwiftUI container shape.
+Use `rounded-container` (or `.roundedContainer`) on an inset fill or border to follow that outline.
+SwiftUI adjusts the corners for the child's position and padding, including right-to-left layouts.
+Use `.twContainer(...)` for a custom styled parent instead of `.tw(...)` to publish its outline.
+Ordinary text wrappers keep the enclosing container shape.
+Explicit radius classes still override `rounded-container` in their usual order.
+
+`CNInputGroupButton` supplies a square native button with a container-relative hover surface.
+Its default target is 32 points on macOS and 44 points on iOS.
+Add a few points of padding to the group to inset the action from its border.
+Native button bezels and Liquid Glass retain their platform shape policy; use container-relative corners for custom inset fills and borders.
+
+Built-in control feedback uses immediate state changes by default.
+Apply an explicit animation preset when a custom composition needs motion.
+
+
+```swift title="NestedCornersExample.swift"
+import SwiftUI
+import SwiftCN
+
+struct NestedCornersExample: View {
+    @State private var query = "Design system"
+
+    var body: some View {
+        CNInputGroup("ps-3 pe-1 py-1 rounded-xl") {
+            Image(systemName: "magnifyingglass").accessibilityHidden(true)
+            CNInputGroupField("Search projects", text: $query)
+            CNInputGroupButton(action: { query = "" }) {
+                Image(systemName: "xmark").accessibilityHidden(true)
+            }.accessibilityLabel("Clear search")
+        }
+    }
+}
+```

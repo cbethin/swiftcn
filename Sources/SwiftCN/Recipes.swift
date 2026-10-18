@@ -49,7 +49,7 @@ extension TWStyle {
          "label": Self(.text(.sm), .fg(.foreground))]
         let components: [String: TWClasses] = [
             "button-group": "text-foreground rounded-md",
-            "control-motion": "animate-smooth duration-150",
+            "control-motion": "animate-none",
             "disclosure-motion": "animate-spring duration-250",
             "feedback-motion": "animate-smooth duration-200",
             "badge": "px-2 py-1 text-xs font-semibold bg-primary text-onPrimary rounded-full",
@@ -138,8 +138,8 @@ extension TWStyle {
             "sidebar-group": "w-full",
             "sidebar-group-label": "px-2 py-2 text-xs font-medium text-mutedForeground",
             "sidebar-menu": "w-full",
-            "sidebar-menu-button": "px-2 py-2 w-full font-medium hover:bg-accent focus:bg-accent animate-none",
-            "sidebar-menu-selected": "bg-accent text-onAccent hover:bg-accent",
+            "sidebar-menu-button": "px-2 py-2 w-full font-medium bg-muted hover:bg-accent focus:bg-accent pressed:bg-accent pressed:opacity-100 animate-none",
+            "sidebar-menu-selected": "bg-accent text-onAccent hover:bg-accent pressed:bg-accent",
             "sidebar-menu-badge": "px-2 py-1 text-xs bg-background text-mutedForeground rounded-sm",
             "sidebar-menu-sub": "pl-4 w-full",
             "sidebar-trigger": "text-mutedForeground hover:text-foreground",
@@ -156,6 +156,7 @@ extension TWStyle {
         ]
         for (name, classes) in components { recipes[name] = .classes(classes) }
         recipes["input-group"] = Self(.px(3), .minH(inputMinimumHeight), .text(.sm), .fg(.foreground), .bg(.surface), .border(.input), .rounded(.md), .focus(.border(.ring, width: 2)), .disabled(.opacity(0.45)), .classes("control-motion"))
+        recipes["input-group-button"] = Self(.w(controlMinimumHeight), .h(controlMinimumHeight), .text(.sm), .fg(.mutedForeground), .roundedContainer, .hover(.bg(.accent)), .pressed(.bg(.accent)), .focus(.border(.ring, width: 2)), .disabled(.opacity(0.45)), .classes("animate-none"))
         recipes["input-group-field"] = Self(.text(.sm), .py(2), .minH(inputMinimumHeight))
         #if os(iOS)
         recipes["date-picker-calendar"] = Self(.classes(components["date-picker-calendar"]!), .w(352), .maxW(352))

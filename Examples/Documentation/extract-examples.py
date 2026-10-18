@@ -14,6 +14,7 @@ expected = {
     "quick-start": {"ContentView.swift", "SwiftCNDemoApp.swift"},
     "native-controls": {"FocusExample.swift"},
     "native-windows": {"IntegratedWindowExample.swift"},
+    "utilities": {"NestedCornersExample.swift"},
     "adaptive-surfaces": {"AdaptiveSurfacesExample.swift"},
     "native-composition": {entry['example'] for entry in json.loads((repo / 'Components/native-examples.json').read_text())},
     "components": {"ComponentPartsExample.swift"},

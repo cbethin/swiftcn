@@ -39,14 +39,14 @@ struct GallerySearchField: View {
     let onSubmit: (String) -> Void
 
     var body: some View {
-        CNInputGroup("px-2 rounded-lg hover:border-foreground animate-smooth duration-120 motion-reduce:animate-none", focus: focus) {
-            CNButton(variant: .ghost, size: .small, classes: "px-0", action: onSearch) {
+        CNInputGroup("p-1 rounded-lg animate-none", focus: focus) {
+            CNInputGroupButton(action: onSearch) {
                 Image(systemName: "magnifyingglass").tw("text-mutedForeground")
             }.keyboardShortcut("k", modifiers: .command).accessibilityLabel("Search components")
             CNInputGroupField("Search components…", text: $query)
                 .accessibilityIdentifier("gallery-search")
             if !query.isEmpty {
-                CNButton(variant: .ghost, size: .small, classes: "px-0", action: clear) {
+                CNInputGroupButton(action: clear) {
                     Image(systemName: "xmark.circle.fill").tw("text-mutedForeground")
                 }.accessibilityLabel("Clear search")
             }

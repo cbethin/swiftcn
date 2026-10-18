@@ -202,6 +202,7 @@ enum TWClassParser {
         if name == "h-full" { return .fullHeight }
         if name == "border" { return .border(.border) }
         if name == "rounded" { return .rounded(.md) }
+        if name == "rounded-container" { return .roundedContainer }
         if name == "shadow" { return .shadow(.sm) }
         func color(_ value: String) -> TWColor? {
             let token = aliases[value] ?? TWColor(value)

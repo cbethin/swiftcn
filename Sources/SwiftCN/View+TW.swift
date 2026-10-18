@@ -193,21 +193,28 @@ struct TWDecorationModifier: ViewModifier {
     let scheme: ColorScheme
     func body(content: Content) -> some View {
         content.background {
-                appearance.outline
-                    .fill(appearance.background ?? .clear)
-                    .shadow(
-                        color: appearance.shadow?.color.resolve(scheme) ?? .clear,
-                        radius: appearance.shadow?.radius ?? 0,
-                        x: appearance.shadow?.x ?? 0,
-                        y: appearance.shadow?.y ?? 0
-                    )
+                if appearance.containerRelativeRadius {
+                    fill(ContainerRelativeShape())
+                } else {
+                    fill(appearance.outline)
+                }
             }
             .overlay {
-                appearance.outline
-                    .strokeBorder(appearance.border ?? .clear, lineWidth: appearance.borderWidth)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
+                Group {
+                    if appearance.containerRelativeRadius {
+                        ContainerRelativeShape().strokeBorder(appearance.border ?? .clear, lineWidth: appearance.borderWidth)
+                    } else {
+                        appearance.outline.strokeBorder(appearance.border ?? .clear, lineWidth: appearance.borderWidth)
+                    }
+                }.allowsHitTesting(false).accessibilityHidden(true)
             }
+    }
+
+    private func fill<S: Shape>(_ shape: S) -> some View {
+        shape.fill(appearance.background ?? .clear)
+            .shadow(color: appearance.shadow?.color.resolve(scheme) ?? .clear,
+                    radius: appearance.shadow?.radius ?? 0,
+                    x: appearance.shadow?.x ?? 0, y: appearance.shadow?.y ?? 0)
     }
 }
 

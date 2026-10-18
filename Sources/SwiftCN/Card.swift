@@ -15,7 +15,7 @@ public struct CNCard<Content: View>: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: spacing) { content }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .tw(cn("card p-0 w-full", classes))
+            .twContainer(cn("card p-0 w-full", classes))
     }
 }
 

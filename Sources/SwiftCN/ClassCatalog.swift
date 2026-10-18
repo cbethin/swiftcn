@@ -44,7 +44,7 @@ import SwiftUI
     public static let bezels = ["bezel-prominent", "bezel-bordered", "bezel-borderless", "bezel-link"]
     public static let controlSizes = ["control-mini", "control-sm", "control-md", "control-lg", "control-xl"]
     public static let sharedElements = ["shared-frame", "shared-position", "shared-size", "shared-source", "shared-follower"]
-    public static let standalone = ["group", "w-full", "h-full", "border", "rounded", "shadow",
+    public static let standalone = ["group", "w-full", "h-full", "border", "rounded", "rounded-container", "shadow",
                                     "text-center", "text-start", "text-end", "line-clamp-none"]
 
     /// One working example for each bracket prefix. `animate-[…]` only accepts interpolated native values.

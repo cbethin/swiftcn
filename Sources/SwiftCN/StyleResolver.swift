@@ -8,6 +8,7 @@ struct TWResolvedStyle {
     var foreground: Color?
     var background: Color?
     var radius: CGFloat = 0
+    var containerRelativeRadius = false
     /// Set by `rounded-t-*` and `rounded-b-*`; the other corners keep `radius`.
     var topRadius: CGFloat?
     var bottomRadius: CGFloat?
@@ -130,7 +131,14 @@ enum TWStyleResolver {
             case .weight(let weight): result.weight = weight
             case .foreground(let source): result.foreground = color(source, theme: theme, scheme: scheme)
             case .background(let source): result.background = color(source, theme: theme, scheme: scheme)
+            case .containerRadius:
+                result.hasRadius = true
+                result.containerRelativeRadius = true
+                result.radius = 0
+                result.topRadius = nil
+                result.bottomRadius = nil
             case .radius(let source):
+                result.containerRelativeRadius = false
                 result.hasRadius = true
                 result.topRadius = nil
                 result.bottomRadius = nil
@@ -139,12 +147,14 @@ enum TWStyleResolver {
                 case .points(let points): result.radius = points
                 }
             case .radiusTop(let source):
+                result.containerRelativeRadius = false
                 result.hasRadius = true
                 switch source {
                 case .token(let token): result.topRadius = theme.radius(token)
                 case .points(let points): result.topRadius = points
                 }
             case .radiusBottom(let source):
+                result.containerRelativeRadius = false
                 result.hasRadius = true
                 switch source {
                 case .token(let token): result.bottomRadius = theme.radius(token)

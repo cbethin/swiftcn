@@ -20,6 +20,8 @@ extension TWStyle {
     public static func fgColor(_ color: Color) -> Self { property(.foreground(.color(color))) }
     public static func bgColor(_ color: Color) -> Self { property(.background(.color(color))) }
     public static func rounded(_ token: TWRadius) -> Self { property(.radius(.token(token))) }
+    /// Match the enclosing container shape, inset to this surface.
+    public static var roundedContainer: Self { property(.containerRadius) }
     public static func radius(_ points: CGFloat) -> Self {
         precondition(points.isFinite && points >= 0)
         return property(.radius(.points(points)))

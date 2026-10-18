@@ -31,7 +31,7 @@ struct GalleryAppearanceControl: View {
             // Keep the native CNButton action and focus; draw a quiet surface around the selected icon.
             rules.named["button-ghost"] = .classes(
                 "p-0 rounded-full hover:opacity-80 pressed:opacity-60 focus:border-ring " +
-                "disabled:opacity-40 animate-smooth duration-120 motion-reduce:animate-none"
+                "disabled:opacity-40 animate-none"
             )
         }
     }

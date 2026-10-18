@@ -245,7 +245,7 @@
     "symbol": "CNInputGroup",
     "source": "Input.swift",
     "example": "InputGroupExample.swift",
-    "notes": "Compose CNInputGroupField with icons, addons, or native actions. Decoration gaps focus the native editor; child buttons retain their own events. Pass focus: when the host controls focus."
+    "notes": "Compose CNInputGroupField with icons, addons, or native actions. CNInputGroupButton provides a square action surface with corners that follow the group and its inset. Use rounded-container for other custom inset fills. Decoration gaps focus the native editor; child buttons retain their own events. Pass focus: when the host controls focus."
   },
   {
     "name": "Input OTP",
