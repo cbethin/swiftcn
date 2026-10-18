@@ -27,7 +27,7 @@ jobs:
           - name: iPad
             arguments: '--ipad'
     env:
-      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
     steps:
       - uses: actions/checkout@v7
       - name: Toolchain
