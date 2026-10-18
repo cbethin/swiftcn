@@ -24,26 +24,30 @@ struct GallerySettingsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            CNWindowHeader(height: 28, classes: "bg-background") { Color.clear }
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Your component workbench").font(.system(size: 24, weight: .semibold)).tracking(-0.5)
-                        Text("A few preferences to make it feel like home.")
-                            .tw("text-sm text-mutedForeground")
-                    }.padding(.bottom, 4)
-                    appearance
-                    workbench
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Settings")
+                            .font(.system(size: 22, weight: .semibold)).tracking(-0.5)
+                        Text("Appearance and defaults for the component gallery.")
+                            .tw("text-xs text-mutedForeground")
+                    }
+                    preferences
                     shortcuts
-                }.padding(28)
+                }.padding(24)
             }
             CNSeparator()
-            HStack {
-                Text("Changes save automatically").tw("text-xs text-mutedForeground")
+            HStack(spacing: 6) {
+                Image(systemName: "checkmark.circle").tw("text-mutedForeground")
+                Text("Saved automatically").tw("text-xs text-mutedForeground")
                 Spacer()
-                CNButton("Restore defaults", variant: .outline, size: .small, action: restoreDefaults)
-            }.padding(.horizontal, 28).frame(height: 60).tw("bg-surface")
+                CNButton("Restore defaults", variant: .ghost, size: .small,
+                         classes: "text-xs text-mutedForeground", action: restoreDefaults)
+            }.padding(.horizontal, 24).frame(height: 56).tw("bg-surface")
         }
-        .frame(width: 600, height: 720)
+        .cnWindowContent()
+        .frame(width: 620, height: 576)
         .tw("bg-background text-foreground")
         .preferredColorScheme(dark ? .dark : .light)
         .onChange(of: dark, initial: true) { _, dark in
@@ -52,59 +56,73 @@ struct GallerySettingsView: View {
         .galleryChrome()
     }
 
-    private var appearance: some View {
+    private var preferences: some View {
         CNCard("shadow-none rounded-xl") {
-            CNCardContent("pt-5") {
-                HStack(spacing: 24) {
-                    settingLabel("Appearance", detail: "Use light or dark throughout the gallery.")
+            VStack(spacing: 0) {
+                HStack(spacing: 20) {
+                    settingLabel("Appearance", detail: "Set the mood for the whole gallery.")
                     Spacer(minLength: 0)
-                    GalleryAppearanceControl(dark: $dark)
+                    HStack(spacing: 2) {
+                        choice("Light", icon: "sun.max", selected: !dark,
+                               accessibility: "Use light appearance") { dark = false }
+                        choice("Dark", icon: "moon", selected: dark,
+                               accessibility: "Use dark appearance") { dark = true }
+                    }.tw("p-1 bg-muted rounded-lg")
+                }.padding(16)
+                CNSeparator()
+                HStack(spacing: 16) {
+                    settingLabel("Default view", detail: "Start new windows in your favorite view.")
+                    Spacer(minLength: 0)
+                    HStack(spacing: 2) {
+                        ForEach(GalleryWorkspaceMode.allCases, id: \.self) { mode in
+                            choice(mode.rawValue, icon: mode.icon, selected: defaultMode == mode.rawValue,
+                                   accessibility: "Default \(mode.rawValue) view") { defaultMode = mode.rawValue }
+                        }
+                    }.tw("p-1 bg-muted rounded-lg")
+                }.padding(16)
+                CNSeparator()
+                CNSwitch(isOn: $previewGrid, classes: "cn-tint-[primary]") {
+                    settingLabel("Preview grid", detail: "A dot grid behind your live examples.")
                 }
-            }
-        }
-    }
-
-    private var workbench: some View {
-        CNCard("shadow-none rounded-xl") {
-            CNCardHeader {
-                CNCardTitle("Workbench", classes: "text-sm")
-                CNCardDescription("Set up your next window and live previews.")
-            }
-            CNCardContent {
-                CNFieldGroup(spacing: 18) {
-                    CNField {
-                        CNFieldLabel("Default view")
-                        CNSelect("Default view", options: GalleryWorkspaceMode.allCases.map {
-                            CNOption($0.rawValue, title: $0.rawValue)
-                        }, selection: $defaultMode).labelsHidden()
-                        CNFieldDescription("Used when you open a new gallery window.")
-                    }
-                    CNSeparator()
-                    CNSwitch(isOn: $previewGrid) {
-                        settingLabel("Preview grid", detail: "Show the dot grid behind live examples.")
-                    }.accessibilityLabel("Preview grid").accessibilityIdentifier("gallery-preview-grid")
-                }
+                .accessibilityLabel("Preview grid").accessibilityIdentifier("gallery-preview-grid")
+                .padding(16)
             }
         }
     }
 
     private var shortcuts: some View {
-        CNCard("shadow-none rounded-xl") {
-            CNCardHeader { CNCardTitle("Keyboard shortcuts", classes: "text-sm") }
-            CNCardContent {
-                VStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 7) {
+                Image(systemName: "keyboard").tw("text-mutedForeground")
+                Text("Keyboard shortcuts").tw("text-xs font-medium")
+            }
+            CNCard("shadow-none rounded-xl") {
+                VStack(spacing: 10) {
                     shortcut("Search components", keys: "⌘ K")
                     shortcut("Toggle sidebar", keys: "⇧ ⌘ B")
                     shortcut("Open settings", keys: "⌘ ,")
-                }
+                }.padding(16)
             }
         }
     }
 
+    private func choice(_ title: String, icon: String, selected: Bool,
+                        accessibility: String, action: @escaping () -> Void) -> some View {
+        CNButton(variant: .ghost, size: .small,
+                 classes: cn("px-2 text-xs rounded-md",
+                             selected ? "bg-surface border shadow-sm hover:bg-accent pressed:bg-border" : "text-mutedForeground"),
+                 action: action) {
+            Label(title, systemImage: icon).fixedSize()
+        }
+        .accessibilityLabel(accessibility)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
     private func settingLabel(_ title: LocalizedStringKey, detail: LocalizedStringKey) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(title).tw("text-sm font-medium")
-            Text(detail).tw("text-xs text-mutedForeground").fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).tw("text-xs font-medium")
+            Text(detail).font(.system(size: 11)).tw("text-mutedForeground")
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

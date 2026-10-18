@@ -180,8 +180,7 @@ final class GalleryInteractionTests: XCTestCase {
             String(describing: (object as? XCUIElement)?.value ?? "") != originalGrid
         }, on: grid))
         let changedGrid = String(describing: grid.value ?? "")
-        activate(settings.popUpButtons["Default view"])
-        activate(app.menuItems["Preview"])
+        activate(settings.buttons["Default Preview view"])
         app.typeKey(",", modifierFlags: .command)
         XCTAssertEqual(app.windows.containing(.button, identifier: "Restore defaults").count, 1)
         app.terminate()
@@ -191,7 +190,7 @@ final class GalleryInteractionTests: XCTestCase {
         XCTAssertTrue(gallery.buttons["Use dark appearance"].isSelected)
         app.typeKey(",", modifierFlags: .command)
         XCTAssertTrue(settings.waitForExistence(timeout: 5))
-        XCTAssertEqual(settings.popUpButtons["Default view"].value as? String, "Preview")
+        XCTAssertTrue(settings.buttons["Default Preview view"].isSelected)
         XCTAssertEqual(String(describing: grid.value ?? ""), changedGrid)
         activate(settings.buttons["Restore defaults"])
     }

@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 private struct CNIntegratedWindowKey: EnvironmentKey {
     static let defaultValue = false
@@ -32,15 +35,101 @@ extension Window {
 
 extension View {
     /// Extend content through a hidden macOS title bar. Other platforms keep their safe areas.
-    /// Pair this with `cnWindowStyle()` on the scene and reserve room for window controls.
+    /// Reserve room for window controls. Use `cnWindowStyle()` on Window and WindowGroup
+    /// for the initial presentation; Settings scenes need only this content modifier.
     @ViewBuilder public func cnWindowContent() -> some View {
         #if os(macOS)
-        ignoresSafeArea(.container, edges: .top).environment(\.cnIntegratedWindow, true)
+        ignoresSafeArea(.container, edges: .top)
+            .environment(\.cnIntegratedWindow, true)
+            .background { CNWindowChromeBridge().frame(width: 0, height: 0) }
         #else
         self
         #endif
     }
 }
+
+#if os(macOS)
+/// Settings does not honor WindowGroup's window-style modifier. Configure only the
+/// window that hosts this root, and restore its original chrome when the root leaves.
+private struct CNWindowChromeBridge: NSViewRepresentable {
+    func makeNSView(context: Context) -> CNWindowChromeView { CNWindowChromeView() }
+    func updateNSView(_ view: CNWindowChromeView, context: Context) { view.attach() }
+    static func dismantleNSView(_ view: CNWindowChromeView, coordinator: ()) { view.invalidate() }
+}
+
+private final class CNWindowChromeView: NSView {
+    private weak var controlledWindow: NSWindow?
+    private var active = true
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        attach()
+        // SwiftUI can finish setting up a Settings window after attaching its content.
+        DispatchQueue.main.async { [weak self] in self?.attach() }
+    }
+
+    func attach() {
+        guard active else { return }
+        if controlledWindow !== window {
+            detach()
+            controlledWindow = window
+        }
+        if let window { CNWindowChromeLease.acquire(window, owner: ObjectIdentifier(self)) }
+    }
+
+    func detach() {
+        if let controlledWindow { CNWindowChromeLease.release(controlledWindow, owner: ObjectIdentifier(self)) }
+        controlledWindow = nil
+    }
+
+    func invalidate() {
+        active = false
+        detach()
+    }
+}
+
+@MainActor private final class CNWindowChromeLease {
+    private static var windows: [ObjectIdentifier: CNWindowChromeLease] = [:]
+    private weak var window: NSWindow?
+    private var owners: Set<ObjectIdentifier> = []
+    private let titleVisibility: NSWindow.TitleVisibility
+    private let transparent: Bool
+    private let separator: NSTitlebarSeparatorStyle
+    private let fullSize: Bool
+
+    private init(_ window: NSWindow) {
+        self.window = window
+        titleVisibility = window.titleVisibility
+        transparent = window.titlebarAppearsTransparent
+        separator = window.titlebarSeparatorStyle
+        fullSize = window.styleMask.contains(.fullSizeContentView)
+    }
+
+    static func acquire(_ window: NSWindow, owner: ObjectIdentifier) {
+        windows = windows.filter { $0.value.window != nil }
+        let key = ObjectIdentifier(window)
+        let lease = windows[key] ?? CNWindowChromeLease(window)
+        windows[key] = lease
+        lease.owners.insert(owner)
+        if window.titleVisibility != .hidden { window.titleVisibility = .hidden }
+        if !window.titlebarAppearsTransparent { window.titlebarAppearsTransparent = true }
+        if window.titlebarSeparatorStyle != .none { window.titlebarSeparatorStyle = .none }
+        if !window.styleMask.contains(.fullSizeContentView) { window.styleMask.insert(.fullSizeContentView) }
+    }
+
+    static func release(_ window: NSWindow, owner: ObjectIdentifier) {
+        let key = ObjectIdentifier(window)
+        guard let lease = windows[key] else { return }
+        lease.owners.remove(owner)
+        guard lease.owners.isEmpty else { return }
+        windows.removeValue(forKey: key)
+        window.titleVisibility = lease.titleVisibility
+        window.titlebarAppearsTransparent = lease.transparent
+        window.titlebarSeparatorStyle = lease.separator
+        if !lease.fullSize { window.styleMask.remove(.fullSizeContentView) }
+    }
+}
+#endif
 
 /// A themed window header with space for native traffic lights.
 /// Set `reservesWindowControls` to false when a sidebar occupies the physical left edge.

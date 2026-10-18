@@ -15,13 +15,15 @@ struct WindowChromeTests {
         let controller = NSHostingController(rootView: WindowChromeHarness(model: model).cnWindowContent()
             .environment(\.layoutDirection, direction))
         let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 800, height: 460),
-                              styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+                              styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered, defer: false)
-        window.titleVisibility = .hidden
-        window.titlebarAppearsTransparent = true
         window.contentViewController = controller
         defer { window.contentViewController = nil }
         settle(controller.view)
+        #expect(window.titleVisibility == .hidden)
+        #expect(window.titlebarAppearsTransparent)
+        #expect(window.titlebarSeparatorStyle == .none)
+        #expect(window.styleMask.contains(.fullSizeContentView))
         let editor = try #require(descendants(controller.view).compactMap { $0 as? NSTextField }.first)
         editor.stringValue = "A working draft"
         editor.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: editor))
@@ -44,6 +46,36 @@ struct WindowChromeTests {
             #expect(descendants(controller.view).compactMap { $0 as? NSTextField }.first === editor)
             #expect(editor.stringValue == "A working draft" && model.draft == "A working draft")
         }
+    }
+
+    @Test func overlappingRootsRestoreChromeOnlyAfterTheLastRootLeaves() {
+        let originalMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .resizable]
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 640, height: 460),
+                              styleMask: originalMask, backing: .buffered, defer: false)
+        window.titleVisibility = .visible
+        window.titlebarAppearsTransparent = false
+        window.titlebarSeparatorStyle = .line
+        let container = NSView(frame: window.contentView!.bounds)
+        window.contentView = container
+        let first = NSHostingView(rootView: Text("First").cnWindowContent())
+        let second = NSHostingView(rootView: Text("Second").cnWindowContent())
+        for root in [first, second] {
+            root.frame = container.bounds
+            container.addSubview(root)
+        }
+        settle(container)
+        #expect(window.styleMask == originalMask.union(.fullSizeContentView))
+        #expect(window.titleVisibility == .hidden)
+        first.removeFromSuperview()
+        settle(container)
+        #expect(window.titleVisibility == .hidden)
+        #expect(window.styleMask.contains(.fullSizeContentView))
+        second.removeFromSuperview()
+        settle(container)
+        #expect(window.titleVisibility == .visible)
+        #expect(!window.titlebarAppearsTransparent)
+        #expect(window.titlebarSeparatorStyle == .line)
+        #expect(window.styleMask == originalMask)
     }
 
     private func settle(_ view: NSView) {

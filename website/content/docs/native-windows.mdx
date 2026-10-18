@@ -45,8 +45,11 @@ struct IntegratedWindowExample: Scene {
 ```
 
 Apply both modifiers to the same window. Keep ordinary child views inside that root.
-SwiftUI's `Settings` scene keeps its standard window style and registers the native **Settings…** command with **⌘,**.
-Build its content with `CNCard`, `CNField`, `CNSelect`, and `CNSwitch`.
+For a native `Settings` scene, apply `cnWindowContent()` to its root view and use `CNWindowHeader` inside it.
+The helper hides the titlebar background and title while preserving native window buttons.
+SwiftUI still registers the **Settings…** command with **⌘,** and manages the single Settings window.
+For fixed-size Settings content, apply `cnWindowContent()` before `.frame(width:height:)` so the content fills the titlebar inset.
+Build its content with `CNCard`, `CNButton`, and `CNSwitch`.
 
 ## Sidebars and compact windows
 
