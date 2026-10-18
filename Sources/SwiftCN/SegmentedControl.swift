@@ -90,6 +90,7 @@ public struct CNSegment<Value: Hashable, Label: View>: View {
                 }
             }
             .focusable(enabled && (context?.tabStop == id))
+            .focusEffectDisabled()
             .focused(focus, equals: id)
             .disabled(!enabled)
             .onKeyPress(keys: [.leftArrow, .rightArrow, .upArrow, .downArrow]) { press in
