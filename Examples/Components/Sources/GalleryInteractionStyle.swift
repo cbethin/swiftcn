@@ -25,13 +25,15 @@ private enum GalleryInteractionStyle {
         .focus(.border(.ring, width: 2)), .disabled(.opacity(0.4)),
         .classes("animate-smooth duration-120 motion-reduce:animate-none")
     )
-    static let sidebar = TWStyle.classes(
-        "px-2 py-2 w-full font-medium hover:bg-accent pressed:bg-border focus:border-ring " +
-        "animate-smooth duration-120 motion-reduce:animate-none"
+    // Navigation rows should track the pointer quietly, without trailing fades or a press flash.
+    // An explicit base fill also avoids interpolating from a transparent surface.
+    static let sidebar = TWStyle(
+        .bg(.muted), .hover(.bg(.accent)), .pressed(.bg(.accent), .opacity(1)),
+        .classes("px-2 py-2 w-full font-medium focus:border-ring animate-none")
     )
     static let selection = TWStyle(
-        .bg(.accent), .border(.border), .hover(.bg(.border)),
-        .pressed(.bg(.primary), .fg(.onPrimary)),
-        .classes("animate-smooth duration-120 motion-reduce:animate-none")
+        .bg(.accent), .fg(.foreground), .border(.border),
+        .hover(.bg(.accent)), .pressed(.bg(.accent)),
+        .classes("animate-none")
     )
 }
