@@ -829,7 +829,13 @@ npm run dev
 
 ### Native component library
 
-SwiftCN includes 64 native component catalog entries, from buttons and composable card parts to searchable commands, data tables, charts, and questionnaires. Each uses `.tw` class recipes and caller-owned bindings.
+SwiftCN includes 65 native component catalog entries, from buttons and composable card parts to searchable commands, data tables, charts, and questionnaires. Each uses `.tw` class recipes and caller-owned bindings.
+
+Extend inherited recipes with `TWRuleOverrides(named:)`, or replace a complete recipe with `replacing:`.
+Use `TWTheme.controls` and SwiftUI's `.controlSize` to share control dimensions.
+`selected:` utilities style selection without changing bindings.
+Compose `CNSegmentedControl` with `CNSegment` labels; toggle groups and sidebar rows also accept custom label builders.
+See the [customization documentation](website/content/docs/customization.mdx) for a complete example.
 
 Direct native controls use the same recipes through `.buttonStyle(.tw(...))`, `.textFieldStyle(.tw(...))`, `.toggleStyle(.tw(...))`, and `.labelStyle(.tw(...))`. `CNDrawerContent` styles a caller-owned sheet; `CNDrawer` adds native defaults with typed detents, selection, and dismissal callbacks. Native navigation and desktop split examples use SwiftUI containers directly. The gallery's **Native composition** section includes all four complete, copyable examples. See the [native composition documentation source](website/content/docs/native-composition.mdx).
 

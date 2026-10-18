@@ -1,0 +1,112 @@
+---
+title: "Customize and compose"
+description: "Extend inherited recipes, share control metrics, and compose selection controls."
+---
+
+Use local `classes:` for one component, `TWRuleOverrides` for a subtree, and `TWTheme` for shared tokens.
+Each path uses the same styling engine. Native bindings, actions, roles, and accessibility remain SwiftUI APIs.
+
+## Extend inherited recipes
+
+```swift
+static let chrome = TWRuleOverrides(
+    named: ["button-ghost": "rounded-lg", "card": "shadow-none"],
+    replacing: ["segmented-indicator": "bg-primary rounded-container"]
+)
+
+WorkbenchView().twRules(overrides: Self.chrome)
+```
+
+`named` appends to the actual inherited definition, including built-in defaults. `replacing` supplies a complete recipe.
+A name cannot occur in both dictionaries. Nested scopes preserve unrelated recipes, custom utilities, native modifiers, and animation presets.
+Keep reusable overrides in stored values, such as a static preset. Copies share a registry revision and reuse cached expansions.
+Changes to a preset receive a new revision. `view` and `button` remain broad inherited defaults; named recipes and local utilities refine them.
+
+For the same state and specificity, later scope patches and instance classes win by property.
+Selection styles precede hover, focus, pressed, and disabled styles. More specific nested conditions win within the same precedence.
+For example, `selected:hover:bg-primary` retains a selected background while hovered.
+
+The existing `.twRules(rules)` replaces the complete environment. The mutation closure remains available for direct registry changes.
+String literals and typed `TWStyle` values work in both override dictionaries.
+
+## Share control dimensions
+
+```swift
+var theme = TWTheme.standard
+theme.controls.small.minHeight = 32
+theme.controls.small.radius = 10
+
+WorkbenchView().twTheme(theme).controlSize(.small)
+```
+
+The control scale has `mini`, `small`, `regular`, `large`, and `extraLarge` entries.
+Each entry supplies `minHeight`, `horizontalPadding`, `verticalPadding`, `iconWidth`, and an optional `radius`.
+A nil radius inherits `theme.radii[.md]`.
+Buttons, toggles, segments, input groups, and fields read SwiftUI's `.controlSize` environment.
+An explicit `CNButton(size:)` overrides the inherited size; instance classes provide final overrides.
+Native switches keep their platform indicator sizing. Their surrounding rows read the shared minimum height.
+iOS controls keep at least a 44-point hit target. Large text can grow the control height.
+
+## A complete composition
+
+```swift title="CustomizationExample.swift"
+import SwiftUI
+import SwiftCN
+
+struct CustomizationExample: View {
+    enum Mode: String, CaseIterable { case preview = "Preview", code = "Code", split = "Split" }
+    @State private var mode = Mode.preview
+    @State private var bold = false
+    @State private var draft = "My workspace"
+
+    private static let chrome = TWRuleOverrides(named: [
+        "card": "rounded-xl shadow-none",
+        "button-primary": "rounded-lg"
+    ])
+
+    private static let theme: TWTheme = {
+        var theme = TWTheme.standard
+        theme.controls.small.radius = 10
+        return theme
+    }()
+
+    var body: some View {
+        CNCard {
+            CNCardHeader {
+                CNCardTitle("Your workbench")
+                CNCardDescription("Shared defaults, custom labels, and caller-owned state.")
+            }
+            CNCardContent {
+                CNSegmentedControl(selection: $mode) {
+                    ForEach(Mode.allCases, id: \.self) { value in
+                        CNSegment(value, title: LocalizedStringKey(value.rawValue))
+                    }
+                }.accessibilityLabel("Workspace view")
+                CNInput("Workspace name", text: $draft)
+                CNToggle("Bold", isOn: $bold, classes: "selected:bg-primary selected:text-onPrimary selected:hover:bg-primary selected:hover:text-onPrimary")
+                Text("Selected: \(mode.rawValue)")
+            }
+            CNCardFooter {
+                CNButton("Save", classes: "rounded-full", action: {})
+            }
+        }
+        .controlSize(.small)
+        .twTheme(Self.theme)
+        .twRules(overrides: Self.chrome)
+    }
+}
+```
+
+`CNSegmentedControl` changes only its binding. Keep selected content outside the control so its editing state remains intact.
+Arrow keys skip disabled segments and follow layout direction. Use `.disabled(...)` on each `CNSegment`.
+The `segmented`, `segmented-item`, and `segmented-indicator` recipes style the separate surfaces.
+Pass `animated: true` to animate the indicator; the default is immediate. Reduce Motion disables that animation.
+
+`CNToggleGroup` also accepts a label builder. It receives the existing `CNOption`, preserving its identifier and disabled state.
+`CNSidebarMenuButton` accepts custom labels, with an optional context argument for collapsed and compact layouts.
+
+## Existing card styles
+
+The `card` recipe now owns its zero padding, matching the existing `CNCard` composition.
+Use card header, content, and footer parts for padded sections. For a standalone `.tw("card")` surface, add `p-6` when needed.
+Component wrappers no longer append hidden padding overrides after the recipe.

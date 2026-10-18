@@ -7,7 +7,12 @@ struct ToggleGroupExample: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            CNToggleGroup(options, selection: $rowSelection)
+            CNToggleGroup(options, selection: $rowSelection) { option in
+                HStack(spacing: 6) {
+                    Text(option.title)
+                    if option.id == "design" { CNBadge("New") }
+                }
+            }
 
         }
     }

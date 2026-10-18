@@ -1029,6 +1029,27 @@ struct ScrollAreaExample: View {
     }
 }
 """### + "\n"
+        case .segmented_control:
+            return ###"""
+import SwiftUI
+import SwiftCN
+
+struct SegmentedControlExample: View {
+    enum Mode: String, CaseIterable { case preview = "Preview", code = "Code", split = "Split" }
+    @State private var mode = Mode.preview
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            CNSegmentedControl(selection: $mode) {
+                ForEach(Mode.allCases, id: \.self) { value in
+                    CNSegment(value, title: LocalizedStringKey(value.rawValue))
+                }
+            }.accessibilityLabel("Workspace view")
+            Text("Selected: \(mode.rawValue)").tw("text-sm text-mutedForeground")
+        }
+    }
+}
+"""### + "\n"
         case .select:
             return ###"""
 import SwiftUI
@@ -1179,8 +1200,16 @@ private struct SidebarNavigationExample: View {
         }
         CNSidebarFooter {
             CNSeparator()
-            CNSidebarMenuButton("Charles Bethin", systemImage: "person.crop.circle", dismissOnSelect: false,
-                                action: { selection = "Account" })
+            CNSidebarMenuButton(dismissOnSelect: false, action: { selection = "Account" }) { context in
+                HStack(spacing: 10) {
+                    Image(systemName: "person.crop.circle").accessibilityHidden(true)
+                    if !context.isCollapsed {
+                        Text("Charles Bethin")
+                        Spacer()
+                        CNBadge("Pro", variant: .outline)
+                    }
+                }
+            }.accessibilityLabel("Charles Bethin account")
         }
     }
     private func item(_ title: String, icon: String, badge: String? = nil) -> some View {
@@ -1429,7 +1458,12 @@ struct ToggleGroupExample: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            CNToggleGroup(options, selection: $rowSelection)
+            CNToggleGroup(options, selection: $rowSelection) { option in
+                HStack(spacing: 6) {
+                    Text(option.title)
+                    if option.id == "design" { CNBadge("New") }
+                }
+            }
 
         }
     }

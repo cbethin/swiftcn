@@ -207,6 +207,14 @@ final class GalleryInteractionTests: XCTestCase {
         XCTAssertFalse(editor.exists, "Hidden previews must leave the accessibility tree.")
         activate(app.buttons["Preview mode"])
         expectValue(editor, "Gallery draft")
+        #if os(macOS)
+        app.typeKey(.rightArrow, modifierFlags: [])
+        XCTAssertTrue(app.buttons["Code mode"].isSelected)
+        XCTAssertFalse(editor.exists)
+        app.typeKey(.leftArrow, modifierFlags: [])
+        XCTAssertTrue(app.buttons["Preview mode"].isSelected)
+        expectValue(editor, "Gallery draft")
+        #endif
         app.typeKey("k", modifierFlags: .command)
         let search = app.textFields["gallery-search"]
         search.typeText("zzzz-no-component")

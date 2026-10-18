@@ -33,7 +33,7 @@ extension CNComponentGallery {
         case .input_otp: "number.square"
         case .radio_group: "smallcircle.filled.circle"
         case .slider: "slider.horizontal.3"
-        case .switch, .toggle, .toggle_group: "switch.2"
+        case .switch, .toggle, .toggle_group, .segmented_control: "switch.2"
         case .textarea: "text.alignleft"
         case .breadcrumb: "chevron.right.2"
         case .command: "command"
@@ -70,7 +70,7 @@ extension CNComponentGallery {
              .separator, .aspect_ratio, .direction, .item: .essentials
         case .checkbox, .combobox, .date_picker, .field, .input, .input_group, .input_otp,
              .native_select, .radio_group, .select, .slider, .switch, .textarea,
-             .toggle, .toggle_group, .calendar: .forms
+             .toggle, .toggle_group, .segmented_control, .calendar: .forms
         case .breadcrumb, .command, .menubar, .navigation_menu, .pagination, .sidebar, .tabs: .navigation
         case .accordion, .alert_dialog, .collapsible, .context_menu, .dialog, .drawer, .dropdown_menu,
              .hover_card, .popover, .resizable, .scroll_area, .sheet, .tooltip, .carousel: .surfaces
@@ -140,6 +140,7 @@ extension CNComponentGallery {
         case .radio_group: "Choose one option with native picker behavior and accessible labels."
         case .resizable: "Let people adjust neighboring panes with an accessible divider."
         case .scroll_area: "Native scrolling with configurable axes and indicators."
+        case .segmented_control: "Compose a single selection with flexible labels, shared styling, and keyboard navigation."
         case .select: "Choose from a stable set of options through a native menu picker."
         case .separator: "Create a quiet boundary between related groups of content."
         case .sheet: "Present a focused panel from an edge, with reversible motion and clear dismissal."

@@ -72,9 +72,9 @@ Button("Rename", action: rename)
     .disabled(isLocked)
 ```
 
-Hover, focus, pressed, and disabled patches apply after base values, in that order. More specific conditions win before declaration order when precedence is equal.
+Selected, hover, focus, pressed, and disabled patches apply after base values, in that order. More specific conditions win before declaration order when precedence is equal.
 
-Variants only affect appearance. Native button styles, such as `button-primary`, keep Apple's own state appearance. Native `.disabled(...)` controls whether a control is disabled. See [native controls and state](/docs/native-controls).
+Variants only affect appearance. Explicit native bezel and glass styles keep Apple's own state appearance. Standard button recipes draw themed surfaces. Native `.disabled(...)` controls whether a control is disabled. See [native controls and state](/docs/native-controls).
 
 
 ## Validate generated strings

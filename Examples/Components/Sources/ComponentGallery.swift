@@ -51,6 +51,7 @@ enum CNComponentGallery: String, CaseIterable, Identifiable {
     case resizable
     case scroll_area
     case select
+    case segmented_control
     case separator
     case sheet
     case sidebar
@@ -128,6 +129,7 @@ enum CNComponentGallery: String, CaseIterable, Identifiable {
         case .resizable: "Resizable"
         case .scroll_area: "Scroll Area"
         case .select: "Select"
+        case .segmented_control: "Segmented Control"
         case .separator: "Separator"
         case .sheet: "Sheet"
         case .sidebar: "Sidebar"
@@ -196,6 +198,7 @@ enum CNComponentGallery: String, CaseIterable, Identifiable {
         case .resizable: AnyView(ResizableExample())
         case .scroll_area: AnyView(ScrollAreaExample())
         case .select: AnyView(SelectExample())
+        case .segmented_control: AnyView(SegmentedControlExample())
         case .separator: AnyView(SeparatorExample())
         case .sheet: AnyView(SheetExample())
         case .sidebar: AnyView(SidebarExample())

@@ -384,6 +384,15 @@
     "notes": "A native ScrollView supports vertical, horizontal, or combined axes and optional indicators. Child controls retain their gestures. Compose lazy stacks when the collection is large; the host owns scroll-position policies."
   },
   {
+    "name": "Segmented Control",
+    "slug": "segmented-control",
+    "symbol": "CNSegmentedControl",
+    "source": "SegmentedControl.swift",
+    "example": "SegmentedControlExample.swift",
+    "preview": false,
+    "notes": "Bind one selection to stable values and compose CNSegment labels with native SwiftUI views. Arrow keys follow layout direction and skip disabled segments. The control preserves labels and focus during selection changes. Use segmented, segmented-item, and segmented-indicator recipes for scoped overrides. The caller owns the selected content."
+  },
+  {
     "name": "Select",
     "slug": "select",
     "symbol": "CNSelect",

@@ -24,6 +24,17 @@ struct LintTests {
             == "View.swift:2:14: error: Unknown swiftcn class 'bg-surfce'. Did you mean 'bg-surface'? [swiftcn-lint]")
     }
 
+    @Test func overrideRecipesLearnNamesAndValidateSelectedValues() {
+        let source = """
+        let style = TWRuleOverrides(named: ["custom-item": "selected:bg-accent"],
+                                    replacing: ["custom-indicator": "rounded-container bg-surfce"])
+        Text("Choice").tw("custom-item custom-indicator")
+        """
+        let diagnostics = lint(source)
+        #expect(diagnostics.count == 1)
+        #expect(diagnostics.first?.token == "bg-surfce")
+    }
+
     @Test func everyCatalogEntryParsesWithTheLinterRules() throws {
         let rules = SwiftCNLinter().rules
         let names = TWClassCatalog.exactClasses + TWClassCatalog.suggestionCandidates

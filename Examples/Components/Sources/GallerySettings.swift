@@ -62,23 +62,21 @@ struct GallerySettingsView: View {
                 HStack(spacing: 20) {
                     settingLabel("Appearance", detail: "Set the mood for the whole gallery.")
                     Spacer(minLength: 0)
-                    HStack(spacing: 2) {
-                        choice("Light", icon: "sun.max", selected: !dark,
-                               accessibility: "Use light appearance") { dark = false }
-                        choice("Dark", icon: "moon", selected: dark,
-                               accessibility: "Use dark appearance") { dark = true }
-                    }.tw("p-1 bg-muted rounded-lg")
+                    CNSegmentedControl(selection: $dark) {
+                        segment(false, title: "Light", icon: "sun.max", accessibility: "Use light appearance")
+                        segment(true, title: "Dark", icon: "moon", accessibility: "Use dark appearance")
+                    }.controlSize(.small)
                 }.padding(16)
                 CNSeparator()
                 HStack(spacing: 16) {
                     settingLabel("Default view", detail: "Start new windows in your favorite view.")
                     Spacer(minLength: 0)
-                    HStack(spacing: 2) {
+                    CNSegmentedControl(selection: $defaultMode) {
                         ForEach(GalleryWorkspaceMode.allCases, id: \.self) { mode in
-                            choice(mode.rawValue, icon: mode.icon, selected: defaultMode == mode.rawValue,
-                                   accessibility: "Default \(mode.rawValue) view") { defaultMode = mode.rawValue }
+                            segment(mode.rawValue, title: mode.rawValue, icon: mode.icon,
+                                    accessibility: "Default \(mode.rawValue) view")
                         }
-                    }.tw("p-1 bg-muted rounded-lg")
+                    }.controlSize(.small)
                 }.padding(16)
                 CNSeparator()
                 CNSwitch(isOn: $previewGrid) {
@@ -106,16 +104,11 @@ struct GallerySettingsView: View {
         }
     }
 
-    private func choice(_ title: String, icon: String, selected: Bool,
-                        accessibility: String, action: @escaping () -> Void) -> some View {
-        CNButton(variant: .ghost, size: .small,
-                 classes: cn("px-2 text-xs rounded-md",
-                             selected ? "bg-surface border shadow-sm hover:bg-accent pressed:bg-border" : "text-mutedForeground"),
-                 action: action) {
+    private func segment<Value: Hashable>(_ value: Value, title: String, icon: String,
+                                          accessibility: String) -> some View {
+        CNSegment(value, classes: "text-xs px-2") {
             Label(title, systemImage: icon).fixedSize()
-        }
-        .accessibilityLabel(accessibility)
-        .accessibilityAddTraits(selected ? .isSelected : [])
+        }.accessibilityLabel(accessibility)
     }
 
     private func settingLabel(_ title: LocalizedStringKey, detail: LocalizedStringKey) -> some View {

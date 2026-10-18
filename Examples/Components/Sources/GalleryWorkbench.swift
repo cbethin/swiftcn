@@ -307,18 +307,13 @@ private struct GalleryWorkspace: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                HStack(spacing: 2) {
+                CNSegmentedControl(selection: $mode) {
                     ForEach(GalleryWorkspaceMode.allCases, id: \.self) { tab in
-                        CNButton(variant: modeVariant(for: tab), size: .small,
-                                 classes: cn("text-xs px-3 rounded-md",
-                                     mode == tab ? "bg-surface border shadow-sm hover:bg-accent pressed:bg-border" : ""),
-                                 action: { mode = tab }) {
+                        CNSegment(tab, classes: "text-xs px-3") {
                             Label(tab.rawValue, systemImage: tab.icon).fixedSize()
-                        }
-                        .accessibilityLabel("\(tab.rawValue) mode")
-                        .accessibilityAddTraits(mode == tab ? .isSelected : [])
+                        }.accessibilityLabel("\(tab.rawValue) mode")
                     }
-                }.tw("p-1 bg-muted rounded-lg").galleryChrome()
+                }.controlSize(.small).galleryChrome()
                 Spacer()
                 Text(selection.symbol).font(.system(size: 11, design: .monospaced))
                     .tw("text-mutedForeground").lineLimit(1).minimumScaleFactor(0.8)
@@ -348,14 +343,6 @@ private struct GalleryWorkspace: View {
                     .font(.system(size: 11)).tw("text-mutedForeground").textSelection(.enabled)
             }
         }
-    }
-
-    private func modeVariant(for tab: GalleryWorkspaceMode) -> CNButtonVariant {
-        #if os(macOS)
-        .ghost
-        #else
-        mode == tab ? .outline : .ghost
-        #endif
     }
 
     private var preview: some View {

@@ -95,7 +95,7 @@ private struct CNCommandBody<ID: Hashable & Sendable, Item: View, Empty: View>: 
                             Button { activate(option) } label: {
                                 item(option, selection == option.id)
                             }
-                            .buttonStyle(.tw(cn("command-item w-full", highlighted == option.id ? "bg-accent" : "")))
+                            .buttonStyle(.tw(cn("command-item", highlighted == option.id ? "bg-accent" : "")))
                             .disabled(option.isDisabled).id(option.id)
                             .onContinuousHover(coordinateSpace: .named(pointerSpace)) { phase in
                                 if case .active(let location) = phase {
@@ -114,7 +114,7 @@ private struct CNCommandBody<ID: Hashable & Sendable, Item: View, Empty: View>: 
                 }
                 .onChange(of: highlighted) { _, id in if let id { scroll.scrollTo(id) } }
             }
-        }.tw(cn("command min-h-[180]", classes))
+        }.tw(cn("command", classes))
             .onAppear { searchFocused = true }
             .onKeyPress(.downArrow) { move(1); return .handled }
             .onKeyPress(.upArrow) { move(-1); return .handled }

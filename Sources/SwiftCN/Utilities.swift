@@ -143,6 +143,7 @@ extension TWStyle {
         return property(.animationDelay(seconds))
     }
 
+    public static func selected(_ styles: TWStyle...) -> Self { Self(styles).conditioned(on: .selected) }
     public static func hover(_ styles: TWStyle...) -> Self { Self(styles).conditioned(on: .hovered) }
     public static func focus(_ styles: TWStyle...) -> Self { Self(styles).conditioned(on: .focused) }
     public static func pressed(_ styles: TWStyle...) -> Self { Self(styles).conditioned(on: .pressed) }

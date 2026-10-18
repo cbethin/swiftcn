@@ -33,7 +33,7 @@ public struct CNTextarea: View {
     }
     public var body: some View {
         TextEditor(text: $text).scrollContentBackground(.hidden).focused(focus ?? $isFocused)
-            .modifier(TWFieldControlModifier(style: .classes(cn("textarea min-h-[100]", classes)), state: .init(isFocused: focus?.wrappedValue ?? isFocused)))
+            .modifier(TWFieldControlModifier(style: .classes(cn("textarea", classes)), state: .init(isFocused: focus?.wrappedValue ?? isFocused)))
             .modifier(CNInputActivationSurface(focus: focus ?? $isFocused))
             .accessibilityLabel(title)
     }

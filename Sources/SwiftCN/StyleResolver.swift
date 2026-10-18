@@ -71,7 +71,7 @@ struct TWResolvedStyle {
 
 enum TWStyleResolver {
     static func resolve(_ style: TWStyle, theme: TWTheme, scheme: ColorScheme, state: TWState,
-                        globalRules: TWGlobalRules = TWGlobalRules(), groupStates: [String: TWState] = [:], target: TWTarget? = .view) -> TWResolvedStyle {
+                        globalRules: TWGlobalRules = TWGlobalRules(), groupStates: [String: TWState] = [:], target: TWTarget? = .view, controlSize: ControlSize = .regular) -> TWResolvedStyle {
         let expanded: TWStyle
         do {
             expanded = try TWClassParser.expand(style, rules: globalRules, theme: theme, target: target)
@@ -97,7 +97,12 @@ enum TWStyleResolver {
                 }
                 return lhs.offset < rhs.offset
             }
+        let effectiveSize = rules.compactMap { entry -> ControlSize? in
+            if case .controlSize(let value) = entry.element.property { return value }
+            return nil
+        }.last ?? controlSize
         var result = TWResolvedStyle()
+        var usesControlMetrics = false
         // Decided before state filtering, so hover or focus variants never add or remove the modifier.
         result.inheritsForeground = !expanded.rules.contains {
             if case .foreground = $0.property { true } else { false }
@@ -177,6 +182,21 @@ enum TWStyleResolver {
             // The bezel selects the native style type, so only unconditioned classes choose it.
             case .bezel(let value): if entry.element.conditionCount == 0 { result.bezel = value }
             case .controlSize(let value): result.controlSize = value
+            case .controlMetrics(let role):
+                usesControlMetrics = true
+                let metrics = theme.controls[effectiveSize]
+                metrics.validate()
+                result.minimumHeight = metrics.minHeight
+                if role != .row {
+                    result.padding = EdgeInsets(top: role == .icon ? 0 : metrics.verticalPadding,
+                                               leading: role == .icon ? 0 : metrics.horizontalPadding,
+                                               bottom: role == .icon ? 0 : metrics.verticalPadding,
+                                               trailing: role == .icon ? 0 : metrics.horizontalPadding)
+                    result.radius = metrics.radius ?? theme.radius(.md)
+                    result.topRadius = nil; result.bottomRadius = nil
+                    result.hasRadius = true; result.containerRelativeRadius = false
+                }
+                if role == .icon { result.minimumWidth = metrics.iconWidth }
             case .opacity(let opacity): result.opacity = opacity
             case .tracking(let value): result.tracking = value
             case .lineSpacing(let value): result.lineSpacing = value
@@ -207,6 +227,14 @@ enum TWStyleResolver {
             case .classes, .interpolated: break // Expansion removes these before resolution.
             }
         }
+        #if os(iOS)
+        if usesControlMetrics {
+            result.minimumHeight = max(44, result.minimumHeight ?? 0)
+            if let height = result.height { result.height = max(44, height) }
+            result.minimumWidth = max(44, result.minimumWidth ?? 0)
+            if let width = result.width { result.width = max(44, width) }
+        }
+        #endif
         // Keep a shared radius when both edges agree, including two explicit edge overrides.
         let top = result.topRadius ?? result.radius, bottom = result.bottomRadius ?? result.radius
         if top == bottom {

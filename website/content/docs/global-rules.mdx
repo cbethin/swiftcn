@@ -35,13 +35,21 @@ Local utilities override defaults by property. Rules do not decorate unstyled na
 ## Override one subtree
 
 ```swift
-SettingsView()
-    .twRules { rules in
-        rules.named["project-card"] = "card p-4 rounded-md"
-    }
+static let preferences = TWRuleOverrides(named: [
+    "card": "shadow-none rounded-xl",
+    "button-primary": "rounded-lg"
+])
+
+SettingsView().twRules(overrides: Self.preferences)
 ```
 
-The closure updates inherited rules and keeps the remaining configuration. `.twRules(rules)` replaces the complete rules value for its subtree.
+Named overrides extend the inherited definition and preserve unspecified properties.
+Use `replacing:` instead of `named:` when you supply a complete replacement recipe.
+Keep reusable presets in stored values to retain their cache identity.
+Other recipes and registries inherit unchanged.
+See [customization and composition](/docs/customization) for shared sizing and complete examples.
+
+The mutation closure updates inherited rules directly. `.twRules(rules)` replaces the complete rules value for its subtree.
 
 ## Custom argument utilities
 
@@ -95,12 +103,6 @@ Preset factories receive seconds. Class duration arguments use milliseconds unle
 
 ## Extend a built-in recipe
 
-Read the built-in definition when you replace that same recipe:
-
-```swift
-var rules = TWGlobalRules()
-let base = TWStyle.defaultStyle(for: "button-primary")!
-rules.named["button-primary"] = TWStyle(base, .rounded(.full), .minH(48))
-```
-
-Referencing `.primaryButton` inside its own replacement creates a cycle. The built-in definition preserves its existing sizing and state appearances.
+Prefer `TWRuleOverrides(named:)` to extend a built-in recipe without referring to its own name.
+For direct registry mutation, `TWStyle.defaultStyle(for:)` still returns the original built-in definition.
+Referencing `.primaryButton` inside its own replacement creates a cycle.

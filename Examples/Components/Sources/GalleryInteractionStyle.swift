@@ -5,7 +5,7 @@ extension View {
     /// The gallery's chrome uses editable SwiftCN recipes. Preview controls keep their original recipes.
     @ViewBuilder func galleryChrome() -> some View {
         #if os(macOS)
-        twRules(GalleryInteractionStyle.rules)
+        twRules(overrides: GalleryInteractionStyle.overrides).controlSize(.small)
         #else
         self
         #endif
@@ -14,14 +14,16 @@ extension View {
 
 enum GalleryInteractionStyle {
     // A stable revision keeps the shared class-expansion cache warm across updates.
-    static let rules = TWGlobalRules(named: [
+    static let overrides = TWRuleOverrides(named: [
         "button-ghost": button, "sidebar-menu-button": sidebar, "sidebar-menu-selected": selection
     ])
+
+    static let rules = overrides.applying(to: TWGlobalRules())
 
     // A native Button still owns activation, keyboard focus, cancellation, and disabled behavior.
     // A plain SwiftCN surface lets hover and press decorate the complete hit area on macOS.
     static let button = TWStyle(
-        .px(3), .rounded(.md), .text(.sm), .weight(.semibold), .fg(.foreground), .minH(32),
+        .weight(.semibold),
         .hover(.bg(.accent)), .pressed(.bg(.border), .opacity(0.8)),
         .focus(.border(.ring, width: 2)), .disabled(.opacity(0.4)),
         .classes("animate-none")
@@ -30,7 +32,7 @@ enum GalleryInteractionStyle {
     // An explicit base fill also avoids interpolating from a transparent surface.
     static let sidebar = TWStyle(
         .bg(.muted), .hover(.bg(.accent)), .pressed(.bg(.accent), .opacity(1)),
-        .classes("px-2 py-2 w-full font-medium focus:border-ring animate-none")
+        .classes("focus:border-ring animate-none")
     )
     static let selection = TWStyle(
         .bg(.accent), .fg(.foreground), .border(.border),

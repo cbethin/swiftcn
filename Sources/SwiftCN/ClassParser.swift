@@ -102,6 +102,7 @@ enum TWClassParser {
                 continue
             }
             switch variant {
+            case "selected": conditions.insert(.selected)
             case "hover": conditions.insert(.hovered)
             case "focus": conditions.insert(.focused)
             case "active", "pressed": conditions.insert(.pressed)
@@ -165,6 +166,10 @@ enum TWClassParser {
         case "bezel-bordered": return .bezel(.bordered)
         case "bezel-borderless": return .bezel(.borderless)
         case "bezel-link": return .bezel(.link)
+        case "control-metrics": return TWStyle(rules: [TWRule(property: .controlMetrics(.button))])
+        case "input-metrics": return TWStyle(rules: [TWRule(property: .controlMetrics(.input))])
+        case "control-row": return TWStyle(rules: [TWRule(property: .controlMetrics(.row))])
+        case "control-icon": return TWStyle(rules: [TWRule(property: .controlMetrics(.icon))])
         case "control-mini": return .controlSize(.mini)
         case "control-sm": return .controlSize(.small)
         case "control-md": return .controlSize(.regular)
@@ -304,6 +309,7 @@ enum TWClassParser {
 
     private static func groupCondition(_ value: String) -> TWCondition? {
         switch value {
+        case "group-selected": .selected
         case "group-hover": .hovered
         case "group-focus": .focused
         case "group-active", "group-pressed": .pressed

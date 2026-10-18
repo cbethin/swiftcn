@@ -18,6 +18,7 @@ expected = {
     "adaptive-surfaces": {"AdaptiveSurfacesExample.swift"},
     "native-composition": {entry['example'] for entry in json.loads((repo / 'Components/native-examples.json').read_text())},
     "components": {"ComponentPartsExample.swift"},
+    "customization": {"CustomizationExample.swift"},
     "interpolation": {"TypedInterpolationExample.swift", "InterpolatedListExample.swift"},
     "native-modifiers": {"NativeRegistryExample.swift", "NativeCompositionExample.swift"},
     "troubleshooting": {"StyleValidation.swift"},

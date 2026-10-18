@@ -72,3 +72,39 @@ extension EnvironmentValues {
         set { self[CNPresentationDismissKey.self] = newValue }
     }
 }
+
+/// Shared context lets imported and locally copied segment parts compose.
+public struct CNSegmentedContext {
+    public let selection: AnyHashable
+    public let tabStop: AnyHashable?
+    public let focused: FocusState<AnyHashable?>.Binding
+    public let indicator: Namespace.ID
+    public let accepts: (AnyHashable) -> Bool
+    public let select: (AnyHashable) -> Void
+    public let navigate: (AnyHashable, KeyEquivalent) -> KeyPress.Result
+
+    public init(selection: AnyHashable, tabStop: AnyHashable?, focused: FocusState<AnyHashable?>.Binding,
+                indicator: Namespace.ID, accepts: @escaping (AnyHashable) -> Bool,
+                select: @escaping (AnyHashable) -> Void,
+                navigate: @escaping (AnyHashable, KeyEquivalent) -> KeyPress.Result) {
+        self.selection = selection; self.tabStop = tabStop; self.focused = focused; self.indicator = indicator
+        self.accepts = accepts; self.select = select; self.navigate = navigate
+    }
+}
+
+extension EnvironmentValues {
+    @Entry public var cnSegmentedContext: CNSegmentedContext? = nil
+}
+
+// Preference values stay on SwiftUI's UI thread; AnyHashable wraps the caller's stable selection values.
+public struct CNSegmentDescriptor: Equatable, @unchecked Sendable {
+    public let id: AnyHashable
+    public let enabled: Bool
+    public init(id: AnyHashable, enabled: Bool) { self.id = id; self.enabled = enabled }
+}
+public struct CNSegmentOrder: PreferenceKey {
+    public static let defaultValue: [CNSegmentDescriptor] = []
+    public static func reduce(value: inout [CNSegmentDescriptor], nextValue: () -> [CNSegmentDescriptor]) {
+        value.append(contentsOf: nextValue())
+    }
+}

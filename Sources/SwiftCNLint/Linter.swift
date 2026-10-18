@@ -136,11 +136,11 @@ public struct SwiftCNLinter {
 
     // MARK: - Finding class strings
 
-    private enum RuleKind: String { case named, modifiers, utilities, animations }
+    private enum RuleKind: String { case named, replacing, modifiers, utilities, animations }
 
     private mutating func record(_ name: String, as kind: RuleKind) {
         switch kind {
-        case .named: learnedNamed.insert(name)
+        case .named, .replacing: learnedNamed.insert(name)
         case .animations: learnedAnimations.insert(name)
         case .modifiers, .utilities:
             // Registrations can be exact tags, argument prefixes, or both.
@@ -178,7 +178,7 @@ public struct SwiftCNLinter {
             return [literal]
         }
         // Recipe values: `named: ["motion-card": "card animate-settle"]`.
-        if token.identifier == "named", at(1)?.isPunctuation(":") == true, at(2)?.isPunctuation("[") == true {
+        if ["named", "replacing"].contains(token.identifier ?? ""), at(1)?.isPunctuation(":") == true, at(2)?.isPunctuation("[") == true {
             return dictionaryEntries(tokens, openingBracket: index + 2).compactMap(\.value)
         }
         return []

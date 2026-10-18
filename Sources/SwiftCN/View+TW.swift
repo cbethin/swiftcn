@@ -40,6 +40,7 @@ struct TWModifier: ViewModifier {
     var animationValue: TWAnimationValue? = nil
     @State private var animationID = UUID()
     private var target: TWTarget { text != nil ? .text : image != nil ? .image : shape != nil ? .shape : .view }
+    @Environment(\.controlSize) private var controlSize
     @Environment(\.twTheme) private var theme
     @Environment(\.twRules) private var rules
     @Environment(\.colorScheme) private var scheme
@@ -59,7 +60,7 @@ struct TWModifier: ViewModifier {
         activeState.prefersReducedMotion = activeState.prefersReducedMotion || reduceMotion
         let combined = TWStyle(rules.view, isButton ? rules.button : TWStyle(), style)
         var appearance = TWStyleResolver.resolve(combined, theme: theme, scheme: scheme, state: activeState,
-            globalRules: rules, groupStates: groups.states, target: target)
+            globalRules: rules, groupStates: groups.states, target: target, controlSize: controlSize)
         let declaresForeground = !appearance.inheritsForeground
         if installsForeground { appearance.inheritsForeground = false }
         if !decorates {

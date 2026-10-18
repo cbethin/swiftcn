@@ -15,7 +15,7 @@ breakpoints, flex or grid utilities, percentages, `rem`, `calc`, or CSS variable
 
 Prefix a class with `variant:`. Combine variants, as in `disabled:hover:opacity-20`.
 
-`hover:` `focus:` `active:` `pressed:` `disabled:` `motion-reduce:` `motion-safe:` `group-hover:` `group-focus:` `group-active:` `group-pressed:` `group-disabled:`
+`selected:` `hover:` `focus:` `active:` `pressed:` `disabled:` `motion-reduce:` `motion-safe:` `group-selected:` `group-hover:` `group-focus:` `group-active:` `group-pressed:` `group-disabled:`
 
 Group variants accept a group name: `group-hover/hero:opacity-70`.
 
@@ -62,7 +62,7 @@ Use with `.buttonStyle(.tw("…"))`. Apple draws the button.
 
 - Recipes: `button-primary` `button-secondary` `button-outline` `button-destructive` `button-ghost` `button-link`
 - Styles: `bezel-prominent` `bezel-bordered` `bezel-borderless` `bezel-link` `glass` `glass-prominent`
-- Size: `control-mini` `control-sm` `control-md` `control-lg` `control-xl`
+- Size: `control-mini` `control-sm` `control-md` `control-lg` `control-xl` `control-metrics` `input-metrics` `control-row` `control-icon`
 - Tint: `tint-{color}` or `tint-[#hex]`
 
 ## Animation
@@ -124,7 +124,7 @@ degrees. Underscores stand for spaces. Interpolation keeps native Swift values: 
 
 Named classes that components use. Redefine them with `TWGlobalRules(named:)` or `.twRules { $0.named["card"] = "…" }`.
 
-`accordion` `accordion-item` `alert` `alert-description` `alert-title` `attachment` `avatar` `badge` `breadcrumb` `bubble` `button-destructive` `button-ghost` `button-group` `button-link` `button-outline` `button-primary` `button-secondary` `calendar` `calendar-day` `calendar-heading` `calendar-outside` `calendar-selected` `calendar-today` `calendar-weekday` `card` `card-content` `card-description` `card-footer` `card-header` `card-title` `carousel` `chart` `checkbox` `collapsible` `combobox` `command` `command-item` `command-search` `control-motion` `data-table` `date-picker` `date-picker-calendar` `dialog` `dialog-description` `dialog-footer` `dialog-title` `disclosure-motion` `drawer` `dropdown-content` `dropdown-item` `dropdown-label` `empty` `empty-description` `empty-title` `feedback-motion` `field` `field-description` `field-error` `field-group` `field-invalid` `field-label` `hover-card` `input` `input-group` `input-group-button` `input-group-field` `input-otp` `item` `item-description` `item-title` `kbd` `label` `marker` `menu` `message` `message-meta` `pagination` `popover` `popover-motion` `presentation-dialog` `presentation-motion` `presentation-scrim` `presentation-sheet` `progress` `questionnaire` `radio-group` `resizable` `resizable-handle` `scroll-area` `select` `separator` `sidebar` `sidebar-content` `sidebar-footer` `sidebar-group` `sidebar-group-label` `sidebar-header` `sidebar-item-label` `sidebar-list` `sidebar-menu` `sidebar-menu-badge` `sidebar-menu-button` `sidebar-menu-selected` `sidebar-menu-sub` `sidebar-motion` `sidebar-scrim` `sidebar-trigger` `skeleton` `skeleton-motion` `slider` `spinner` `spinner-motion` `switch` `table` `table-caption` `table-cell` `table-header` `table-row` `table-row-selected` `tabs` `textarea` `toast` `toggle` `toggle-selected` `toggle-unselected` `tooltip` `typography`
+`accordion` `accordion-item` `alert` `alert-description` `alert-title` `attachment` `avatar` `badge` `breadcrumb` `bubble` `button-destructive` `button-ghost` `button-group` `button-link` `button-outline` `button-primary` `button-secondary` `calendar` `calendar-day` `calendar-heading` `calendar-outside` `calendar-selected` `calendar-today` `calendar-weekday` `card` `card-content` `card-description` `card-footer` `card-header` `card-title` `carousel` `chart` `checkbox` `collapsible` `combobox` `command` `command-item` `command-search` `control-motion` `data-table` `date-picker` `date-picker-calendar` `dialog` `dialog-description` `dialog-footer` `dialog-title` `disclosure-motion` `drawer` `dropdown-content` `dropdown-item` `dropdown-label` `empty` `empty-description` `empty-title` `feedback-motion` `field` `field-description` `field-error` `field-group` `field-invalid` `field-label` `hover-card` `input` `input-group` `input-group-button` `input-group-field` `input-otp` `item` `item-description` `item-title` `kbd` `label` `marker` `menu` `menu-bar` `menu-separator` `menu-separator-container` `message` `message-meta` `pagination` `popover` `popover-motion` `presentation-dialog` `presentation-motion` `presentation-scrim` `presentation-sheet` `progress` `questionnaire` `radio-group` `resizable` `resizable-handle` `scroll-area` `segmented` `segmented-indicator` `segmented-item` `select` `separator` `sidebar` `sidebar-content` `sidebar-footer` `sidebar-group` `sidebar-group-label` `sidebar-header` `sidebar-item-label` `sidebar-list` `sidebar-menu` `sidebar-menu-badge` `sidebar-menu-button` `sidebar-menu-selected` `sidebar-menu-sub` `sidebar-motion` `sidebar-scrim` `sidebar-trigger` `skeleton` `skeleton-motion` `slider` `spinner` `spinner-motion` `switch` `table` `table-caption` `table-cell` `table-header` `table-row` `table-row-selected` `tabs` `textarea` `toast` `toggle` `toggle-button` `toggle-selected` `toggle-unselected` `tooltip` `typography`
 
 ## Custom classes
 

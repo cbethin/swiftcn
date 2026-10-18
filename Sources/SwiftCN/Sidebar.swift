@@ -175,6 +175,7 @@ public struct CNSidebarMenu<Content: View>: View {
 public struct CNSidebarMenuButton: View {
     @Environment(\.cnSidebarContext) private var context
     @ScaledMetric(relativeTo: .body) private var iconWidth: CGFloat = 20
+    private let customLabel: ((CNSidebarContext) -> AnyView)?
     private let title: String
     private let systemImage: String
     private let isSelected: Bool
@@ -184,23 +185,48 @@ public struct CNSidebarMenuButton: View {
     private let action: () -> Void
     public init(_ title: String, systemImage: String, isSelected: Bool = false, badge: String? = nil,
                 dismissOnSelect: Bool = true, classes: TWClasses = "", action: @escaping () -> Void) {
+        self.customLabel = nil
         self.title = title; self.systemImage = systemImage; self.isSelected = isSelected; self.badge = badge
         self.dismissOnSelect = dismissOnSelect; self.classes = classes; self.action = action
     }
+    public init<Label: View>(isSelected: Bool = false, dismissOnSelect: Bool = true,
+                             classes: TWClasses = "", action: @escaping () -> Void,
+                             @ViewBuilder label: @escaping () -> Label) {
+        self.init(isSelected: isSelected, dismissOnSelect: dismissOnSelect, classes: classes,
+                  action: action, label: { _ in label() })
+    }
+    public init<Label: View>(isSelected: Bool = false, dismissOnSelect: Bool = true,
+                             classes: TWClasses = "", action: @escaping () -> Void,
+                             @ViewBuilder label: @escaping (CNSidebarContext) -> Label) {
+        customLabel = { AnyView(label($0)) }
+        title = ""; systemImage = ""; badge = nil
+        self.isSelected = isSelected; self.dismissOnSelect = dismissOnSelect
+        self.classes = classes; self.action = action
+    }
     public var body: some View {
+        accessibleButton.accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+    @ViewBuilder private var accessibleButton: some View {
+        if customLabel == nil {
+            button.accessibilityLabel(title).accessibilityValue(badge ?? "").help(title)
+        } else {
+            button
+        }
+    }
+    private var button: some View {
         CNButton(variant: .ghost, classes: cn("sidebar-menu-button", isSelected ? "sidebar-menu-selected" : "", classes), action: {
             action()
             if context.isCompact && dismissOnSelect { context.dismiss() }
         }) {
-            HStack(spacing: 10) {
+            if let customLabel { customLabel(context) }
+            else { HStack(spacing: 10) {
                 Image(systemName: systemImage).frame(width: context.isCollapsed ? 20 : iconWidth).accessibilityHidden(true)
                 if !context.isCollapsed {
                     Text(title).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading).transition(.opacity)
                     if let badge { Text(badge).tw("sidebar-menu-badge").transition(.opacity) }
                 }
-            }.frame(maxWidth: .infinity, alignment: context.isCollapsed ? .center : .leading)
-        }.accessibilityLabel(title).accessibilityValue(badge ?? "")
-            .accessibilityAddTraits(isSelected ? .isSelected : []).help(title)
+            }.frame(maxWidth: .infinity, alignment: context.isCollapsed ? .center : .leading) }
+        }
     }
 }
 /// Nested navigation remains mounted when the desktop rail collapses.

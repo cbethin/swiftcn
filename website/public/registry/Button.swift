@@ -9,26 +9,10 @@ public enum CNButtonSize: Sendable {
     case regular, small, large, icon
     public var classes: TWClasses {
         switch self {
-        case .regular: ""
-        case .small:
-            #if os(iOS)
-            "control-sm px-3 py-1 min-h-[44]"
-            #else
-            "control-sm px-3 py-1 min-h-[32]"
-            #endif
-        case .large:
-            #if os(iOS)
-            "control-lg px-6 min-h-[48]"
-            #else
-            "control-lg px-6 min-h-[40]"
-            #endif
-        case .icon:
-            // Icon labels are narrower than the platform's touch target.
-            #if os(iOS)
-            "px-0 py-0 min-w-[44] min-h-[44]"
-            #else
-            "px-0 py-0 min-w-[36] min-h-[36]"
-            #endif
+        case .regular: "control-md"
+        case .small: "control-sm"
+        case .large: "control-lg"
+        case .icon: "control-icon"
         }
     }
 }
@@ -37,25 +21,25 @@ public enum CNButtonSize: Sendable {
 public struct CNButton<Label: View>: View {
     private let role: ButtonRole?
     private let variant: CNButtonVariant
-    private let size: CNButtonSize
+    private let size: CNButtonSize?
     private let classes: TWClasses
     private let action: () -> Void
     private let label: Label
     @FocusState private var isFocused: Bool
 
-    public init(role: ButtonRole? = nil, variant: CNButtonVariant = .primary, size: CNButtonSize = .regular,
+    public init(role: ButtonRole? = nil, variant: CNButtonVariant = .primary, size: CNButtonSize? = nil,
                 classes: TWClasses = "", action: @escaping () -> Void, @ViewBuilder label: () -> Label) {
         self.role = role; self.variant = variant; self.size = size; self.classes = classes
         self.action = action; self.label = label()
     }
     public init(_ title: LocalizedStringKey, role: ButtonRole? = nil, variant: CNButtonVariant = .primary,
-                size: CNButtonSize = .regular, classes: TWClasses = "", action: @escaping () -> Void) where Label == Text {
+                size: CNButtonSize? = nil, classes: TWClasses = "", action: @escaping () -> Void) where Label == Text {
         self.init(role: role, variant: variant, size: size, classes: classes, action: action) { Text(title) }
     }
     public var body: some View {
         Button(role: role, action: action) { label }
             .focused($isFocused)
-            .buttonStyle(.tw(cn(variant.classes, size.classes, classes), state: .init(isFocused: isFocused)))
+            .buttonStyle(.tw(cn(variant.classes, size?.classes ?? "", classes), state: .init(isFocused: isFocused)))
     }
 }
 
