@@ -25,14 +25,17 @@ struct NativeButtonLabelProbe: View {
     }
 }
 #if os(macOS)
-/// A real scene verifies that the native focus environment reaches direct style adapters.
+/// A real scene verifies caller-owned focus with the direct style adapter.
 struct NativeButtonFocusProbe: View {
     @FocusState private var focused: Bool
     var body: some View {
         HStack {
             Button("Focus styled button") { focused = true }
             Button("Styled focus target") {}
-                .buttonStyle(.tw("button-primary bg-[#ff0000] focus:bg-[#00ff00]"))
+                .buttonStyle(.tw("button-primary bg-[#ff0000] focus:bg-[#00ff00]",
+                                 state: .init(isFocused: focused)))
+                // Test focus styling independently of the host's Keyboard Navigation preference.
+                .focusable()
                 .focused($focused)
         }
     }

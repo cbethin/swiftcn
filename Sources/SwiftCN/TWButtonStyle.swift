@@ -48,13 +48,11 @@ private struct TWButtonBody: View {
     @Environment(\.twRules) private var rules
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @FocusState private var focused: Bool
 
     /// The state, with Reduce Motion, for `motion-reduce:` and `motion-safe:` classes.
     private var resolvedState: TWState {
         var state = self.state
         state.prefersReducedMotion = state.prefersReducedMotion || reduceMotion
-        state.isFocused = state.isFocused || focused
         return state
     }
 
@@ -68,10 +66,8 @@ private struct TWButtonBody: View {
                                 rendering: .resolve(bezel: bezel, glass: glass, engine: inputs.engine),
                                 fullRadius: theme.radius(.full))
         } else {
-            Button(configuration)
-                .buttonStyle(TWPlainButtonStyle(style: style, state: resolvedState))
-                .focusEffectDisabled()
-                .focused($focused)
+            Button(role: configuration.role, action: configuration.trigger) { configuration.label }
+                .buttonStyle(TWPlainButtonStyle(style: style, state: state))
         }
     }
 }

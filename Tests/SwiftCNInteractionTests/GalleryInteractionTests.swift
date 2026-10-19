@@ -164,12 +164,14 @@ final class GalleryInteractionTests: XCTestCase {
     }
 
     #if os(macOS)
-    @MainActor func testDirectButtonStyleTracksNativeKeyboardFocus() throws {
+    @MainActor func testDirectButtonStylePreservesCallerKeyboardFocus() throws {
         let app = launch("button", probe: "flat-button-focus")
         defer { capture(app); app.terminate() }
         let target = app.buttons["Styled focus target"]
         XCTAssertTrue(target.waitForExistence(timeout: 5))
         activate(app.buttons["Focus styled button"])
+        XCTAssertTrue(wait(for: NSPredicate(format: "hasKeyboardFocus == true"), on: target),
+                      "The caller's focus binding must focus the native button.")
         let image = try XCTUnwrap(target.screenshot().image.cgImage(forProposedRect: nil, context: nil, hints: nil))
         let width = image.width, height = image.height
         let context = try XCTUnwrap(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
@@ -181,7 +183,7 @@ final class GalleryInteractionTests: XCTestCase {
             bytes[$0] < 50 && bytes[$0 + 1] > 200 && bytes[$0 + 2] < 50
         }.count
         XCTAssertGreaterThan(Double(green) / Double(width * height), 0.3,
-                             "Native keyboard focus must activate focus: classes without an explicit TWState.")
+                             "The caller's native focus state must activate focus: classes.")
     }
 
     @MainActor func testCommandCommaOpensOneSettingsWindowAndPersistsPreferences() {

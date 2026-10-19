@@ -128,7 +128,9 @@ public struct CNSidebar<Sidebar: View, Detail: View>: View {
                 .twAnimation("sidebar-motion", value: dragOffset, tracksHover: false)
                 .twAnimation("sidebar-motion", value: swipeOffset, tracksHover: false)
                 .onChange(of: compact) { _, _ in mobile.wrappedValue = false; drawerFocused = false; swipeOffset = 0 }
-                .onChange(of: mobile.wrappedValue) { _, presented in drawerFocused = compact && presented }
+                .onChange(of: mobile.wrappedValue) { _, presented in
+                    if compact { drawerFocused = presented }
+                }
                 .onAppear { drawerFocused = compact && mobile.wrappedValue }
                 .onKeyPress(.escape) {
                     guard compact, mobile.wrappedValue else { return .ignored }
