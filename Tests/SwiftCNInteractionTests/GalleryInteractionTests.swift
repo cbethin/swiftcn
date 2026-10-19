@@ -45,7 +45,9 @@ final class GalleryInteractionTests: XCTestCase {
         capture(app)
         #if os(iOS)
         XCTAssertFalse(app.keyboards.firstMatch.exists, "Opening choices must not summon the keyboard.")
-        activate(app.buttons["Cancel"])
+        let usesSheet = app.buttons["Cancel"].exists
+        if usesSheet { activate(app.buttons["Cancel"]) }
+        else { activate(trigger) }
         XCTAssertTrue(wait(for: NSPredicate(format: "exists == false"), on: search))
         expectValue(trigger, "No selection, Collapsed")
         activate(trigger)
@@ -68,7 +70,8 @@ final class GalleryInteractionTests: XCTestCase {
         XCTAssertTrue(mobile.waitForExistence(timeout: 5))
         XCTAssertTrue(mobile.isSelected)
         #if os(iOS)
-        activate(app.buttons["Cancel"])
+        if usesSheet { activate(app.buttons["Cancel"]) }
+        else { activate(trigger) }
         #else
         app.typeKey(.escape, modifierFlags: [])
         #endif
@@ -76,13 +79,16 @@ final class GalleryInteractionTests: XCTestCase {
     }
 
     #if os(iOS)
-    @MainActor func testComboboxLongListReachesItsFinalChoiceAndSurvivesRotation() {
+    @MainActor func testComboboxLongListReachesItsFinalChoiceAndSurvivesRotation() throws {
         let app = launch("combobox", probe: "long-combobox")
         defer { XCUIDevice.shared.orientation = .portrait; capture(app); app.terminate() }
         let trigger = app.buttons["Choose a workspace"]
         activate(trigger)
         let search = app.textFields["Search workspaces…"]
         XCTAssertTrue(search.waitForExistence(timeout: 5))
+        guard app.buttons["Cancel"].exists else {
+            throw XCTSkip("This regression covers compact iPhone sheets; regular-width choices use an anchored popover.")
+        }
         let list = app.scrollViews.containing(.button, identifier: "Workspace 1").firstMatch
         XCTAssertTrue(list.exists)
         let frame = list.frame
