@@ -118,7 +118,11 @@ private struct CNPopoverPointerLayer<Content: View>: NSViewRepresentable {
     let onDeactivate: () -> Void
     @ViewBuilder let content: () -> Content
     func makeNSView(context: Context) -> CNPopoverHostingView {
-        CNPopoverHostingView(rootView: AnyView(CNPopoverEnvironmentRoot(content: content(), environment: context.environment)))
+        let view = CNPopoverHostingView(rootView: AnyView(CNPopoverEnvironmentRoot(content: content(), environment: context.environment)))
+        // The outer host has already resolved safe areas. A nested hosting view
+        // must not add the hidden titlebar inset to popup coordinates again.
+        view.safeAreaRegions = []
+        return view
     }
     func updateNSView(_ view: CNPopoverHostingView, context: Context) {
         let opening = active && presentationIDs != view.presentationIDs

@@ -262,13 +262,14 @@ public struct CNCombobox<ID: Hashable & Sendable>: View {
     private let presentation: CNComboboxPresentation
     private let searchPrompt: String
     private let autofocusSearch: Bool?
-    private let popupWidth: CGFloat
+    private let popupWidth: CGFloat?
     private let maximumListHeight: CGFloat
     private let contentClasses: TWClasses
     private let searchClasses: TWClasses
     private let itemClasses: TWClasses
     @State private var isPresented = false
     @State private var presentedAsSheet = false
+    @State private var triggerWidth: CGFloat = 200
     @AccessibilityFocusState private var triggerAccessibilityFocused: Bool
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -276,11 +277,11 @@ public struct CNCombobox<ID: Hashable & Sendable>: View {
 
     public init(_ title: String, options: [CNOption<ID>], selection: Binding<ID?>, classes: TWClasses = "",
                 presentation: CNComboboxPresentation = .automatic, searchPrompt: String = "Search options…",
-                autofocusSearch: Bool? = nil, popupWidth: CGFloat = 320, maximumListHeight: CGFloat = 320,
+                autofocusSearch: Bool? = nil, popupWidth: CGFloat? = nil, maximumListHeight: CGFloat = 320,
                 contentClasses: TWClasses = "", searchClasses: TWClasses = "", itemClasses: TWClasses = "") {
         self.title = title; self.options = options; _selection = selection; self.classes = classes
         self.presentation = presentation; self.searchPrompt = searchPrompt; self.autofocusSearch = autofocusSearch
-        self.popupWidth = popupWidth.isFinite ? max(160, popupWidth) : 320
+        self.popupWidth = popupWidth.flatMap { $0.isFinite && $0 > 0 ? $0 : nil }
         self.maximumListHeight = maximumListHeight.isFinite ? max(44, maximumListHeight) : 320
         self.contentClasses = contentClasses; self.searchClasses = searchClasses; self.itemClasses = itemClasses
     }
@@ -323,15 +324,17 @@ public struct CNCombobox<ID: Hashable & Sendable>: View {
             HStack {
                 Text(options.first { $0.id == selection }?.title ?? title)
                     .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
                 Image(systemName: "chevron.up.chevron.down").accessibilityHidden(true)
             }
         }
+        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { triggerWidth = $0 }
         .accessibilityLabel(title)
         .accessibilityValue("\(options.first { $0.id == selection }?.title ?? "No selection"), \(isPresented ? "Expanded" : "Collapsed")")
-        .accessibilityHint("Opens searchable choices")
+        .accessibilityHint(isPresented ? "Closes choices" : "Opens searchable choices")
         .accessibilityFocused($triggerAccessibilityFocused)
         .cnPopover(isPresented: presented(false), scrollsContent: false) {
-            command(sheet: false).frame(idealWidth: popupWidth, maxWidth: popupWidth)
+            command(sheet: false).frame(idealWidth: popupWidth ?? triggerWidth, maxWidth: popupWidth ?? triggerWidth)
         }
         .sheet(isPresented: presented(true), onDismiss: { triggerAccessibilityFocused = true }) {
             VStack(spacing: 0) {
@@ -350,7 +353,7 @@ public struct CNCombobox<ID: Hashable & Sendable>: View {
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(24)
             #else
-            .frame(width: popupWidth, height: maximumListHeight + 120)
+            .frame(width: popupWidth ?? 320, height: maximumListHeight + 120)
             #endif
         }
         .onChange(of: isPresented) { old, new in

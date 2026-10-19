@@ -8,6 +8,30 @@ import Testing
 @MainActor
 struct PopoverInteractionTests {
     @Test(arguments: [false, true])
+    func comboboxMatchesItsTriggerAndUsesOneTitlebarInset(integrated: Bool) async throws {
+        let model = PopoverPointerModel()
+        let controller = NSHostingController(rootView: ComboboxAnchorHarness(model: model, integrated: integrated))
+        var mask: NSWindow.StyleMask = [.titled, .resizable]
+        if integrated { mask.insert(.fullSizeContentView) }
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 600, height: 500),
+                              styleMask: mask, backing: .buffered, defer: false)
+        if integrated { window.titleVisibility = .hidden; window.titlebarAppearsTransparent = true }
+        controller.view.frame = window.contentLayoutRect
+        window.contentViewController = controller; window.makeKeyAndOrderFront(nil)
+        defer { window.orderOut(nil); window.contentViewController = nil }
+        try await settle(controller.view, seconds: 0.2)
+        let trigger = try #require(model.triggerBounds)
+        try click(window, at: controller.view.convert(CGPoint(x: trigger.midX, y: trigger.midY), to: nil))
+        try await settle(controller.view, seconds: 0.3)
+        let scroll = try #require(descendants(controller.view).compactMap { $0 as? NSScrollView }.first)
+        let viewport = scroll.convert(scroll.bounds, to: controller.view)
+        // Search is 48 points high, followed by its one-point separator.
+        let popupTop = viewport.minY - 49
+        #expect(abs(viewport.width - trigger.width) < 1, "Popup: \(viewport), trigger: \(trigger)")
+        #expect(abs(popupTop - trigger.maxY - 6) < 1, "Popup top: \(popupTop), trigger bottom: \(trigger.maxY)")
+    }
+
+    @Test(arguments: [false, true])
     func datePickerCentersItsCalendarOnTheInputAndKeepsTheTriggerClickable(rtl: Bool) async throws {
         let model = DatePickerPopoverModel()
         let controller = NSHostingController(rootView: VStack {
@@ -189,6 +213,30 @@ struct PopoverInteractionTests {
     private func settle(_ host: NSView, seconds: TimeInterval) async throws {
         host.layoutSubtreeIfNeeded()
         try await Task.sleep(for: .seconds(seconds))
+    }
+}
+private struct ComboboxAnchorHarness: View {
+    let model: PopoverPointerModel
+    let integrated: Bool
+    @State private var selection: String?
+    private var content: some View {
+        VStack(alignment: .leading) {
+            CNCombobox("Choose a workspace", options: [CNOption("design", title: "Design system"),
+                        CNOption("mobile", title: "Mobile app")], selection: $selection, autofocusSearch: false)
+                .background { GeometryReader { geometry in
+                    Color.clear.preference(key: PointerTriggerBounds.self,
+                                           value: geometry.frame(in: .named("pointer-root")))
+                } }
+                .padding(.top, 80).padding(.leading, 40)
+            Spacer()
+        }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .coordinateSpace(name: "pointer-root")
+            .onPreferenceChange(PointerTriggerBounds.self) { model.triggerBounds = $0 }
+            .cnPopoverHost()
+    }
+    @ViewBuilder var body: some View {
+        if integrated { content.cnWindowContent() }
+        else { content }
     }
 }
 @MainActor @Observable private final class DatePickerPopoverModel {

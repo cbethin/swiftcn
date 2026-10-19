@@ -141,7 +141,7 @@
     "symbol": "CNCombobox",
     "source": "Command.swift",
     "example": "ComboboxExample.swift",
-    "notes": "Stable option IDs and the caller binding own selection. Automatic presentation uses a native sheet on compact iOS and an anchored popover elsewhere. Cancel or swipe dismissal does not change selection. iOS search focuses only when tapped; set autofocusSearch to override. Configure presentation, popupWidth, maximumListHeight, and searchPrompt. Use classes for the trigger and contentClasses, searchClasses, and itemClasses for popup parts. One list owns scrolling; the search field stays visible above the keyboard. Selected rows show a checkmark and a selected accessibility trait."
+    "notes": "Stable option IDs and the caller binding own selection. Automatic presentation uses a native sheet on compact iOS and an anchored popover elsewhere. Cancel or swipe dismissal does not change selection. iOS search focuses only when tapped; set autofocusSearch to override. Configure presentation, popupWidth, maximumListHeight, and searchPrompt. Use classes for the trigger and contentClasses, searchClasses, and itemClasses for popup parts. One list owns scrolling; the search field stays visible above the keyboard. Selected rows show a checkmark and a selected accessibility trait. The default trigger is 200 points wide. Its popover matches the rendered trigger width; use popupWidth for an explicit override."
   },
   {
     "name": "Command",

@@ -117,7 +117,7 @@ extension TWStyle {
             "command": "min-h-[180] bg-surface text-foreground rounded-lg border",
             "command-search": "px-4 py-1 min-h-[48] bg-[\(Color.clear)] border-0 focus:border-0 rounded-none",
             "command-item": "w-full px-3 py-2 min-h-[36] text-sm rounded-md pressed:opacity-80 disabled:opacity-45",
-            "combobox": "px-3 py-2 bg-surface text-foreground border border-input rounded-md",
+            "combobox": "w-[200] px-3 py-2 bg-surface text-foreground border border-input rounded-md",
             "pagination": "text-sm text-foreground",
             "scroll-area": "text-foreground",
             "skeleton": "bg-muted rounded-md",
