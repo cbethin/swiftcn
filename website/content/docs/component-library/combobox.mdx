@@ -19,11 +19,13 @@ import SwiftCN
 
 struct ComboboxExample: View {
     @State private var optionalSelection: String? = nil
-    private let options = [CNOption("design", title: "Design system"), CNOption("mobile", title: "Mobile app"), CNOption("archive", title: "Archived", isDisabled: true)]
+    private let options = [CNOption("design", title: "Design system"), CNOption("mobile", title: "Mobile app"),
+                           CNOption("archive", title: "Archived", isDisabled: true)]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            CNCombobox("Choose a workspace", options: options, selection: $optionalSelection)
+            CNCombobox("Choose a workspace", options: options, selection: $optionalSelection,
+                       searchPrompt: "Search workspaces…")
 
         }
     }
@@ -32,7 +34,7 @@ struct ComboboxExample: View {
 
 ## Native behavior
 
-A searchable custom SwiftUI popover selects stable option IDs. Empty results and disabled options are handled. The selected value remains in the caller binding. Hosted popovers keep their intrinsic size until the host bounds limit them. A native scroll viewport makes oversized content reachable without replacing child controls during resizing.
+Stable option IDs and the caller binding own selection. Automatic presentation uses a native sheet on compact iOS and an anchored popover elsewhere. Cancel or swipe dismissal does not change selection. iOS search focuses only when tapped; set autofocusSearch to override. Configure presentation, popupWidth, maximumListHeight, and searchPrompt. Use classes for the trigger and contentClasses, searchClasses, and itemClasses for popup parts. One list owns scrolling; the search field stays visible above the keyboard. Selected rows show a checkmark and a selected accessibility trait.
 
 ## Style and compose
 
@@ -96,10 +98,21 @@ public struct CNCommand<ID: Hashable & Sendable>: View {
     private let classes: TWClasses
     private let onSelect: (ID) -> Void
     private let query: Binding<String>?
+    private let searchPrompt: String
+    private let autofocusSearch: Bool
+    private let maximumListHeight: CGFloat
+    private let searchClasses: TWClasses
+    private let itemClasses: TWClasses
     public init(_ options: [CNOption<ID>], selection: Binding<ID?>, query: Binding<String>? = nil,
-                classes: TWClasses = "", onSelect: @escaping (ID) -> Void = { _ in }) {
+                classes: TWClasses = "", searchPrompt: String = "Search commands…",
+                autofocusSearch: Bool = true, maximumListHeight: CGFloat = 320,
+                searchClasses: TWClasses = "", itemClasses: TWClasses = "",
+                onSelect: @escaping (ID) -> Void = { _ in }) {
         self.options = options; _selection = selection; self.query = query
         self.classes = classes; self.onSelect = onSelect
+        self.searchPrompt = searchPrompt; self.autofocusSearch = autofocusSearch
+        self.maximumListHeight = maximumListHeight.isFinite ? max(44, maximumListHeight) : 320
+        self.searchClasses = searchClasses; self.itemClasses = itemClasses
     }
     public var body: some View {
         itemContent { option, selected in CNCommandLabel(option: option, selected: selected) }
@@ -113,7 +126,9 @@ public struct CNCommand<ID: Hashable & Sendable>: View {
         @ViewBuilder empty: () -> Empty
     ) -> some View {
         CNCommandBody(options: options, selection: $selection, boundQuery: query,
-                      classes: classes, onSelect: onSelect, item: item, empty: empty())
+                      classes: classes, searchPrompt: searchPrompt, autofocusSearch: autofocusSearch,
+                      maximumListHeight: maximumListHeight, searchClasses: searchClasses, itemClasses: itemClasses,
+                      onSelect: onSelect, item: item, empty: empty())
     }
 }
 
@@ -122,9 +137,15 @@ private struct CNCommandBody<ID: Hashable & Sendable, Item: View, Empty: View>: 
     @Binding var selection: ID?
     let boundQuery: Binding<String>?
     let classes: TWClasses
+    let searchPrompt: String
+    let autofocusSearch: Bool
+    let maximumListHeight: CGFloat
+    let searchClasses: TWClasses
+    let itemClasses: TWClasses
     let onSelect: (ID) -> Void
     let item: (CNOption<ID>, Bool) -> Item
     let empty: Empty
+    @State private var listHeight: CGFloat?
     @State private var localQuery = ""
     @State private var highlighted: ID?
     @State private var pointer = CNCommandPointer()
@@ -134,11 +155,22 @@ private struct CNCommandBody<ID: Hashable & Sendable, Item: View, Empty: View>: 
     private var results: [CNOption<ID>] { CNOptionSearch.filter(options, query: query.wrappedValue) }
     public var body: some View {
         let results = self.results
-        VStack(alignment: .leading, spacing: 0) {
-            CNInputGroup("command-search", focus: $searchFocused) {
+        CNCommandLayout(listHeight: listHeight ?? maximumListHeight, maximumListHeight: maximumListHeight) {
+            CNInputGroup(cn("command-search", searchClasses), focus: $searchFocused) {
                 Image(systemName: "magnifyingglass").tw("text-sm text-mutedForeground").accessibilityHidden(true)
-                CNInputGroupField("Search…", text: query).accessibilityLabel("Search commands")
+                CNInputGroupField(LocalizedStringKey(searchPrompt), text: query).accessibilityLabel(searchPrompt)
+                    .autocorrectionDisabled()
+                    #if os(iOS)
+                    .textInputAutocapitalization(.never)
+                    .submitLabel(.search)
+                    #endif
                     .onSubmit(activateHighlighted)
+                if !query.wrappedValue.isEmpty {
+                    CNButton(variant: .ghost, size: .icon, classes: "control-icon", action: {
+                        query.wrappedValue = ""
+                    }) { Image(systemName: "xmark.circle.fill").accessibilityHidden(true) }
+                        .accessibilityLabel("Clear search")
+                }
             }
             CNSeparator()
             ScrollViewReader { scroll in
@@ -151,7 +183,7 @@ private struct CNCommandBody<ID: Hashable & Sendable, Item: View, Empty: View>: 
                             Button { activate(option) } label: {
                                 item(option, selection == option.id)
                             }
-                            .buttonStyle(.tw(cn("command-item", highlighted == option.id ? "bg-accent" : "")))
+                            .buttonStyle(.tw(cn("command-item", highlighted == option.id ? "bg-accent" : "", itemClasses)))
                             .disabled(option.isDisabled).id(option.id)
                             .onContinuousHover(coordinateSpace: .named(pointerSpace)) { phase in
                                 if case .active(let location) = phase {
@@ -162,16 +194,25 @@ private struct CNCommandBody<ID: Hashable & Sendable, Item: View, Empty: View>: 
                             .accessibilityAddTraits(selection == option.id ? .isSelected : [])
                         }
                     }.tw("p-[6]")
+                        .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { listHeight = $0 }
                 }
+                .scrollBounceBehavior(.basedOnSize)
+                #if os(iOS)
+                .scrollDismissesKeyboard(.interactively)
+                #endif
                 .coordinateSpace(name: pointerSpace)
                 .onChange(of: results, initial: true) { _, options in
+                    #if os(iOS)
+                    if highlighted != nil { highlighted = CNCommandNavigation.reconcile(options, highlighted: highlighted) }
+                    #else
                     highlighted = CNCommandNavigation.reconcile(options, highlighted: highlighted)
-                    if let highlighted { scroll.scrollTo(highlighted) }
+                    #endif
+                    if let id = highlighted ?? options.first?.id { scroll.scrollTo(id, anchor: .top) }
                 }
                 .onChange(of: highlighted) { _, id in if let id { scroll.scrollTo(id) } }
             }
         }.tw(cn("command", classes))
-            .onAppear { searchFocused = true }
+            .onAppear { searchFocused = autofocusSearch }
             .onKeyPress(.downArrow) { move(1); return .handled }
             .onKeyPress(.upArrow) { move(-1); return .handled }
     }
@@ -180,6 +221,9 @@ private struct CNCommandBody<ID: Hashable & Sendable, Item: View, Empty: View>: 
         selection = option.id; onSelect(option.id)
     }
     private func activateHighlighted() {
+        #if os(iOS)
+        guard highlighted != nil else { searchFocused = false; return }
+        #endif
         if let id = CNCommandNavigation.reconcile(results, highlighted: highlighted),
            let option = results.first(where: { $0.id == id }) { activate(option) }
     }
@@ -199,8 +243,8 @@ private struct CNCommandLabel<ID: Hashable & Sendable>: View {
                 Image(systemName: symbol).tw("w-[20] text-mutedForeground").accessibilityHidden(true)
             }
             VStack(alignment: .leading, spacing: 3) {
-                Text(option.title).lineLimit(1)
-                if let detail = option.detail { Text(detail).tw("text-xs text-mutedForeground").lineLimit(1) }
+                Text(option.title).fixedSize(horizontal: false, vertical: true)
+                if let detail = option.detail { Text(detail).tw("text-xs text-mutedForeground").fixedSize(horizontal: false, vertical: true) }
             }
             Spacer(minLength: 8)
             Image(systemName: "checkmark").tw("text-xs text-mutedForeground")
@@ -209,24 +253,142 @@ private struct CNCommandLabel<ID: Hashable & Sendable>: View {
     }
 }
 
+/// Automatic uses a native sheet in compact iOS layouts and an anchored popover elsewhere.
+public enum CNComboboxPresentation: Sendable { case automatic, popover, sheet }
+
 public struct CNCombobox<ID: Hashable & Sendable>: View {
     private let title: String
     private let options: [CNOption<ID>]
     @Binding private var selection: ID?
     private let classes: TWClasses
+    private let presentation: CNComboboxPresentation
+    private let searchPrompt: String
+    private let autofocusSearch: Bool?
+    private let popupWidth: CGFloat
+    private let maximumListHeight: CGFloat
+    private let contentClasses: TWClasses
+    private let searchClasses: TWClasses
+    private let itemClasses: TWClasses
     @State private var isPresented = false
-    public init(_ title: String, options: [CNOption<ID>], selection: Binding<ID?>, classes: TWClasses = "") {
+    @State private var presentedAsSheet = false
+    @AccessibilityFocusState private var triggerAccessibilityFocused: Bool
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    #endif
+
+    public init(_ title: String, options: [CNOption<ID>], selection: Binding<ID?>, classes: TWClasses = "",
+                presentation: CNComboboxPresentation = .automatic, searchPrompt: String = "Search options…",
+                autofocusSearch: Bool? = nil, popupWidth: CGFloat = 320, maximumListHeight: CGFloat = 320,
+                contentClasses: TWClasses = "", searchClasses: TWClasses = "", itemClasses: TWClasses = "") {
         self.title = title; self.options = options; _selection = selection; self.classes = classes
+        self.presentation = presentation; self.searchPrompt = searchPrompt; self.autofocusSearch = autofocusSearch
+        self.popupWidth = popupWidth.isFinite ? max(160, popupWidth) : 320
+        self.maximumListHeight = maximumListHeight.isFinite ? max(44, maximumListHeight) : 320
+        self.contentClasses = contentClasses; self.searchClasses = searchClasses; self.itemClasses = itemClasses
+    }
+    private var usesSheet: Bool {
+        switch presentation {
+        case .sheet: true
+        case .popover: false
+        case .automatic:
+            #if os(iOS)
+            sizeClass == .compact
+            #else
+            false
+            #endif
+        }
+    }
+    private var shouldAutofocus: Bool {
+        if let autofocusSearch { return autofocusSearch }
+        #if os(iOS)
+        return false
+        #else
+        return true
+        #endif
+    }
+    private func presented(_ sheet: Bool) -> Binding<Bool> {
+        Binding(get: { isPresented && presentedAsSheet == sheet }, set: { isPresented = $0 })
+    }
+    private func command(sheet: Bool) -> some View {
+        CNCommand(options, selection: $selection,
+                  classes: cn(sheet ? "min-h-0 border-0 rounded-none bg-transparent" : "min-h-0 shadow-md", contentClasses),
+                  searchPrompt: searchPrompt, autofocusSearch: shouldAutofocus,
+                  maximumListHeight: maximumListHeight, searchClasses: searchClasses, itemClasses: itemClasses) { _ in
+            isPresented = false
+        }
     }
     public var body: some View {
-        CNPopover(isPresented: $isPresented, classes: cn("combobox", classes)) {
-            CNCommand(options, selection: $selection, classes: "w-[300] h-[320]") { _ in isPresented = false }
-        } label: {
+        CNButton(variant: .outline, classes: cn("combobox", classes), action: {
+            if !isPresented { presentedAsSheet = usesSheet }
+            isPresented.toggle()
+        }) {
             HStack {
                 Text(options.first { $0.id == selection }?.title ?? title)
+                    .fixedSize(horizontal: false, vertical: true)
                 Image(systemName: "chevron.up.chevron.down").accessibilityHidden(true)
             }
-        }.accessibilityLabel(title).accessibilityValue(options.first { $0.id == selection }?.title ?? "No selection")
+        }
+        .accessibilityLabel(title)
+        .accessibilityValue("\(options.first { $0.id == selection }?.title ?? "No selection"), \(isPresented ? "Expanded" : "Collapsed")")
+        .accessibilityHint("Opens searchable choices")
+        .accessibilityFocused($triggerAccessibilityFocused)
+        .cnPopover(isPresented: presented(false), scrollsContent: false) {
+            command(sheet: false).frame(idealWidth: popupWidth, maxWidth: popupWidth)
+        }
+        .sheet(isPresented: presented(true), onDismiss: { triggerAccessibilityFocused = true }) {
+            VStack(spacing: 0) {
+                HStack(spacing: 12) {
+                    Text(title).font(.headline).accessibilityAddTraits(.isHeader)
+                    Spacer(minLength: 8)
+                    CNButton("Cancel", variant: .ghost, size: .small, action: { isPresented = false })
+                }.padding(.horizontal, 20).padding(.top, 24).padding(.bottom, 12)
+                CNSeparator()
+                command(sheet: true)
+                Spacer(minLength: 0)
+            }
+            .tw("bg-surface text-foreground")
+            #if os(iOS)
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(24)
+            #else
+            .frame(width: popupWidth, height: maximumListHeight + 120)
+            #endif
+        }
+        .onChange(of: isPresented) { old, new in
+            if old && !new && !presentedAsSheet {
+                Task { @MainActor in
+                    await Task.yield()
+                    triggerAccessibilityFocused = true
+                }
+            }
+        }
+    }
+}
+
+/// Give the list its measured height, then shrink it to the available viewport.
+/// Search stays outside the scrolling region and keeps one native editor identity.
+private struct CNCommandLayout: Layout {
+    let listHeight: CGFloat
+    let maximumListHeight: CGFloat
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard subviews.count == 3 else { return .zero }
+        let width = proposal.width.flatMap { $0.isFinite ? max(0, $0) : nil } ?? 300
+        let header = subviews[0].sizeThatFits(.init(width: width, height: nil)).height
+        let separator = subviews[1].sizeThatFits(.init(width: width, height: nil)).height
+        let height = header + separator + min(listHeight, maximumListHeight)
+        return CGSize(width: width, height: min(height, proposal.height ?? height))
+    }
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard subviews.count == 3 else { return }
+        var y = bounds.minY
+        for index in 0..<3 {
+            let height = index < 2 ? min(max(0, bounds.maxY - y), subviews[index].sizeThatFits(.init(width: bounds.width, height: nil)).height)
+                : max(0, bounds.maxY - y)
+            subviews[index].place(at: CGPoint(x: bounds.minX, y: y), anchor: .topLeading,
+                                 proposal: .init(width: bounds.width, height: height))
+            y += height
+        }
     }
 }
 ```

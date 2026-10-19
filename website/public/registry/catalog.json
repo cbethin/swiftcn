@@ -141,7 +141,7 @@
     "symbol": "CNCombobox",
     "source": "Command.swift",
     "example": "ComboboxExample.swift",
-    "notes": "A searchable custom SwiftUI popover selects stable option IDs. Empty results and disabled options are handled. The selected value remains in the caller binding. Hosted popovers keep their intrinsic size until the host bounds limit them. A native scroll viewport makes oversized content reachable without replacing child controls during resizing."
+    "notes": "Stable option IDs and the caller binding own selection. Automatic presentation uses a native sheet on compact iOS and an anchored popover elsewhere. Cancel or swipe dismissal does not change selection. iOS search focuses only when tapped; set autofocusSearch to override. Configure presentation, popupWidth, maximumListHeight, and searchPrompt. Use classes for the trigger and contentClasses, searchClasses, and itemClasses for popup parts. One list owns scrolling; the search field stays visible above the keyboard. Selected rows show a checkmark and a selected accessibility trait."
   },
   {
     "name": "Command",
@@ -149,7 +149,7 @@
     "symbol": "CNCommand",
     "source": "Command.swift",
     "example": "CommandExample.swift",
-    "notes": "Search filters titles and details. Disabled options cannot activate. Native search and buttons share one pointer and keyboard highlight. Arrow keys reveal the active result; Return chooses it. The host owns command effects. Pass `query: $query` to own the search text. Use `.itemContent { option, selected in ... } empty: { ... }` to customize native button labels and the empty state. The component retains filtering, stable IDs, activation, and keyboard navigation. Avoid interactive controls inside an item label. See the complete observable-model example in native composition."
+    "notes": "Search filters titles and details. Disabled options cannot activate. Native search and buttons share one pointer and keyboard highlight. Arrow keys reveal the active result; Return chooses it. The host owns command effects. Pass `query: $query` to own the search text. Use `.itemContent { option, selected in ... } empty: { ... }` to customize native button labels and the empty state. The component retains filtering, stable IDs, activation, and keyboard navigation. Avoid interactive controls inside an item label. See the complete observable-model example in native composition. Configure searchPrompt, autofocusSearch, maximumListHeight, searchClasses, and itemClasses. The list fits its results and scrolls within the available height. On iOS, Return dismisses search unless arrow-key navigation has highlighted an option. Autocorrection and automatic capitalization are disabled."
   },
   {
     "name": "Context Menu",

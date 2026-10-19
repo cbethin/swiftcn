@@ -84,11 +84,14 @@ struct ComponentGalleryView: View {
             HStack(spacing: 12) {
                 CNSidebarTrigger().keyboardShortcut("b", modifiers: [.command, .shift])
                 CNSeparator(axis: .vertical).frame(height: 16)
-                CNBreadcrumb {
-                    Text(selection.sectionTitle).tw("text-sm text-mutedForeground")
-                    CNBreadcrumbSeparator()
-                    CNBreadcrumbPage(LocalizedStringKey(selection.title))
-                }.lineLimit(1)
+                ViewThatFits(in: .horizontal) {
+                    CNBreadcrumb {
+                        Text(selection.sectionTitle).tw("text-sm text-mutedForeground")
+                        CNBreadcrumbSeparator()
+                        CNBreadcrumbPage(LocalizedStringKey(selection.title))
+                    }.fixedSize()
+                    Text(selection.title).font(.subheadline.weight(.medium)).lineLimit(1)
+                }
                 Spacer(minLength: 8)
                 GalleryAppearanceControl(dark: $dark)
             }
@@ -320,8 +323,10 @@ private struct GalleryWorkspace: View {
                     }
                 }.controlSize(.small).galleryChrome()
                 Spacer()
-                Text(selection.symbol).font(.system(size: 11, design: .monospaced))
-                    .tw("text-mutedForeground").lineLimit(1).minimumScaleFactor(0.8)
+                if isWide {
+                    Text(selection.symbol).font(.system(size: 11, design: .monospaced))
+                        .tw("text-mutedForeground").lineLimit(1)
+                }
             }
             // The layout changes without removing the example. Edits survive view-mode changes.
             let horizontal = mode == .split && isWide
@@ -350,6 +355,16 @@ private struct GalleryWorkspace: View {
         }
     }
 
+    @ViewBuilder private var exampleContent: some View {
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["SWIFTCN_UI_PROBE"] == "long-combobox" {
+            ComboboxInteractionProbe()
+        } else { selection.example.id(revision) }
+        #else
+        selection.example.id(revision)
+        #endif
+    }
+
     private var preview: some View {
         CNCard("shadow-none rounded-xl") {
             HStack(spacing: 8) {
@@ -361,9 +376,9 @@ private struct GalleryWorkspace: View {
                 }.accessibilityLabel("Reset example").help("Reset example").galleryChrome()
             }.padding(.horizontal, 16).frame(height: 48)
             CNSeparator()
-            selection.example.id(revision)
-                .padding(28)
-                .frame(maxWidth: .infinity, minHeight: 390, alignment: .center)
+            exampleContent
+                .padding(isWide ? 28 : 20)
+                .frame(maxWidth: .infinity, minHeight: isWide ? 390 : 200, alignment: .center)
                 .background { if previewGrid { GalleryPreviewGrid() } }
             CNSeparator()
             HStack(spacing: 6) {
@@ -390,3 +405,13 @@ private struct GalleryPreviewGrid: View {
         }.accessibilityHidden(true).allowsHitTesting(false)
     }
 }
+
+#if DEBUG
+private struct ComboboxInteractionProbe: View {
+    @State private var selection: String?
+    var body: some View {
+        CNCombobox("Choose a workspace", options: (1...40).map { CNOption("\($0)", title: "Workspace \($0)") },
+                   selection: $selection, searchPrompt: "Search workspaces…")
+    }
+}
+#endif

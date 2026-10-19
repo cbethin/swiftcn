@@ -3,8 +3,24 @@ import SwiftCN
 
 struct GalleryAppearanceControl: View {
     @Binding var dark: Bool
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    #endif
 
-    var body: some View {
+    @ViewBuilder var body: some View {
+        #if os(iOS)
+        if sizeClass == .compact {
+            CNButton(variant: .ghost, size: .icon, action: { dark.toggle() }) {
+                Image(systemName: dark ? "sun.max" : "moon")
+            }
+            .accessibilityLabel(dark ? "Use light appearance" : "Use dark appearance")
+        } else { segments }
+        #else
+        segments
+        #endif
+    }
+
+    private var segments: some View {
         CNSegmentedControl(selection: $dark, classes: "p-[3] rounded-full border", animated: true) {
             CNSegment(false, classes: "control-icon rounded-full") {
                 Image(systemName: "sun.max.fill").font(.system(size: 13, weight: .semibold))

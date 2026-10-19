@@ -28,6 +28,90 @@ final class GalleryInteractionTests: XCTestCase {
         activate(trigger)
         expectValue(trigger, "Collapsed")
     }
+    @MainActor func testComboboxKeepsEveryChoiceReachableAndCommitsOnlySelection() {
+        let app = launch("combobox")
+        defer { capture(app); app.terminate() }
+        let trigger = app.buttons["Choose a workspace"]
+        activate(trigger)
+        let search = app.textFields["Search workspaces…"]
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        let design = app.buttons["Design system"]
+        let mobile = app.buttons["Mobile app"]
+        let archived = app.buttons["Archived"]
+        XCTAssertTrue(design.isHittable)
+        XCTAssertTrue(mobile.isHittable)
+        XCTAssertTrue(archived.exists)
+        XCTAssertFalse(archived.isEnabled)
+        capture(app)
+        #if os(iOS)
+        XCTAssertFalse(app.keyboards.firstMatch.exists, "Opening choices must not summon the keyboard.")
+        activate(app.buttons["Cancel"])
+        XCTAssertTrue(wait(for: NSPredicate(format: "exists == false"), on: search))
+        expectValue(trigger, "No selection, Collapsed")
+        activate(trigger)
+        #endif
+        activate(search)
+        search.typeText("xyzq")
+        XCTAssertTrue(app.staticTexts["No results found."].waitForExistence(timeout: 5))
+        XCTAssertFalse(mobile.exists)
+        activate(app.buttons["Clear search"])
+        XCTAssertTrue(mobile.waitForExistence(timeout: 5))
+        XCTAssertTrue(mobile.isHittable, "Results must stay above the keyboard.")
+        capture(app)
+        search.typeText("Mobile")
+        XCTAssertFalse(design.exists)
+        XCTAssertTrue(mobile.isHittable)
+        activate(mobile)
+        XCTAssertTrue(wait(for: NSPredicate(format: "exists == false"), on: search))
+        expectValue(trigger, "Mobile app, Collapsed")
+        activate(trigger)
+        XCTAssertTrue(mobile.waitForExistence(timeout: 5))
+        XCTAssertTrue(mobile.isSelected)
+        #if os(iOS)
+        activate(app.buttons["Cancel"])
+        #else
+        app.typeKey(.escape, modifierFlags: [])
+        #endif
+        expectValue(trigger, "Mobile app, Collapsed")
+    }
+
+    #if os(iOS)
+    @MainActor func testComboboxLongListReachesItsFinalChoiceAndSurvivesRotation() {
+        let app = launch("combobox", probe: "long-combobox")
+        defer { XCUIDevice.shared.orientation = .portrait; capture(app); app.terminate() }
+        let trigger = app.buttons["Choose a workspace"]
+        activate(trigger)
+        let search = app.textFields["Search workspaces…"]
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        let list = app.scrollViews.containing(.button, identifier: "Workspace 1").firstMatch
+        XCTAssertTrue(list.exists)
+        let frame = list.frame
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        let start = origin.withOffset(CGVector(dx: frame.midX, dy: frame.maxY - 20))
+        let end = origin.withOffset(CGVector(dx: frame.midX, dy: frame.minY + 20))
+        let last = app.buttons["Workspace 40"]
+        for _ in 0..<20 {
+            if last.isHittable { break }
+            start.press(forDuration: 0.05, thenDragTo: end)
+        }
+        XCTAssertTrue(last.isHittable, "The final row must be reachable by scrolling the choices.")
+        activate(last)
+        expectValue(trigger, "Workspace 40, Collapsed")
+        activate(trigger)
+        XCUIDevice.shared.orientation = .landscapeLeft
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Cancel"].isHittable)
+        XCUIDevice.shared.orientation = .portrait
+        activate(search)
+        search.typeText("Workspace 40")
+        activate(app.keyboards.buttons["Search"])
+        XCTAssertTrue(search.exists, "Search must not silently commit an unhighlighted result.")
+        XCTAssertTrue(wait(for: NSPredicate(format: "exists == false"), on: app.keyboards.firstMatch))
+        activate(app.buttons["Cancel"])
+        expectValue(trigger, "Workspace 40, Collapsed")
+    }
+    #endif
+
     @MainActor func testCheckboxLabelAndTrailingSpaceToggleTheValue() {
         let app = launch("checkbox")
         defer { capture(app); app.terminate() }

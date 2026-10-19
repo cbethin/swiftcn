@@ -37,6 +37,36 @@ struct ComposableContentTests {
         #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)
     }
 
+    @Test func commandOwnsOneBoundedListAndShrinksAfterFiltering() async throws {
+        let model = ContentSlotModel()
+        let controller = NSHostingController(rootView: CommandViewportHarness(model: model))
+        let window = window(controller)
+        defer { window.orderOut(nil); window.contentViewController = nil }
+        let host = controller.view
+        try await settle(host)
+        let scrolls = descendants(host).compactMap { $0 as? NSScrollView }
+        #expect(scrolls.count == 1, "The command must own exactly one list viewport.")
+        let scroll = try #require(scrolls.first)
+        let editor = try #require(descendants(host).compactMap { $0 as? NSTextField }.first)
+        let expandedHeight = try #require(model.frames["command"]).height
+        #expect(scroll.contentSize.height <= 201)
+        let document = try #require(scroll.documentView)
+        #expect(document.bounds.height > scroll.contentSize.height)
+        scroll.contentView.scroll(to: CGPoint(x: 0, y: document.bounds.maxY - scroll.contentSize.height))
+        scroll.reflectScrolledClipView(scroll.contentView)
+        #expect(abs(scroll.documentVisibleRect.maxY - document.bounds.maxY) < 2)
+        model.query = "Item 39"
+        try await settle(host)
+        let filteredHeight = try #require(model.frames["command"]).height
+        #expect(filteredHeight < expandedHeight - 40, "Expanded: \(expandedHeight), filtered: \(filteredHeight), list: \(scroll.contentSize), document: \(document.bounds)")
+        #expect(descendants(host).compactMap { $0 as? NSTextField }.first === editor)
+        window.setContentSize(CGSize(width: 280, height: 120))
+        try await settle(host)
+        let viewport = scroll.convert(scroll.bounds, to: host)
+        #expect(viewport.maxY <= host.bounds.height + 1)
+        #expect(editor.stringValue == "Item 39")
+    }
+
     @Test func customToastControlsPauseDeadlinesAndSurviveDeckExpansion() async throws {
         let model = ContentSlotModel()
         let toast = CNToast(title: "Draft", duration: 0.7)
@@ -124,6 +154,17 @@ struct ComposableContentTests {
     @ObservationIgnored var identities: [String: UUID] = [:]
     @ObservationIgnored var selectedLabels: [String: Bool] = [:]
     @ObservationIgnored var contexts: [UUID: CNToastContentContext] = [:]
+}
+private struct CommandViewportHarness: View {
+    @Bindable var model: ContentSlotModel
+    var body: some View {
+        VStack(spacing: 0) {
+            CNCommand((1...40).map { CNOption("\($0)", title: "Item \($0)") },
+                      selection: $model.selection, query: $model.query, autofocusSearch: false, maximumListHeight: 200)
+                .modifier(ContentSlotFrame(model: model, key: "command"))
+            Spacer(minLength: 0)
+        }.coordinateSpace(name: "slot-host")
+    }
 }
 private struct CommandSlotHarness: View {
     @Bindable var model: ContentSlotModel
