@@ -17,7 +17,9 @@ public struct CNAdaptiveActionLayout: Layout {
     }
 
     public func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let layout = layout(width: bounds.width, subviews: subviews)
+        // Match measurement. An intrinsic row can be narrower than its proposal;
+        // its final bounds must not turn it into an unmeasured column.
+        let layout = layout(width: proposal.width, subviews: subviews)
         var nativeCache = layout.makeCache(subviews: subviews)
         layout.placeSubviews(in: bounds, proposal: proposal, subviews: subviews, cache: &nativeCache)
     }

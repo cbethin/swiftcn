@@ -46,9 +46,9 @@ struct GallerySettingsView: View {
                          classes: "text-xs text-mutedForeground", action: restoreDefaults)
             }.padding(.horizontal, 24).frame(height: 56).tw("bg-surface")
         }
+        .tw("bg-background text-foreground")
         .cnWindowContent()
         .frame(width: 620, height: 576)
-        .tw("bg-background text-foreground")
         .preferredColorScheme(dark ? .dark : .light)
         .onChange(of: dark, initial: true) { _, dark in
             NSApplication.shared.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)

@@ -317,7 +317,17 @@ private final class CNSidebarSwipeView: UIView, UIGestureRecognizerDelegate {
     override func didMoveToWindow() {
         super.didMoveToWindow()
         if window == nil { removeGestures() }
-        else { attach() }
+        else {
+            attach()
+            // Older SwiftUI hosts install the controller in the responder chain
+            // after inserting the representable's view into its window.
+            DispatchQueue.main.async { [weak self] in self?.attach() }
+        }
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        attach()
     }
 
     func attach() {
