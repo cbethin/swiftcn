@@ -293,6 +293,46 @@ final class GalleryInteractionTests: XCTestCase {
     #endif
 
     #if os(iOS)
+    @MainActor func testCompactSidebarSwipesPreserveScrollingAndTheEditorDraft() throws {
+        let app = launch("card")
+        defer { capture(app); app.terminate() }
+        guard app.buttons["Open sidebar"].exists else {
+            throw XCTSkip("A regular-width sidebar stays visible instead of presenting a drawer.")
+        }
+        let editor = app.textFields["Workspace name"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        activate(editor)
+        editor.typeText(" 2468")
+        let draft = try XCTUnwrap(editor.value as? String)
+        let window = app.windows.firstMatch
+        let search = app.textFields["gallery-search"]
+        let edge = window.coordinate(withNormalizedOffset: CGVector(dx: 0.002, dy: 0.3))
+        let inside = window.coordinate(withNormalizedOffset: CGVector(dx: 0.65, dy: 0.3))
+        // A short pull that stops must return to the closed state.
+        edge.press(forDuration: 0.05,
+                   thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.3)),
+                   withVelocity: .slow, thenHoldForDuration: 0.3)
+        XCTAssertFalse(search.isHittable)
+        for _ in 0..<2 {
+            edge.press(forDuration: 0.05, thenDragTo: inside)
+            XCTAssertTrue(wait(for: NSPredicate(format: "hittable == true"), on: search))
+            let firstRow = app.buttons["Aspect Ratio"].firstMatch
+            if firstRow.isHittable {
+                window.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.4))
+                    .press(forDuration: 0.05,
+                           thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.25)))
+                XCTAssertTrue(wait(for: NSPredicate(format: "hittable == false"), on: firstRow))
+                XCTAssertTrue(search.isHittable, "Vertical scrolling must keep the drawer open.")
+            }
+            // Start over the list, rather than an empty background strip.
+            window.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.4))
+                .press(forDuration: 0.05,
+                       thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.002, dy: 0.4)))
+            XCTAssertTrue(wait(for: NSPredicate(format: "hittable == false"), on: search))
+            expectValue(editor, draft)
+        }
+    }
+
     @MainActor func testNativeProminentButtonsKeepTheirLabelColorUnderStyledAncestors() throws {
         // AppKit draws macOS button labels itself; iOS button styles adopt any explicit ancestor foreground.
         let app = launch("button", probe: "native-button-labels")
