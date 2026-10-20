@@ -21,6 +21,44 @@ public enum TWClassError: Error, Equatable, CustomStringConvertible {
 }
 
 enum TWClassParser {
+    /// Reuse the existing bounded cache for literal surfaces, including their cascade order.
+    /// Typed values and outer conditions retain the uncached path.
+    static func ordered(_ style: TWStyle, rules: TWGlobalRules, theme: TWTheme, target: TWTarget?) throws -> [TWRule] {
+        let key = literalClasses(style).map {
+            TWExpansionCache.Key(token: $0, target: target, rules: rules.revision, theme: theme.revision, ordered: true)
+        }
+        if let key, let cached = TWExpansionCache.shared.rules(for: key) { return cached }
+        let expanded = try expand(style, rules: rules, theme: theme, target: target)
+        let ordered = expanded.rules.enumerated().map {
+            (rule: $0.element, priority: $0.element.priority, count: $0.element.conditionCount, index: $0.offset)
+        }.sorted {
+            if $0.priority != $1.priority { return $0.priority < $1.priority }
+            if $0.count != $1.count { return $0.count < $1.count }
+            return $0.index < $1.index
+        }.map(\.rule)
+        if let key { TWExpansionCache.shared.insert(ordered, for: key) }
+        return ordered
+    }
+
+    private static func literalClasses(_ style: TWStyle) -> String? {
+        var fragments: [String] = []
+        for rule in style.rules {
+            guard rule.conditionCount == 0 else { return nil }
+            switch rule.property {
+            case .classes(let text): fragments.append(text)
+            case .interpolated(let classes):
+                var text = ""
+                for part in classes.parts {
+                    guard case .literal(let literal) = part else { return nil }
+                    text += literal
+                }
+                fragments.append(text)
+            default: return nil
+            }
+        }
+        return fragments.joined(separator: " ")
+    }
+
     // These tables do not depend on the theme, registry, or interpolated values.
     static let fonts: [String: TWText] = ["xs": .xs, "sm": .sm, "base": .base, "lg": .lg,
                                                  "xl": .xl, "2xl": .xxl, "3xl": .xxxl]
@@ -102,6 +140,7 @@ enum TWClassParser {
                 continue
             }
             switch variant {
+            case "selected": conditions.insert(.selected)
             case "hover": conditions.insert(.hovered)
             case "focus": conditions.insert(.focused)
             case "active", "pressed": conditions.insert(.pressed)
@@ -165,6 +204,10 @@ enum TWClassParser {
         case "bezel-bordered": return .bezel(.bordered)
         case "bezel-borderless": return .bezel(.borderless)
         case "bezel-link": return .bezel(.link)
+        case "control-metrics": return TWStyle(rules: [TWRule(property: .controlMetrics(.button))])
+        case "input-metrics": return TWStyle(rules: [TWRule(property: .controlMetrics(.input))])
+        case "control-row": return TWStyle(rules: [TWRule(property: .controlMetrics(.row))])
+        case "control-icon": return TWStyle(rules: [TWRule(property: .controlMetrics(.icon))])
         case "control-mini": return .controlSize(.mini)
         case "control-sm": return .controlSize(.small)
         case "control-md": return .controlSize(.regular)
@@ -202,6 +245,7 @@ enum TWClassParser {
         if name == "h-full" { return .fullHeight }
         if name == "border" { return .border(.border) }
         if name == "rounded" { return .rounded(.md) }
+        if name == "rounded-container" { return .roundedContainer }
         if name == "shadow" { return .shadow(.sm) }
         func color(_ value: String) -> TWColor? {
             let token = aliases[value] ?? TWColor(value)
@@ -303,6 +347,7 @@ enum TWClassParser {
 
     private static func groupCondition(_ value: String) -> TWCondition? {
         switch value {
+        case "group-selected": .selected
         case "group-hover": .hovered
         case "group-focus": .focused
         case "group-active", "group-pressed": .pressed

@@ -28,6 +28,99 @@ final class GalleryInteractionTests: XCTestCase {
         activate(trigger)
         expectValue(trigger, "Collapsed")
     }
+    @MainActor func testComboboxKeepsEveryChoiceReachableAndCommitsOnlySelection() {
+        let app = launch("combobox")
+        defer { capture(app); app.terminate() }
+        let trigger = app.buttons["Choose a workspace"]
+        activate(trigger)
+        let search = app.textFields["Search workspaces…"]
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        let design = app.buttons["Design system"]
+        let mobile = app.buttons["Mobile app"]
+        let archived = app.buttons["Archived"]
+        XCTAssertTrue(design.isHittable)
+        XCTAssertTrue(mobile.isHittable)
+        XCTAssertTrue(archived.exists)
+        XCTAssertFalse(archived.isEnabled)
+        capture(app)
+        #if os(iOS)
+        XCTAssertFalse(app.keyboards.firstMatch.exists, "Opening choices must not summon the keyboard.")
+        let usesSheet = app.buttons["Cancel"].exists
+        if usesSheet { activate(app.buttons["Cancel"]) }
+        else { activate(trigger) }
+        XCTAssertTrue(wait(for: NSPredicate(format: "exists == false"), on: search))
+        expectValue(trigger, "No selection, Collapsed")
+        activate(trigger)
+        #endif
+        activate(search)
+        search.typeText("xyzq")
+        XCTAssertTrue(app.staticTexts["No results found."].waitForExistence(timeout: 5))
+        XCTAssertFalse(mobile.exists)
+        activate(app.buttons["Clear search"])
+        XCTAssertTrue(mobile.waitForExistence(timeout: 5))
+        XCTAssertTrue(mobile.isHittable, "Results must stay above the keyboard.")
+        capture(app)
+        search.typeText("Mobile")
+        XCTAssertFalse(design.exists)
+        XCTAssertTrue(mobile.isHittable)
+        activate(mobile)
+        XCTAssertTrue(wait(for: NSPredicate(format: "exists == false"), on: search))
+        expectValue(trigger, "Mobile app, Collapsed")
+        activate(trigger)
+        XCTAssertTrue(mobile.waitForExistence(timeout: 5))
+        XCTAssertTrue(mobile.isSelected)
+        #if os(iOS)
+        if usesSheet { activate(app.buttons["Cancel"]) }
+        else { activate(trigger) }
+        #else
+        app.typeKey(.escape, modifierFlags: [])
+        #endif
+        expectValue(trigger, "Mobile app, Collapsed")
+    }
+
+    #if os(iOS)
+    @MainActor func testComboboxLongListReachesItsFinalChoiceAndSurvivesRotation() throws {
+        let app = launch("combobox", probe: "long-combobox")
+        defer { XCUIDevice.shared.orientation = .portrait; capture(app); app.terminate() }
+        let trigger = app.buttons["Choose a workspace"]
+        activate(trigger)
+        let search = app.textFields["Search workspaces…"]
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        guard app.buttons["Cancel"].exists else {
+            throw XCTSkip("This regression covers compact iPhone sheets; regular-width choices use an anchored popover.")
+        }
+        let list = app.scrollViews["cn-command-list"]
+        XCTAssertTrue(list.exists)
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        let last = app.buttons["Workspace 40"]
+        for _ in 0..<20 {
+            if last.isHittable { break }
+            // Stay inside the visible list, away from the home indicator and sheet edges.
+            // Resolve each frame again because a native sheet can change its detent.
+            let frame = list.frame.intersection(app.windows.firstMatch.frame.insetBy(dx: 0, dy: 44))
+            let start = origin.withOffset(CGVector(dx: frame.midX, dy: frame.minY + frame.height * 0.75))
+            let end = origin.withOffset(CGVector(dx: frame.midX, dy: frame.minY + frame.height * 0.25))
+            start.press(forDuration: 0.05, thenDragTo: end)
+            XCTAssertTrue(search.exists, "Scrolling choices must not activate a row or dismiss the sheet.")
+        }
+        XCTAssertTrue(last.isHittable, "The final row must be reachable by scrolling the choices.")
+        activate(last)
+        expectValue(trigger, "Workspace 40, Collapsed")
+        activate(trigger)
+        XCUIDevice.shared.orientation = .landscapeLeft
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Cancel"].isHittable)
+        XCUIDevice.shared.orientation = .portrait
+        activate(search)
+        search.typeText("Workspace 40")
+        activate(app.keyboards.buttons["Search"])
+        XCTAssertTrue(search.exists, "Search must not silently commit an unhighlighted result.")
+        XCTAssertTrue(wait(for: NSPredicate(format: "exists == false"), on: app.keyboards.firstMatch))
+        activate(app.buttons["Cancel"])
+        expectValue(trigger, "Workspace 40, Collapsed")
+    }
+    #endif
+
     @MainActor func testCheckboxLabelAndTrailingSpaceToggleTheValue() {
         let app = launch("checkbox")
         defer { capture(app); app.terminate() }
@@ -164,15 +257,107 @@ final class GalleryInteractionTests: XCTestCase {
     }
 
     #if os(macOS)
+    @MainActor func testDirectButtonStylePreservesCallerKeyboardFocus() throws {
+        let app = launch("button", probe: "flat-button-focus")
+        defer { capture(app); app.terminate() }
+        let target = app.buttons["Styled focus target"]
+        XCTAssertTrue(target.waitForExistence(timeout: 5))
+        activate(app.buttons["Focus styled button"])
+        XCTAssertTrue(wait(for: NSPredicate(format: "hasKeyboardFocus == true"), on: target),
+                      "The caller's focus binding must focus the native button.")
+        let image = try XCTUnwrap(target.screenshot().image.cgImage(forProposedRect: nil, context: nil, hints: nil))
+        let width = image.width, height = image.height
+        let context = try XCTUnwrap(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+            bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        let bytes = try XCTUnwrap(context.data).assumingMemoryBound(to: UInt8.self)
+        let green = stride(from: 0, to: width * height * 4, by: 4).filter {
+            bytes[$0] < 50 && bytes[$0 + 1] > 200 && bytes[$0 + 2] < 50
+        }.count
+        XCTAssertGreaterThan(Double(green) / Double(width * height), 0.3,
+                             "The caller's native focus state must activate focus: classes.")
+    }
+
+    @MainActor func testCommandCommaOpensOneSettingsWindowAndPersistsPreferences() {
+        let app = launch("card")
+        defer { capture(app); app.terminate() }
+        app.typeKey(",", modifierFlags: .command)
+        let settings = app.windows.containing(.button, identifier: "Restore defaults").firstMatch
+        XCTAssertTrue(settings.waitForExistence(timeout: 5))
+        activate(settings.buttons["Restore defaults"])
+        activate(settings.buttons["Use dark appearance"])
+        XCTAssertTrue(settings.buttons["Use dark appearance"].isSelected)
+        let grid = settings.descendants(matching: .any).matching(identifier: "gallery-preview-grid").firstMatch
+        let originalGrid = String(describing: grid.value ?? "")
+        activate(grid)
+        XCTAssertTrue(wait(for: NSPredicate { object, _ in
+            String(describing: (object as? XCUIElement)?.value ?? "") != originalGrid
+        }, on: grid))
+        let changedGrid = String(describing: grid.value ?? "")
+        activate(settings.buttons["Default Preview view"])
+        app.typeKey(",", modifierFlags: .command)
+        XCTAssertEqual(app.windows.containing(.button, identifier: "Restore defaults").count, 1)
+        app.terminate()
+        app.launch()
+        ensureGalleryWindow(app)
+        let gallery = app.windows.containing(.button, identifier: "Preview mode").firstMatch
+        XCTAssertTrue(gallery.buttons["Preview mode"].isSelected)
+        XCTAssertTrue(gallery.buttons["Use dark appearance"].isSelected)
+        app.typeKey(",", modifierFlags: .command)
+        XCTAssertTrue(settings.waitForExistence(timeout: 5))
+        XCTAssertTrue(settings.buttons["Default Preview view"].isSelected)
+        XCTAssertEqual(String(describing: grid.value ?? ""), changedGrid)
+        activate(settings.buttons["Restore defaults"])
+    }
+
+    @MainActor func testGalleryKeepsPreviewEditsAcrossModesAndSearch() {
+        let app = launch("card")
+        defer { capture(app); app.terminate() }
+        let editor = app.textFields["Workspace name"]
+        activate(editor)
+        editor.typeKey("a", modifierFlags: .command)
+        editor.typeText("Gallery draft")
+        activate(app.buttons["Code mode"])
+        XCTAssertTrue(app.buttons["Copy Swift code"].waitForExistence(timeout: 5))
+        XCTAssertFalse(editor.exists, "Hidden previews must leave the accessibility tree.")
+        activate(app.buttons["Preview mode"])
+        XCTAssertFalse(app.buttons["Copy Swift code"].exists, "Hidden code must leave the accessibility tree.")
+        expectValue(editor, "Gallery draft")
+        #if os(macOS)
+        app.typeKey(.rightArrow, modifierFlags: [])
+        XCTAssertTrue(wait(for: NSPredicate(format: "selected == true"), on: app.buttons["Code mode"]))
+        XCTAssertFalse(editor.exists)
+        app.typeKey(.leftArrow, modifierFlags: [])
+        XCTAssertTrue(wait(for: NSPredicate(format: "selected == true"), on: app.buttons["Preview mode"]))
+        expectValue(editor, "Gallery draft")
+        #endif
+        app.typeKey("k", modifierFlags: .command)
+        let search = app.textFields["gallery-search"]
+        search.typeText("zzzz-no-component")
+        XCTAssertTrue(app.staticTexts["No results"].waitForExistence(timeout: 5))
+        expectValue(editor, "Gallery draft")
+        activate(app.buttons["Clear search"].firstMatch)
+        XCTAssertTrue(wait(for: NSPredicate(format: "exists == false"), on: app.staticTexts["No results"]))
+        expectValue(editor, "Gallery draft")
+        activate(search)
+        search.typeText("CNInputOTP")
+        expectValue(search, "CNInputOTP")
+        search.typeKey(.return, modifierFlags: [])
+        XCTAssertTrue(app.staticTexts["Input OTP"].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertFalse(editor.exists)
+    }
+
     @MainActor func testNativeSplitDividerDragsWithoutLosingTheEditorDraft() {
         let app = launch("native:split")
         defer { capture(app); app.terminate() }
+        activate(app.buttons["Preview mode"])
         let editor = app.textViews["Split editor draft"]
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
         activate(editor)
         editor.typeKey("a", modifierFlags: .command)
         editor.typeText("Draft after divider dragging")
-        let divider = app.splitters.element(boundBy: 1)
+        let divider = app.splitters.firstMatch
         XCTAssertTrue(divider.exists)
         let original = divider.frame.midX
         drag(divider, by: 130)
@@ -207,6 +392,46 @@ final class GalleryInteractionTests: XCTestCase {
     #endif
 
     #if os(iOS)
+    @MainActor func testCompactSidebarSwipesPreserveScrollingAndTheEditorDraft() throws {
+        let app = launch("card")
+        defer { capture(app); app.terminate() }
+        guard app.buttons["Open sidebar"].exists else {
+            throw XCTSkip("A regular-width sidebar stays visible instead of presenting a drawer.")
+        }
+        let editor = app.textFields["Workspace name"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        activate(editor)
+        editor.typeText(" 2468")
+        let draft = try XCTUnwrap(editor.value as? String)
+        let window = app.windows.firstMatch
+        let search = app.textFields["gallery-search"]
+        let edge = window.coordinate(withNormalizedOffset: CGVector(dx: 0.002, dy: 0.3))
+        let inside = window.coordinate(withNormalizedOffset: CGVector(dx: 0.65, dy: 0.3))
+        // A short pull that stops must return to the closed state.
+        edge.press(forDuration: 0.05,
+                   thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.3)),
+                   withVelocity: .slow, thenHoldForDuration: 0.3)
+        XCTAssertFalse(search.isHittable)
+        for _ in 0..<2 {
+            edge.press(forDuration: 0.05, thenDragTo: inside)
+            XCTAssertTrue(wait(for: NSPredicate(format: "hittable == true"), on: search))
+            let firstRow = app.buttons["Aspect Ratio"].firstMatch
+            if firstRow.isHittable {
+                window.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.4))
+                    .press(forDuration: 0.05,
+                           thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.25)))
+                XCTAssertTrue(wait(for: NSPredicate(format: "hittable == false"), on: firstRow))
+                XCTAssertTrue(search.isHittable, "Vertical scrolling must keep the drawer open.")
+            }
+            // Start over the list, rather than an empty background strip.
+            window.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.4))
+                .press(forDuration: 0.05,
+                       thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.002, dy: 0.4)))
+            XCTAssertTrue(wait(for: NSPredicate(format: "hittable == false"), on: search))
+            expectValue(editor, draft)
+        }
+    }
+
     @MainActor func testNativeProminentButtonsKeepTheirLabelColorUnderStyledAncestors() throws {
         // AppKit draws macOS button labels itself; iOS button styles adopt any explicit ancestor foreground.
         let app = launch("button", probe: "native-button-labels")
@@ -255,7 +480,21 @@ final class GalleryInteractionTests: XCTestCase {
         if example == "date_picker" { app.launchArguments += ["-AppleLocale", "en_US"] }
         app.launchEnvironment["SWIFTCN_UI_EXAMPLE"] = example
         app.launch()
+        ensureGalleryWindow(app)
         return app
+    }
+
+    @MainActor private func ensureGalleryWindow(_ app: XCUIApplication) {
+        #if os(macOS)
+        // A terminated SwiftUI app can restore a session with no gallery window.
+        // Open the normal scene through its public menu before checking controls.
+        let gallery = app.windows.containing(.button, identifier: "Preview mode").firstMatch
+        if !gallery.waitForExistence(timeout: 5) {
+            app.menuBars.menuBarItems["File"].click()
+            app.menuItems["New SwiftCN Component Gallery Window"].click()
+            XCTAssertTrue(gallery.waitForExistence(timeout: 5))
+        }
+        #endif
     }
 
     /// macOS exposes Text as a value; iOS exposes it as a label.

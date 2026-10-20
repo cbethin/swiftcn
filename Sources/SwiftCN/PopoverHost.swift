@@ -35,7 +35,7 @@ public struct CNPopoverHost<Content: View>: View {
                                 if request.isPresented {
                                     // Constrain the native viewport before requesting its ideal size.
                                     // The content keeps one identity as the host resizes.
-                                    CNPopoverViewport(content: request.content,
+                                    CNPopoverViewport(content: request.content, scrollsContent: request.scrollsContent,
                                         maximumSize: CGSize(width: max(0, bounds.width - 16), height: max(0, bounds.height - 16)))
                                         .alignmentGuide(.leading) { size in
                                             let x = CNPopoverPosition.origin(anchor: anchor,
@@ -76,19 +76,36 @@ public struct CNPopoverHost<Content: View>: View {
 }
 private struct CNPopoverViewport<Content: View>: View {
     let content: Content
+    let scrollsContent: Bool
     let maximumSize: CGSize
     @State private var contentSize: CGSize?
     var body: some View {
-        ScrollView([.horizontal, .vertical]) {
-            content.fixedSize()
-                .onGeometryChange(for: CGSize.self, of: { $0.size }) { contentSize = $0 }
+        if scrollsContent {
+            ScrollView([.horizontal, .vertical]) {
+                content.fixedSize()
+                    .onGeometryChange(for: CGSize.self, of: { $0.size }) { contentSize = $0 }
+            }
+            // Preserve rounded shadows when no scrolling is needed. Oversized
+            // content must still clip to its viewport, including after resizing.
+            .scrollClipDisabled(contentSize.map { $0.width <= maximumSize.width && $0.height <= maximumSize.height } ?? false)
+            .scrollBounceBehavior(.basedOnSize)
+            .frame(width: min(contentSize?.width ?? maximumSize.width, maximumSize.width),
+                   height: min(contentSize?.height ?? maximumSize.height, maximumSize.height))
+        } else {
+            CNPopoverFittingLayout(maximumSize: maximumSize) { content }
         }
-        // Preserve rounded shadows when no scrolling is needed. Oversized
-        // content must still clip to its viewport, including after resizing.
-        .scrollClipDisabled(contentSize.map { $0.width <= maximumSize.width && $0.height <= maximumSize.height } ?? false)
-        .scrollBounceBehavior(.basedOnSize)
-        .frame(maxWidth: maximumSize.width, maxHeight: maximumSize.height)
-        .fixedSize()
+    }
+}
+/// A popup with its own scrolling receives the available space directly.
+private struct CNPopoverFittingLayout: Layout {
+    let maximumSize: CGSize
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard let child = subviews.first else { return .zero }
+        let size = child.sizeThatFits(.init(width: maximumSize.width, height: maximumSize.height))
+        return CGSize(width: min(size.width, maximumSize.width), height: min(size.height, maximumSize.height))
+    }
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        subviews.first?.place(at: bounds.origin, anchor: .topLeading, proposal: .init(bounds.size))
     }
 }
 #if os(macOS)
@@ -101,7 +118,11 @@ private struct CNPopoverPointerLayer<Content: View>: NSViewRepresentable {
     let onDeactivate: () -> Void
     @ViewBuilder let content: () -> Content
     func makeNSView(context: Context) -> CNPopoverHostingView {
-        CNPopoverHostingView(rootView: AnyView(CNPopoverEnvironmentRoot(content: content(), environment: context.environment)))
+        let view = CNPopoverHostingView(rootView: AnyView(CNPopoverEnvironmentRoot(content: content(), environment: context.environment)))
+        // The outer host has already resolved safe areas. A nested hosting view
+        // must not add the hidden titlebar inset to popup coordinates again.
+        view.safeAreaRegions = []
+        return view
     }
     func updateNSView(_ view: CNPopoverHostingView, context: Context) {
         let opening = active && presentationIDs != view.presentationIDs
@@ -174,10 +195,11 @@ extension View {
 
     /// An in-tree popover keeps its trigger clickable during entry and exit.
     /// Hosted popovers align horizontally with the decorated view; native popovers use system placement.
+    /// Set scrollsContent to false when the popup already owns a bounded scrolling list.
     public func cnPopover<Popup: View>(isPresented: Binding<Bool>, arrowEdge: Edge = .top,
-                                      alignment: HorizontalAlignment = .leading,
+                                      alignment: HorizontalAlignment = .leading, scrollsContent: Bool = true,
                                       @ViewBuilder content: @escaping () -> Popup) -> some View {
-        modifier(CNAnchoredPopoverModifier(presentation: isPresented, edge: arrowEdge, alignment: alignment, popup: content))
+        modifier(CNAnchoredPopoverModifier(presentation: isPresented, edge: arrowEdge, alignment: alignment, scrollsContent: scrollsContent, popup: content))
     }
 }
 private struct CNAnchoredPopoverModifier<Popup: View>: ViewModifier {
@@ -186,11 +208,12 @@ private struct CNAnchoredPopoverModifier<Popup: View>: ViewModifier {
     let presentation: Binding<Bool>
     let edge: Edge
     let alignment: HorizontalAlignment
+    let scrollsContent: Bool
     let popup: () -> Popup
     private func anchored(_ content: Content) -> some View {
         content.anchorPreference(key: CNPopoverAnchorPreference.self, value: .bounds) { anchor in
             [CNPopoverAnchorRequest(id: id, anchor: anchor, edge: edge, alignment: alignment,
-                                    isPresented: presentation.wrappedValue, presentation: presentation,
+                                    isPresented: presentation.wrappedValue, presentation: presentation, scrollsContent: scrollsContent,
                                     content: AnyView(popup()))]
         }
         .onDisappear { presentation.wrappedValue = false }
@@ -216,6 +239,7 @@ private struct CNPopoverAnchorRequest: Identifiable {
     let alignment: HorizontalAlignment
     let isPresented: Bool
     let presentation: Binding<Bool>
+    let scrollsContent: Bool
     let content: AnyView
 }
 private struct CNPopoverAnchorPreference: PreferenceKey {

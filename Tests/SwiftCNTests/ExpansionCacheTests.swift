@@ -5,6 +5,23 @@ import Testing
 
 @Suite("Class expansion cache")
 struct ExpansionCacheTests {
+    @Test func preparedSurfacesKeepCascadeOrderAcrossStatesAndComposition() throws {
+        let styles: [TWStyle] = [
+            "hover:p-4 p-2 disabled:p-1",
+            TWStyle(.classes("hover:p-4"), .classes("p-2 disabled:p-1")),
+            .classes(cn("hover:p-4", "p-2", "disabled:p-1"))
+        ]
+        for style in styles {
+            let ordered = try TWClassParser.ordered(style, rules: TWGlobalRules(), theme: .standard, target: .view)
+            #expect(ordered.map(\.priority) == ordered.map(\.priority).sorted())
+            #expect(resolve(style).padding.top == 8)
+            #expect(resolve(style, state: .init(isHovered: true)).padding.top == 16)
+            #expect(resolve(style, state: .init(isHovered: true, isDisabled: true)).padding.top == 4)
+        }
+        // Typed defaults bypass the literal cache and retain their own precedence.
+        #expect(resolve(TWStyle(.p(6), styles[0])).padding.top == 8)
+    }
+
     @Test func defaultValuesShareTheStandardRevision() {
         #expect(TWGlobalRules().revision == TWRevision.standard)
         #expect(TWTheme().revision == TWRevision.standard)

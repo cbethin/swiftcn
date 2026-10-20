@@ -25,8 +25,8 @@ import SwiftUI
         ])
     }
 
-    public static let variants = ["hover", "focus", "active", "pressed", "disabled", "motion-reduce", "motion-safe",
-                                  "group-hover", "group-focus", "group-active", "group-pressed", "group-disabled"]
+    public static let variants = ["selected", "hover", "focus", "active", "pressed", "disabled", "motion-reduce", "motion-safe",
+                                  "group-selected", "group-hover", "group-focus", "group-active", "group-pressed", "group-disabled"]
 
     /// Theme colors and their aliases, as class suffixes.
     public static var colors: [String] {
@@ -42,9 +42,9 @@ import SwiftUI
 
     public static let surfaces = ["surface-floating", "surface-solid", "glass", "glass-prominent", "glass-interactive"]
     public static let bezels = ["bezel-prominent", "bezel-bordered", "bezel-borderless", "bezel-link"]
-    public static let controlSizes = ["control-mini", "control-sm", "control-md", "control-lg", "control-xl"]
+    public static let controlSizes = ["control-mini", "control-sm", "control-md", "control-lg", "control-xl", "control-metrics", "input-metrics", "control-row", "control-icon"]
     public static let sharedElements = ["shared-frame", "shared-position", "shared-size", "shared-source", "shared-follower"]
-    public static let standalone = ["group", "w-full", "h-full", "border", "rounded", "shadow",
+    public static let standalone = ["group", "w-full", "h-full", "border", "rounded", "rounded-container", "shadow",
                                     "text-center", "text-start", "text-end", "line-clamp-none"]
 
     /// One working example for each bracket prefix. `animate-[…]` only accepts interpolated native values.

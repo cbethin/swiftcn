@@ -40,12 +40,15 @@ struct TWModifier: ViewModifier {
     var animationValue: TWAnimationValue? = nil
     @State private var animationID = UUID()
     private var target: TWTarget { text != nil ? .text : image != nil ? .image : shape != nil ? .shape : .view }
+    @Environment(\.controlSize) private var controlSize
     @Environment(\.twTheme) private var theme
     @Environment(\.twRules) private var rules
     @Environment(\.colorScheme) private var scheme
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.isFocused) private var isFocused
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.twGroups) private var groups
+    @Namespace private var containerNamespace
     @Namespace private var groupNamespace
     @State private var isHovered = false
     /// Once a text color installs the foreground modifier, it stays, so removing the color keeps child identity.
@@ -54,11 +57,12 @@ struct TWModifier: ViewModifier {
     func body(content: Content) -> some View {
         var activeState = state
         activeState.isDisabled = activeState.isDisabled || !isEnabled
+        activeState.isFocused = activeState.isFocused || isFocused
         activeState.isHovered = activeState.isHovered || isHovered
         activeState.prefersReducedMotion = activeState.prefersReducedMotion || reduceMotion
         let combined = TWStyle(rules.view, isButton ? rules.button : TWStyle(), style)
         var appearance = TWStyleResolver.resolve(combined, theme: theme, scheme: scheme, state: activeState,
-            globalRules: rules, groupStates: groups.states, target: target)
+            globalRules: rules, groupStates: groups.states, target: target, controlSize: controlSize)
         let declaresForeground = !appearance.inheritsForeground
         if installsForeground { appearance.inheritsForeground = false }
         if !decorates {
@@ -82,6 +86,17 @@ struct TWModifier: ViewModifier {
             .modifier(phase(.content, appearance: appearance))
             .modifier(phase(.layout, appearance: appearance))
             .modifier(phase(.decoration, appearance: appearance))
+            .coordinateSpace(name: containerNamespace)
+            .transformEnvironment(\.twContainerShapeContext) { inherited in
+                if decorates && (!appearance.containerRelativeRadius || appearance.surface != nil) {
+                    if appearance.hasRadius {
+                        inherited = TWContainerShapeContext(space: containerNamespace, outline: appearance.outline)
+                    } else if appearance.surface != nil {
+                        inherited = TWContainerShapeContext(space: containerNamespace,
+                                                            outline: TWSurfaceShape(top: 10_000, bottom: 10_000))
+                    }
+                }
+            }
             .modifier(phase(.effects, appearance: appearance))
             .transaction(value: animationValue) { transaction in
                 if animationValue != nil {
@@ -93,7 +108,11 @@ struct TWModifier: ViewModifier {
             .transaction { transaction in
                 transaction[TWCallerAnimationKey.self] = TWCallerAnimation(animation: transaction.animation)
             }
-            .onHover { isHovered = $0 }
+            // Keep one modifier structure for editors, but do not invalidate static
+            // labels and surfaces when the pointer passes over them.
+            .onHover { hovering in
+                if appearance.tracksHover || isHovered { isHovered = appearance.tracksHover && hovering }
+            }
             .onChange(of: declaresForeground, initial: true) { _, declares in
                 if declares { installsForeground = true }
             }
@@ -193,21 +212,30 @@ struct TWDecorationModifier: ViewModifier {
     let scheme: ColorScheme
     func body(content: Content) -> some View {
         content.background {
-                appearance.outline
-                    .fill(appearance.background ?? .clear)
-                    .shadow(
-                        color: appearance.shadow?.color.resolve(scheme) ?? .clear,
-                        radius: appearance.shadow?.radius ?? 0,
-                        x: appearance.shadow?.x ?? 0,
-                        y: appearance.shadow?.y ?? 0
-                    )
+                if appearance.containerRelativeRadius {
+                    TWContainerRelativeSurface { fill(ContainerRelativeShape()) }
+                } else {
+                    fill(appearance.outline)
+                }
             }
             .overlay {
-                appearance.outline
-                    .strokeBorder(appearance.border ?? .clear, lineWidth: appearance.borderWidth)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
+                Group {
+                    if appearance.containerRelativeRadius {
+                        TWContainerRelativeSurface {
+                            ContainerRelativeShape().strokeBorder(appearance.border ?? .clear, lineWidth: appearance.borderWidth)
+                        }
+                    } else {
+                        appearance.outline.strokeBorder(appearance.border ?? .clear, lineWidth: appearance.borderWidth)
+                    }
+                }.allowsHitTesting(false).accessibilityHidden(true)
             }
+    }
+
+    private func fill<S: Shape>(_ shape: S) -> some View {
+        shape.fill(appearance.background ?? .clear)
+            .shadow(color: appearance.shadow?.color.resolve(scheme) ?? .clear,
+                    radius: appearance.shadow?.radius ?? 0,
+                    x: appearance.shadow?.x ?? 0, y: appearance.shadow?.y ?? 0)
     }
 }
 

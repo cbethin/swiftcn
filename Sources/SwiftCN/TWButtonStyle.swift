@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// A native Button. When its classes choose a native style (a button variant, `bezel-*`, or a glass surface),
+/// A native Button. When its classes choose a native style (`bezel-*` or a glass surface),
 /// Apple draws the bezel and the classes shape only the label. Other classes style the label of a plain button,
 /// as list rows, menu items and calendar days need. Recognition, roles and activation remain with SwiftUI.
 public struct TWButtonStyle: PrimitiveButtonStyle {
@@ -43,6 +43,7 @@ private struct TWButtonBody: View {
     let style: TWStyle
     let state: TWState
     private let inputs = TWSurfaceInputs()
+    @Environment(\.controlSize) private var controlSize
     @Environment(\.twTheme) private var theme
     @Environment(\.twRules) private var rules
     @Environment(\.colorScheme) private var scheme
@@ -57,7 +58,7 @@ private struct TWButtonBody: View {
 
     var body: some View {
         let appearance = TWStyleResolver.resolve(TWStyle(rules.view, rules.button, style), theme: theme, scheme: scheme,
-                                                 state: resolvedState, globalRules: rules)
+                                                 state: resolvedState, globalRules: rules, controlSize: controlSize)
         // The bezel is part of the button's design, so it selects a structure once, like a surface role.
         if let bezel = appearance.buttonBezel {
             let glass = appearance.buttonSurface.map(inputs.context.usesGlass) ?? false

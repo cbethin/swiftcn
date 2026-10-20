@@ -32,6 +32,7 @@ public struct TWShadowValue: Sendable {
 
 /// Value-type design tokens. Changing this environment value updates its descendants.
 public struct TWTheme: Sendable {
+    public var controls: TWControlMetricsScale { didSet { revision = TWRevision.next() } }
     public var spacingUnit: CGFloat { didSet { revision = TWRevision.next() } }
     public var colors: [TWColor: TWAdaptiveColor] { didSet { revision = TWRevision.next() } }
     public var typography: [TWText: Font] { didSet { revision = TWRevision.next() } }
@@ -42,18 +43,20 @@ public struct TWTheme: Sendable {
 
     public init(
         spacingUnit: CGFloat = 4,
+        controls: TWControlMetricsScale? = nil,
         colors: [TWColor: TWAdaptiveColor] = [:],
         typography: [TWText: Font] = [:],
         radii: [TWRadius: CGFloat] = [:],
         shadows: [TWShadow: TWShadowValue] = [:]
     ) {
         precondition(spacingUnit.isFinite && spacingUnit >= 0, "Spacing must be finite and nonnegative.")
+        self.controls = controls ?? TWControlMetricsScale()
         self.spacingUnit = spacingUnit
         self.colors = Self.defaultColors.merging(colors) { _, override in override }
         self.typography = Self.defaultTypography.merging(typography) { _, override in override }
         self.radii = Self.defaultRadii.merging(radii) { _, override in override }
         self.shadows = Self.defaultShadows.merging(shadows) { _, override in override }
-        let isStandard = spacingUnit == 4 && colors.isEmpty && typography.isEmpty && radii.isEmpty && shadows.isEmpty
+        let isStandard = controls == nil && spacingUnit == 4 && colors.isEmpty && typography.isEmpty && radii.isEmpty && shadows.isEmpty
         self.revision = isStandard ? TWRevision.standard : TWRevision.next()
     }
 

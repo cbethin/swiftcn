@@ -38,6 +38,7 @@ public enum TWShadow: CaseIterable, Hashable, Sendable {
 
 /// Explicit state supplied by the caller. General view styling never recognizes presses.
 public struct TWState: Equatable, Sendable {
+    public var isSelected: Bool
     public var isHovered: Bool
     public var isFocused: Bool
     public var isPressed: Bool
@@ -47,12 +48,14 @@ public struct TWState: Equatable, Sendable {
     public var prefersReducedMotion: Bool
 
     public init(
+        isSelected: Bool = false,
         isHovered: Bool = false,
         isFocused: Bool = false,
         isPressed: Bool = false,
         isDisabled: Bool = false,
         prefersReducedMotion: Bool = false
     ) {
+        self.isSelected = isSelected
         self.isHovered = isHovered
         self.isFocused = isFocused
         self.isPressed = isPressed

@@ -238,7 +238,7 @@ private struct CNToastCard<Message: View>: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .opacity(concealed ? 0 : 1)
-        .tw(cn("toast max-w-[360]", classes))
+        .tw(cn("toast", classes))
         .transition(.opacity.combined(with: .move(edge: .bottom)))
         .accessibilityElement(children: .contain)
         .disabled(concealed)

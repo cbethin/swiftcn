@@ -34,7 +34,7 @@ jobs:
         timeout-minutes: 15
         if: inputs.ios_component == ''
         run: |
-          swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests|ComponentRenderingTests|CompositionRenderingTests|CatalogNativeRenderingTests|ComposableContentTests|PopoverInteractionTests|MotionRenderingTests|TouchTargetInteractionTests|PresentationAndScrollingTests|AdaptiveSurfaceRenderingTests'
+          swift test --skip 'SwiftCNVisualTests|NativeUtilityRenderingTests|ComponentRenderingTests|CompositionRenderingTests|CatalogNativeRenderingTests|ComposableContentTests|PopoverInteractionTests|MotionRenderingTests|TouchTargetInteractionTests|PresentationAndScrollingTests|AdaptiveSurfaceRenderingTests|SegmentedControlTests'
           swift test --filter MotionRenderingTests
           swift test --filter AdaptiveSurfaceRenderingTests
           swift test --filter CompositionRenderingTests
@@ -44,6 +44,7 @@ jobs:
           swift test --filter PopoverInteractionTests
           bash Scripts/check-presentation.sh
           swift test --filter TouchTargetInteractionTests
+          swift test --filter SegmentedControlTests
           SWIFTCN_GALLERY_APPEARANCE_TESTS=1 swift test --filter GalleryAppearanceTests
           swift test --filter NativeUtilityRenderingTests
       - name: Record candidates

@@ -178,7 +178,7 @@ public struct CNDropdownMenuLabel<Content: View>: View {
 public struct CNDropdownMenuSeparator: View {
     private let classes: TWClasses
     public init(_ classes: TWClasses = "") { self.classes = classes }
-    public var body: some View { Color.clear.tw(cn("h-[1] w-full bg-border", classes)).tw("py-1").accessibilityHidden(true) }
+    public var body: some View { Color.clear.tw(cn("menu-separator", classes)).tw("menu-separator-container").accessibilityHidden(true) }
 }
 public struct CNDropdownMenuShortcut: View {
     private let text: String
@@ -227,7 +227,7 @@ public struct CNMenubar<Content: View>: View {
     private let classes: TWClasses
     private let content: Content
     public init(_ classes: TWClasses = "", @ViewBuilder content: () -> Content) { self.classes = classes; self.content = content() }
-    public var body: some View { HStack(spacing: 8) { content }.tw(cn("menu p-1 bg-surface border rounded-md", classes)) }
+    public var body: some View { HStack(spacing: 8) { content }.tw(cn("menu-bar", classes)) }
 }
 
 /// Attach native contextual actions to any content, including rows and images.

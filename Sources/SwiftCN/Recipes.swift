@@ -24,15 +24,16 @@ extension TWStyle {
 
     /// Built-in classes stay editable when you copy these source files.
     static let defaultClasses: [String: Self] = {
-        var recipes: [String: Self] = ["card": Self(.p(6), .bg(.surface), .fg(.foreground), .rounded(.lg), .border(.border), .shadow(.sm)),
-         // Apple draws every button variant. The theme supplies the tint and label color.
-         "button-primary": Self(.bezel(.prominent), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.primary), .fg(.onPrimary)),
-         "button-secondary": Self(.bezel(.prominent), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.muted), .fg(.foreground)),
-         "button-outline": Self(.bezel(.bordered), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.foreground), .fg(.foreground)),
-         "button-destructive": Self(.bezel(.prominent), .rounded(.md), .text(.sm), .weight(.semibold), .tint(.destructive), .fg(.onDestructive)),
-         // Borderless buttons have no bezel to size them, so the label keeps the platform's touch target.
-         "button-ghost": Self(.bezel(.borderless), .px(3), .rounded(.md), .text(.sm), .weight(.semibold), .fg(.foreground), .minH(controlMinimumHeight)),
-         "button-link": Self(.bezel(.link), .text(.sm), .weight(.medium), .fg(.primary), .minH(controlMinimumHeight)),
+        let button = Self(.classes("control-metrics"), .text(.sm), .weight(.medium),
+                          .focus(.border(.ring, width: 2)), .disabled(.opacity(0.5)), .classes("animate-none"))
+        var recipes: [String: Self] = ["card": Self(.p(0), .bg(.surface), .fg(.foreground), .rounded(.lg), .border(.border), .shadow(.sm)),
+         // SwiftCN draws the variant; SwiftUI's Button keeps activation, roles, focus, and accessibility.
+         "button-primary": Self(button, .bg(.primary), .fg(.onPrimary), .tint(.primary), .hover(.opacity(0.9)), .pressed(.opacity(0.8))),
+         "button-secondary": Self(button, .bg(.muted), .fg(.foreground), .tint(.muted), .hover(.bg(.accent)), .pressed(.opacity(0.8))),
+         "button-outline": Self(button, .bg(.surface), .border(.input), .fg(.foreground), .tint(.foreground), .hover(.bg(.accent)), .pressed(.opacity(0.8))),
+         "button-destructive": Self(button, .bg(.destructive), .fg(.onDestructive), .tint(.destructive), .hover(.opacity(0.9)), .pressed(.opacity(0.8))),
+         "button-ghost": Self(button, .fg(.foreground), .hover(.bg(.accent)), .pressed(.bg(.accent)), .pressed(.opacity(0.8))),
+         "button-link": Self(button, .fg(.primary), .hover(.opacity(0.7)), .pressed(.opacity(0.6))),
          "card-header": Self(.p(6), .pb(0)),
          "card-content": Self(.p(6)),
          "card-footer": Self(.p(6), .pt(0)),
@@ -43,13 +44,13 @@ extension TWStyle {
          "field-description": Self(.text(.xs), .fg(.mutedForeground)),
          "field-error": Self(.text(.xs), .fg(.destructive)),
          "field-invalid": Self(.border(.destructive), .focus(.border(.destructive, width: 2))),
-         "input": Self(.px(3), .py(2), .minH(inputMinimumHeight), .text(.sm), .fg(.foreground), .bg(.surface), .border(.input), .rounded(.md),
+         "input": Self(.classes("input-metrics"), .text(.sm), .fg(.foreground), .bg(.surface), .border(.input),
                        .focus(.border(.ring, width: 2)), .classes("control-motion"), .disabled(.opacity(0.45))),
-         "toggle": Self(.text(.sm), .fg(.foreground), .disabled(.opacity(0.45))),
+         "toggle": Self(.classes("control-row"), .text(.sm), .fg(.foreground), .disabled(.opacity(0.45))),
          "label": Self(.text(.sm), .fg(.foreground))]
         let components: [String: TWClasses] = [
             "button-group": "text-foreground rounded-md",
-            "control-motion": "animate-smooth duration-150",
+            "control-motion": "animate-none",
             "disclosure-motion": "animate-spring duration-250",
             "feedback-motion": "animate-smooth duration-200",
             "badge": "px-2 py-1 text-xs font-semibold bg-primary text-onPrimary rounded-full",
@@ -76,8 +77,8 @@ extension TWStyle {
             "spinner-motion": "cn-spin-[0.9]",
             "progress": "text-foreground cn-tint-[tint]",
             "slider": "text-foreground cn-tint-[tint]",
-            "checkbox": "text-foreground w-full text-sm cn-tint-[tint] disabled:opacity-45",
-            "switch": "text-foreground text-sm cn-tint-[tint] disabled:opacity-45",
+            "checkbox": "control-row text-foreground w-full text-sm cn-tint-[tint] disabled:opacity-45",
+            "switch": "control-row text-foreground text-sm cn-tint-[tint] disabled:opacity-45",
             "radio-group": "text-foreground text-sm cn-tint-[tint]",
             "select": "text-foreground text-sm cn-tint-[tint]",
             "date-picker": "text-foreground cn-tint-[tint] max-w-[320]",
@@ -92,13 +93,16 @@ extension TWStyle {
             "dropdown-content": "p-1 w-[240] bg-surface text-foreground rounded-lg border shadow-md",
             "dropdown-item": "px-2 py-2 text-sm rounded-md hover:bg-accent focus:bg-accent pressed:opacity-80 disabled:opacity-40 animate-none",
             "dropdown-label": "px-2 py-2 text-sm font-semibold",
-            "textarea": "p-3 text-sm text-foreground bg-surface border border-input rounded-md focus:border-ring focus:border-2 disabled:opacity-45 control-motion",
+            "textarea": "input-metrics min-h-[100] text-sm text-foreground bg-surface border border-input focus:border-ring focus:border-2 disabled:opacity-45 control-motion",
             "input-group": "px-3 py-2 bg-background border rounded-md",
             "input-otp": "cn-mono text-xl",
             "accordion": "text-foreground",
             "accordion-item": "py-3",
             "collapsible": "text-foreground",
             "menu": "text-sm text-foreground",
+            "menu-bar": "p-1 bg-surface border rounded-md text-sm text-foreground",
+            "menu-separator": "h-[1] w-full bg-border",
+            "menu-separator-container": "py-1",
             "dialog": "p-6 min-w-[320] max-w-[480] bg-surface text-foreground rounded-lg",
             "dialog-title": "text-lg font-semibold",
             "dialog-description": "text-sm text-mutedForeground",
@@ -110,15 +114,15 @@ extension TWStyle {
             "presentation-motion": "animate-spring duration-300",
             "popover": "p-4 bg-surface text-foreground rounded-lg border shadow-md",
             "popover-motion": "animate-smooth duration-150",
-            "command": "bg-surface text-foreground rounded-lg border",
+            "command": "min-h-[180] bg-surface text-foreground rounded-lg border",
             "command-search": "px-4 py-1 min-h-[48] bg-[\(Color.clear)] border-0 focus:border-0 rounded-none",
-            "command-item": "px-3 py-2 min-h-[36] text-sm rounded-md pressed:opacity-80 disabled:opacity-45",
-            "combobox": "px-3 py-2 bg-surface text-foreground border border-input rounded-md",
+            "command-item": "w-full px-3 py-2 min-h-[36] text-sm rounded-md pressed:opacity-80 disabled:opacity-45",
+            "combobox": "w-[200] px-3 py-2 bg-surface text-foreground border border-input rounded-md",
             "pagination": "text-sm text-foreground",
             "scroll-area": "text-foreground",
             "skeleton": "bg-muted rounded-md",
             "skeleton-motion": "cn-shimmer-[1.6]",
-            "toast": "p-4 bg-surface text-foreground border rounded-lg shadow-md",
+            "toast": "max-w-[360] p-4 bg-surface text-foreground border rounded-lg shadow-md",
             "table": "bg-surface text-foreground rounded-lg border w-full",
             "data-table": "bg-surface text-foreground rounded-lg border w-full cn-tint-[tint]",
             "table-row": "hover:bg-accent animate-none",
@@ -138,8 +142,8 @@ extension TWStyle {
             "sidebar-group": "w-full",
             "sidebar-group-label": "px-2 py-2 text-xs font-medium text-mutedForeground",
             "sidebar-menu": "w-full",
-            "sidebar-menu-button": "px-2 py-2 w-full font-medium hover:bg-accent focus:bg-accent animate-none",
-            "sidebar-menu-selected": "bg-accent text-onAccent hover:bg-accent",
+            "sidebar-menu-button": "px-2 py-2 w-full font-medium bg-muted hover:bg-accent focus:bg-accent pressed:bg-accent pressed:opacity-100 animate-none",
+            "sidebar-menu-selected": "bg-accent text-onAccent hover:bg-accent pressed:bg-accent",
             "sidebar-menu-badge": "px-2 py-1 text-xs bg-background text-mutedForeground rounded-sm",
             "sidebar-menu-sub": "pl-4 w-full",
             "sidebar-trigger": "text-mutedForeground hover:text-foreground",
@@ -150,24 +154,26 @@ extension TWStyle {
             "resizable-handle": "text-mutedForeground hover:text-foreground control-motion",
             "tooltip": "text-xs",
             "hover-card": "p-4 bg-surface text-foreground border shadow-md rounded-lg",
-            // Selection changes only the tint, so the native style and the label keep their identity.
-            "toggle-selected": "tint-primary text-onPrimary",
-            "toggle-unselected": "tint-muted text-foreground"
+            "toggle-selected": "bg-accent text-onAccent hover:bg-accent hover:text-onAccent pressed:opacity-80",
+            "toggle-unselected": "text-mutedForeground hover:bg-muted hover:text-foreground pressed:bg-accent pressed:text-foreground"
         ]
         for (name, classes) in components { recipes[name] = .classes(classes) }
-        recipes["input-group"] = Self(.px(3), .minH(inputMinimumHeight), .text(.sm), .fg(.foreground), .bg(.surface), .border(.input), .rounded(.md), .focus(.border(.ring, width: 2)), .disabled(.opacity(0.45)), .classes("control-motion"))
-        recipes["input-group-field"] = Self(.text(.sm), .py(2), .minH(inputMinimumHeight))
+        recipes["toggle-button"] = Self(button, .classes("toggle-unselected"), .selected(.classes("toggle-selected")))
+        recipes["segmented"] = "p-1 bg-muted rounded-lg"
+        recipes["segmented-item"] = Self(button, .classes("rounded-container"), .fg(.mutedForeground),
+            .hover(.fg(.foreground)), .selected(.fg(.foreground)), .pressed(.opacity(0.8)))
+        recipes["segmented-indicator"] = "bg-surface border shadow-sm rounded-container disabled:opacity-50"
+        recipes["input-group"] = Self(.classes("input-metrics"), .py(0), .text(.sm), .fg(.foreground), .bg(.surface), .border(.input), .focus(.border(.ring, width: 2)), .disabled(.opacity(0.45)), .classes("control-motion"))
+        recipes["input-group-button"] = Self(.classes("control-icon"), .text(.sm), .fg(.mutedForeground), .roundedContainer, .hover(.bg(.accent)), .pressed(.bg(.accent)), .focus(.border(.ring, width: 2)), .disabled(.opacity(0.45)), .classes("animate-none"))
+        recipes["input-group-field"] = Self(.classes("input-metrics"), .px(0), .text(.sm))
         #if os(iOS)
         recipes["date-picker-calendar"] = Self(.classes(components["date-picker-calendar"]!), .w(352), .maxW(352))
         if let classes = components["checkbox"] { recipes["checkbox"] = Self(.classes(classes), .minW(44), .minH(44)) }
-        for name in ["switch", "command-item", "sidebar-menu-button"] {
+        for name in ["command-item", "sidebar-menu-button"] {
             if let classes = components[name] { recipes[name] = Self(.classes(classes), .minH(44)) }
         }
         #else
         recipes["date-picker-calendar"] = Self(.classes(components["date-picker-calendar"]!), .w(280), .maxW(280))
-        for name in ["checkbox", "switch"] {
-            if let classes = components[name] { recipes[name] = Self(.classes(classes), .minH(32)) }
-        }
         #endif
         return recipes
     }()
@@ -175,19 +181,4 @@ extension TWStyle {
     /// Read a built-in definition when extending that same class globally.
     public static func defaultStyle(for name: String) -> Self? { defaultClasses[name] }
 
-    private static var controlMinimumHeight: CGFloat {
-        #if os(iOS)
-        44
-        #else
-        32
-        #endif
-    }
-
-    private static var inputMinimumHeight: CGFloat {
-        #if os(iOS)
-        44
-        #else
-        36
-        #endif
-    }
 }

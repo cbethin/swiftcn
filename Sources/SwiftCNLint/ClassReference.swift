@@ -58,7 +58,7 @@ public enum ClassReference {
         ## Borders, corners, and shadows
 
         - Borders: `border` (1 point, theme border color), `border-{n}` (width in points), `border-{color}`
-        - Corners: `rounded` (md), \(prefixed("rounded-", catalog.radii))
+        - Corners: `rounded` (md), `rounded-container`, \(prefixed("rounded-", catalog.radii))
         - Shadows: `shadow` (sm), \(prefixed("shadow-", catalog.shadows))
         - Opacity: `opacity-{0…100}`
 

@@ -4,6 +4,18 @@ import Testing
 
 @Suite("Utility resolution")
 struct StyleResolverTests {
+    @Test func onlyHoverStylesAndGroupSourcesTrackThePointer() {
+        #expect(!resolve("text-sm text-mutedForeground").tracksHover)
+        #expect(!resolve("p-4 bg-surface rounded-lg border").tracksHover)
+        #expect(!resolve("group-hover:text-primary").tracksHover)
+        #expect(resolve("hover:bg-accent").tracksHover)
+        #expect(resolve("group/card").tracksHover)
+        #expect(resolve("disabled:hover:bg-accent").tracksHover)
+        let rules = TWGlobalRules(named: ["hover-label": "hover:text-primary"])
+        #expect(TWStyleResolver.resolve("hover-label", theme: .standard, scheme: .light,
+                                       state: .init(), globalRules: rules).tracksHover)
+    }
+
     private func resolve(_ style: TWStyle, theme: TWTheme = .standard, state: TWState = .init()) -> TWResolvedStyle {
         TWStyleResolver.resolve(style, theme: theme, scheme: .light, state: state)
     }
@@ -46,11 +58,10 @@ struct StyleResolverTests {
         #expect(!named.inheritsForeground)
     }
 
-    @Test func buttonClassesSelectOneNativeStyle() throws {
-        #expect(resolve("button-primary").buttonBezel == .prominent)
-        #expect(resolve("button-outline").buttonBezel == .bordered)
-        #expect(resolve("button-ghost").buttonBezel == .borderless)
-        #expect(resolve("button-link").buttonBezel == .link)
+    @Test func buttonClassesKeepCustomSurfacesAndExplicitNativeStyles() throws {
+        for variant in CNButtonVariant.allCases {
+            #expect(resolve(.classes(variant.classes)).buttonBezel == nil)
+        }
         #expect(resolve("glass").buttonBezel == .bordered)
         #expect(resolve("glass-prominent").buttonBezel == .prominent)
         #expect(resolve("button-outline bezel-prominent").buttonBezel == .prominent)
@@ -60,7 +71,7 @@ struct StyleResolverTests {
         // States never switch the native style type, so the button keeps its structure.
         let pressed = TWState(isHovered: true, isFocused: true, isPressed: true)
         #expect(resolve("hover:bezel-prominent", state: pressed).buttonBezel == nil)
-        #expect(resolve("button-outline pressed:bezel-prominent", state: pressed).buttonBezel == .bordered)
+        #expect(resolve("button-outline pressed:bezel-prominent", state: pressed).buttonBezel == nil)
         #expect(resolve("glass pressed:glass-prominent", state: pressed).buttonBezel == .bordered)
         #expect(resolve("px-2 hover:glass", state: pressed).buttonBezel == nil)
     }

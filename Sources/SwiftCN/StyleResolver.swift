@@ -2,12 +2,14 @@ import SwiftUI
 import os
 
 struct TWResolvedStyle {
+    var tracksHover = false
     var padding = EdgeInsets()
     var font: Font?
     var weight: Font.Weight?
     var foreground: Color?
     var background: Color?
     var radius: CGFloat = 0
+    var containerRelativeRadius = false
     /// Set by `rounded-t-*` and `rounded-b-*`; the other corners keep `radius`.
     var topRadius: CGFloat?
     var bottomRadius: CGFloat?
@@ -20,6 +22,7 @@ struct TWResolvedStyle {
     var outline: TWSurfaceShape {
         TWSurfaceShape(top: topRadius ?? radius, bottom: bottomRadius ?? radius)
     }
+    /// An explicit numeric radius. Container-relative artwork keeps native surface defaults.
     var hasRadius = false
     var border: Color?
     var borderWidth: CGFloat = 0
@@ -70,43 +73,43 @@ struct TWResolvedStyle {
 
 enum TWStyleResolver {
     static func resolve(_ style: TWStyle, theme: TWTheme, scheme: ColorScheme, state: TWState,
-                        globalRules: TWGlobalRules = TWGlobalRules(), groupStates: [String: TWState] = [:], target: TWTarget? = .view) -> TWResolvedStyle {
-        let expanded: TWStyle
+                        globalRules: TWGlobalRules = TWGlobalRules(), groupStates: [String: TWState] = [:], target: TWTarget? = .view, controlSize: ControlSize = .regular) -> TWResolvedStyle {
+        let expanded: [TWRule]
         do {
-            expanded = try TWClassParser.expand(style, rules: globalRules, theme: theme, target: target)
+            expanded = try TWClassParser.ordered(style, rules: globalRules, theme: theme, target: target)
         } catch {
             Logger(subsystem: "swiftcn", category: "classes").error("\(String(describing: error), privacy: .public)")
             var invalid = TWResolvedStyle()
             invalid.nativeSlots = globalRules.nativeSlots
             return invalid
         }
-        let rules = expanded.rules.enumerated()
+        let rules = expanded
             .filter {
-                $0.element.conditions.allSatisfy { $0.matches(state) } && $0.element.groupConditions.allSatisfy {
+                $0.conditions.allSatisfy { $0.matches(state) } && $0.groupConditions.allSatisfy {
                     guard let group = groupStates[$0.name ?? ""] else { return false }
                     return $0.condition.matches(group)
                 }
             }
-            .sorted { lhs, rhs in
-                if lhs.element.priority != rhs.element.priority {
-                    return lhs.element.priority < rhs.element.priority
-                }
-                if lhs.element.conditionCount != rhs.element.conditionCount {
-                    return lhs.element.conditionCount < rhs.element.conditionCount
-                }
-                return lhs.offset < rhs.offset
-            }
+        let effectiveSize = rules.compactMap { entry -> ControlSize? in
+            if case .controlSize(let value) = entry.property { return value }
+            return nil
+        }.last ?? controlSize
         var result = TWResolvedStyle()
+        var usesControlMetrics = false
         // Decided before state filtering, so hover or focus variants never add or remove the modifier.
-        result.inheritsForeground = !expanded.rules.contains {
+        result.tracksHover = expanded.contains {
+            if case .group = $0.property { return true }
+            return $0.conditions.contains(.hovered)
+        }
+        result.inheritsForeground = !expanded.contains {
             if case .foreground = $0.property { true } else { false }
         }
-        result.inheritsTint = !expanded.rules.contains {
+        result.inheritsTint = !expanded.contains {
             if case .glassTint = $0.property { true } else { false }
         }
         var selectedNative: [String: (name: String, argument: TWArgument?)] = [:]
         for entry in rules {
-            switch entry.element.property {
+            switch entry.property {
             case .native(let name, let argument):
                 let key = globalRules.modifiers[name]?.conflictKey ?? name
                 selectedNative[key] = (name, argument)
@@ -130,7 +133,14 @@ enum TWStyleResolver {
             case .weight(let weight): result.weight = weight
             case .foreground(let source): result.foreground = color(source, theme: theme, scheme: scheme)
             case .background(let source): result.background = color(source, theme: theme, scheme: scheme)
+            case .containerRadius:
+                result.hasRadius = false
+                result.containerRelativeRadius = true
+                result.radius = 0
+                result.topRadius = nil
+                result.bottomRadius = nil
             case .radius(let source):
+                result.containerRelativeRadius = false
                 result.hasRadius = true
                 result.topRadius = nil
                 result.bottomRadius = nil
@@ -139,12 +149,14 @@ enum TWStyleResolver {
                 case .points(let points): result.radius = points
                 }
             case .radiusTop(let source):
+                result.containerRelativeRadius = false
                 result.hasRadius = true
                 switch source {
                 case .token(let token): result.topRadius = theme.radius(token)
                 case .points(let points): result.topRadius = points
                 }
             case .radiusBottom(let source):
+                result.containerRelativeRadius = false
                 result.hasRadius = true
                 switch source {
                 case .token(let token): result.bottomRadius = theme.radius(token)
@@ -158,15 +170,30 @@ enum TWStyleResolver {
             case .shadow(let token): result.shadow = theme.shadow(token)
             case .surface(let role):
                 result.surface = role
-                if entry.element.conditionCount == 0 { result.buttonSurface = role }
+                if entry.conditionCount == 0 { result.buttonSurface = role }
             case .glassInteractive(let value): result.glassInteractive = value
             case .glassTint(let source): result.glassTint = color(source, theme: theme, scheme: scheme)
             case .prominent(let value):
                 result.prominent = value
-                if entry.element.conditionCount == 0 { result.buttonProminent = value }
+                if entry.conditionCount == 0 { result.buttonProminent = value }
             // The bezel selects the native style type, so only unconditioned classes choose it.
-            case .bezel(let value): if entry.element.conditionCount == 0 { result.bezel = value }
+            case .bezel(let value): if entry.conditionCount == 0 { result.bezel = value }
             case .controlSize(let value): result.controlSize = value
+            case .controlMetrics(let role):
+                usesControlMetrics = true
+                let metrics = theme.controls[effectiveSize]
+                metrics.validate()
+                result.minimumHeight = metrics.minHeight
+                if role != .row {
+                    result.padding = EdgeInsets(top: role == .icon ? 0 : metrics.verticalPadding,
+                                               leading: role == .icon ? 0 : metrics.horizontalPadding,
+                                               bottom: role == .icon ? 0 : metrics.verticalPadding,
+                                               trailing: role == .icon ? 0 : metrics.horizontalPadding)
+                    result.radius = metrics.radius ?? theme.radius(.md)
+                    result.topRadius = nil; result.bottomRadius = nil
+                    result.hasRadius = true; result.containerRelativeRadius = false
+                }
+                if role == .icon { result.minimumWidth = metrics.iconWidth }
             case .opacity(let opacity): result.opacity = opacity
             case .tracking(let value): result.tracking = value
             case .lineSpacing(let value): result.lineSpacing = value
@@ -187,7 +214,7 @@ enum TWStyleResolver {
             case .animation(let preset):
                 result.motion.preset = preset
                 // An animation written for reduced motion is the one to run under it.
-                if entry.element.conditions.contains(.reducedMotion) { result.motion.runsWithReducedMotion = true }
+                if entry.conditions.contains(.reducedMotion) { result.motion.runsWithReducedMotion = true }
             case .animationDuration(let duration): result.motion.duration = duration
             case .animationDelay(let delay): result.motion.delay = delay
             case .group(let name): result.group = name
@@ -197,6 +224,14 @@ enum TWStyleResolver {
             case .classes, .interpolated: break // Expansion removes these before resolution.
             }
         }
+        #if os(iOS)
+        if usesControlMetrics {
+            result.minimumHeight = max(44, result.minimumHeight ?? 0)
+            if let height = result.height { result.height = max(44, height) }
+            result.minimumWidth = max(44, result.minimumWidth ?? 0)
+            if let width = result.width { result.width = max(44, width) }
+        }
+        #endif
         // Keep a shared radius when both edges agree, including two explicit edge overrides.
         let top = result.topRadius ?? result.radius, bottom = result.bottomRadius ?? result.radius
         if top == bottom {

@@ -33,7 +33,7 @@ public struct CNTextarea: View {
     }
     public var body: some View {
         TextEditor(text: $text).scrollContentBackground(.hidden).focused(focus ?? $isFocused)
-            .modifier(TWFieldControlModifier(style: .classes(cn("textarea min-h-[100]", classes)), state: .init(isFocused: focus?.wrappedValue ?? isFocused)))
+            .modifier(TWFieldControlModifier(style: .classes(cn("textarea", classes)), state: .init(isFocused: focus?.wrappedValue ?? isFocused)))
             .modifier(CNInputActivationSurface(focus: focus ?? $isFocused))
             .accessibilityLabel(title)
     }
@@ -53,6 +53,26 @@ public struct CNInputGroup<Content: View>: View {
             .modifier(TWFieldControlModifier(style: .classes(cn("input-group", classes)), state: .init(isFocused: focus?.wrappedValue ?? isFocused)))
             .environment(\.twInputGroupFocus, focus ?? $isFocused)
             .modifier(CNInputActivationSurface(focus: focus ?? $isFocused))
+    }
+}
+
+/// A native inset action with a complete hit area and corners supplied by its input group.
+public struct CNInputGroupButton<Label: View>: View {
+    private let classes: TWClasses
+    private let action: () -> Void
+    private let label: Label
+    @FocusState private var focused: Bool
+
+    public init(classes: TWClasses = "", action: @escaping () -> Void, @ViewBuilder label: () -> Label) {
+        self.classes = classes
+        self.action = action
+        self.label = label()
+    }
+
+    public var body: some View {
+        Button(action: action) { label }
+            .focused($focused)
+            .buttonStyle(.tw(cn("input-group-button", classes), state: .init(isFocused: focused)))
     }
 }
 public struct CNInputGroupField: View {

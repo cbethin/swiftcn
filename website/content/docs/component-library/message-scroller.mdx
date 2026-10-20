@@ -61,9 +61,9 @@ A lazy native scroll view uses stable message IDs and scroll targets. Bind posit
 
 ## Style and compose
 
-Visual recipes use `.tw` classes. Append `classes:` to override a recipe locally, or change the recipe in `TWGlobalRules.named` for your subtree. Native layout and interaction modifiers remain SwiftUI APIs. For control colors, append `cn-tint-[primary]`, another theme token, or an interpolated `Color`.
+Visual recipes use `.tw` classes. Append `classes:` to override a recipe locally, or extend the inherited recipe with `.twRules(overrides: TWRuleOverrides(named: ...))` for your subtree. Use `replacing:` for a complete recipe replacement. Native layout and interaction modifiers remain SwiftUI APIs. For control colors, append `cn-tint-[primary]`, another theme token, or an interpolated `Color`.
 
-Motion recipes are editable too: `control-motion` uses a 150 ms smooth response, `disclosure-motion` uses a 250 ms spring, and `feedback-motion` uses a 200 ms smooth response. Set a recipe to `animate-none` in your global rules to turn it off. Presets respect Reduce Motion. Static components stay still; native scrolling, drag tracking, and platform presentation keep their own gestures.
+Motion recipes are editable too: `control-motion` uses immediate feedback, `disclosure-motion` uses a 250 ms spring, and `feedback-motion` uses a 200 ms smooth response. Set a recipe to `animate-none` in your global rules to turn it off. Presets respect Reduce Motion. Static components stay still; native scrolling, drag tracking, and platform presentation keep their own gestures.
 
 Action groups and card, dialog, and questionnaire footers stack when their content does not fit. The native layout preserves the same child controls during this change.
 

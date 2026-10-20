@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(iOS)
+import UIKit
+#endif
 
 public enum CNSidebarCollapsible: Sendable { case icon, offcanvas, none }
 public enum CNSidebarSide: Sendable { case leading, trailing }
@@ -10,6 +13,7 @@ public struct CNSidebar<Sidebar: View, Detail: View>: View {
     private let mobilePresented: Binding<Bool>?
     @State private var localMobilePresented = false
     @GestureState private var dragOffset: CGFloat = 0
+    @State private var swipeOffset: CGFloat = 0
     @FocusState private var drawerFocused: Bool
     @Environment(\.layoutDirection) private var direction
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -42,6 +46,7 @@ public struct CNSidebar<Sidebar: View, Detail: View>: View {
             let compact = geometry.size.width < compactBreakpoint
             let compactWidth = max(0, geometry.size.width - 44)
             let panelWidth = compact ? (typeSize.isAccessibilitySize ? compactWidth : min(width, compactWidth)) : width
+            let drawerProgress = min(1, max(0, (mobile.wrappedValue ? 1 : 0) - hiddenSign * swipeOffset / max(1, panelWidth)))
             let railWidth = desktopOpen ? panelWidth : (collapsible == .icon ? collapsedWidth : 0)
             let visibleWidth = compact ? 0 : railWidth
             let context = CNSidebarContext(isCollapsed: !compact && !desktopOpen && collapsible == .icon,
@@ -61,7 +66,7 @@ public struct CNSidebar<Sidebar: View, Detail: View>: View {
                 }
                 // A mounted scrim and pane allow every reversal to retarget immediately.
                 Button(action: context.dismiss) { Color.clear.tw("sidebar-scrim") }
-                    .buttonStyle(.plain).opacity(compact && mobile.wrappedValue ? 1 : 0)
+                    .buttonStyle(.plain).opacity(compact ? drawerProgress : 0)
                     .allowsHitTesting(compact && mobile.wrappedValue)
                     .accessibilityHidden(!compact || !mobile.wrappedValue)
                     .accessibilityLabel("Close sidebar")
@@ -69,6 +74,7 @@ public struct CNSidebar<Sidebar: View, Detail: View>: View {
                     .frame(width: context.isCollapsed ? collapsedWidth : panelWidth, height: geometry.size.height,
                            alignment: .topLeading)
                     .background(alignment: hiddenSign < 0 ? .leading : .trailing) {
+                        #if !os(iOS)
                         if compact && mobile.wrappedValue {
                             // Keep the recognizer off child controls. Native controls in front of
                             // this edge surface retain their hit testing and drag handling.
@@ -84,6 +90,7 @@ public struct CNSidebar<Sidebar: View, Detail: View>: View {
                                     })
                                 .accessibilityHidden(true)
                         }
+                        #endif
                     }
                     .tw(cn("sidebar", classes))
                     .overlay(alignment: side == .leading ? .trailing : .leading) {
@@ -92,7 +99,7 @@ public struct CNSidebar<Sidebar: View, Detail: View>: View {
                     .offset(x: !compact && collapsible == .offcanvas ? hiddenSign * (panelWidth - visibleWidth) : 0)
                     .frame(width: compact ? panelWidth : visibleWidth, alignment: side == .leading ? .leading : .trailing)
                     .clipped()
-                    .offset(x: compact ? (mobile.wrappedValue ? dragOffset : hiddenSign * panelWidth) : 0)
+                    .offset(x: compact ? ((mobile.wrappedValue ? 0 : hiddenSign * panelWidth) + dragOffset + swipeOffset) : 0)
                     .allowsHitTesting(compact ? mobile.wrappedValue : visibleWidth > 0)
                     .accessibilityHidden(compact ? !mobile.wrappedValue : visibleWidth == 0)
                     .accessibilityElement(children: .contain)
@@ -100,12 +107,30 @@ public struct CNSidebar<Sidebar: View, Detail: View>: View {
                     .focusable(compact && mobile.wrappedValue)
                     .focusEffectDisabled()
                     .focused($drawerFocused)
-            }.environment(\.cnSidebarContext, context)
+            }
+                #if os(iOS)
+                .background {
+                    CNSidebarSwipeBridge(enabled: compact, presented: mobile.wrappedValue,
+                                         panelWidth: panelWidth, hiddenSign: hiddenSign,
+                        changed: { offset in
+                            var transaction = Transaction()
+                            transaction.disablesAnimations = true
+                            withTransaction(transaction) { swipeOffset = offset }
+                        }, ended: { presented in
+                            mobile.wrappedValue = presented
+                            swipeOffset = 0
+                        })
+                }
+                #endif
+                .environment(\.cnSidebarContext, context)
                 .twAnimation("sidebar-motion", value: desktopOpen, tracksHover: false)
                 .twAnimation("sidebar-motion", value: mobile.wrappedValue, tracksHover: false)
                 .twAnimation("sidebar-motion", value: dragOffset, tracksHover: false)
-                .onChange(of: compact) { _, _ in mobile.wrappedValue = false; drawerFocused = false }
-                .onChange(of: mobile.wrappedValue) { _, presented in drawerFocused = compact && presented }
+                .twAnimation("sidebar-motion", value: swipeOffset, tracksHover: false)
+                .onChange(of: compact) { _, _ in mobile.wrappedValue = false; drawerFocused = false; swipeOffset = 0 }
+                .onChange(of: mobile.wrappedValue) { _, presented in
+                    if compact { drawerFocused = presented }
+                }
                 .onAppear { drawerFocused = compact && mobile.wrappedValue }
                 .onKeyPress(.escape) {
                     guard compact, mobile.wrappedValue else { return .ignored }
@@ -139,7 +164,7 @@ public struct CNSidebarContent<Content: View>: View {
     private let content: Content
     public init(_ classes: TWClasses = "", @ViewBuilder content: () -> Content) { self.classes = classes; self.content = content() }
     public var body: some View {
-        ScrollView { VStack(alignment: .leading, spacing: 16) { content }.tw(cn("sidebar-content", classes)) }
+        ScrollView { LazyVStack(alignment: .leading, spacing: 16) { content }.tw(cn("sidebar-content", classes)) }
             .frame(maxHeight: .infinity)
     }
 }
@@ -175,6 +200,7 @@ public struct CNSidebarMenu<Content: View>: View {
 public struct CNSidebarMenuButton: View {
     @Environment(\.cnSidebarContext) private var context
     @ScaledMetric(relativeTo: .body) private var iconWidth: CGFloat = 20
+    private let customLabel: ((CNSidebarContext) -> AnyView)?
     private let title: String
     private let systemImage: String
     private let isSelected: Bool
@@ -184,23 +210,52 @@ public struct CNSidebarMenuButton: View {
     private let action: () -> Void
     public init(_ title: String, systemImage: String, isSelected: Bool = false, badge: String? = nil,
                 dismissOnSelect: Bool = true, classes: TWClasses = "", action: @escaping () -> Void) {
+        self.customLabel = nil
         self.title = title; self.systemImage = systemImage; self.isSelected = isSelected; self.badge = badge
         self.dismissOnSelect = dismissOnSelect; self.classes = classes; self.action = action
     }
+    public init<Label: View>(isSelected: Bool = false, dismissOnSelect: Bool = true,
+                             classes: TWClasses = "", action: @escaping () -> Void,
+                             @ViewBuilder label: @escaping () -> Label) {
+        self.init(isSelected: isSelected, dismissOnSelect: dismissOnSelect, classes: classes,
+                  action: action, label: { _ in label() })
+    }
+    public init<Label: View>(isSelected: Bool = false, dismissOnSelect: Bool = true,
+                             classes: TWClasses = "", action: @escaping () -> Void,
+                             @ViewBuilder label: @escaping (CNSidebarContext) -> Label) {
+        customLabel = { AnyView(label($0)) }
+        title = ""; systemImage = ""; badge = nil
+        self.isSelected = isSelected; self.dismissOnSelect = dismissOnSelect
+        self.classes = classes; self.action = action
+    }
     public var body: some View {
+        accessibleButton.accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+    @ViewBuilder private var accessibleButton: some View {
+        if customLabel == nil {
+            button.accessibilityLabel(title).accessibilityValue(badge ?? "").help(title)
+        } else {
+            button
+        }
+    }
+    private var button: some View {
         CNButton(variant: .ghost, classes: cn("sidebar-menu-button", isSelected ? "sidebar-menu-selected" : "", classes), action: {
             action()
             if context.isCompact && dismissOnSelect { context.dismiss() }
         }) {
-            HStack(spacing: 10) {
-                Image(systemName: systemImage).frame(width: context.isCollapsed ? 20 : iconWidth).accessibilityHidden(true)
-                if !context.isCollapsed {
-                    Text(title).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading).transition(.opacity)
-                    if let badge { Text(badge).tw("sidebar-menu-badge").transition(.opacity) }
-                }
-            }.frame(maxWidth: .infinity, alignment: context.isCollapsed ? .center : .leading)
-        }.accessibilityLabel(title).accessibilityValue(badge ?? "")
-            .accessibilityAddTraits(isSelected ? .isSelected : []).help(title)
+            if let customLabel { customLabel(context) }
+            else { standardLabel }
+        }
+    }
+
+    private var standardLabel: some View {
+        HStack(spacing: 10) {
+            Image(systemName: systemImage).frame(width: context.isCollapsed ? 20 : iconWidth).accessibilityHidden(true)
+            if !context.isCollapsed {
+                Text(title).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading).transition(.opacity)
+                if let badge { Text(badge).tw("sidebar-menu-badge").transition(.opacity) }
+            }
+        }.frame(maxWidth: .infinity, alignment: context.isCollapsed ? .center : .leading)
     }
 }
 /// Nested navigation remains mounted when the desktop rail collapses.
@@ -215,3 +270,151 @@ public struct CNSidebarMenuSub<Content: View>: View {
             .allowsHitTesting(!context.isCollapsed).accessibilityHidden(context.isCollapsed)
     }
 }
+
+#if os(iOS)
+/// Observe the hosting view without adding a hit-test overlay over the sidebar's controls.
+private struct CNSidebarSwipeBridge: UIViewRepresentable {
+    let enabled: Bool
+    let presented: Bool
+    let panelWidth: CGFloat
+    let hiddenSign: CGFloat
+    let changed: (CGFloat) -> Void
+    let ended: (Bool) -> Void
+
+    func makeUIView(context: Context) -> CNSidebarSwipeView { CNSidebarSwipeView() }
+    func updateUIView(_ view: CNSidebarSwipeView, context: Context) {
+        view.presented = presented; view.panelWidth = panelWidth; view.hiddenSign = hiddenSign
+        view.changed = changed; view.ended = ended
+        if view.edge.isEnabled != (enabled && !presented) { view.edge.isEnabled = enabled && !presented }
+        if view.close.isEnabled != (enabled && presented) { view.close.isEnabled = enabled && presented }
+        view.attach()
+    }
+    static func dismantleUIView(_ view: CNSidebarSwipeView, coordinator: ()) { view.detach() }
+}
+
+private final class CNSidebarSwipeView: UIView, UIGestureRecognizerDelegate {
+    var presented = false
+    var panelWidth: CGFloat = 0
+    var hiddenSign: CGFloat = -1
+    var changed: (CGFloat) -> Void = { _ in }
+    var ended: (Bool) -> Void = { _ in }
+    private weak var gestureRoot: UIView?
+    let edge = UIPanGestureRecognizer()
+    let close = UIPanGestureRecognizer()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = false
+        for gesture in [edge, close] {
+            gesture.addTarget(self, action: #selector(panned(_:)))
+            gesture.delegate = self
+            gesture.maximumNumberOfTouches = 1
+        }
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        if window == nil { removeGestures() }
+        else {
+            attach()
+            // Older SwiftUI hosts install the controller in the responder chain
+            // after inserting the representable's view into its window.
+            DispatchQueue.main.async { [weak self] in self?.attach() }
+        }
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        attach()
+    }
+
+    func attach() {
+        guard window != nil else { return }
+        var responder: UIResponder? = self
+        while let current = responder {
+            if let controller = current as? UIViewController {
+                let root = controller.view
+                guard gestureRoot !== root else { return }
+                removeGestures()
+                gestureRoot = root
+                root?.addGestureRecognizer(edge)
+                root?.addGestureRecognizer(close)
+                if let back = controller.navigationController?.interactivePopGestureRecognizer {
+                    edge.require(toFail: back)
+                }
+                return
+            }
+            responder = current.next
+        }
+    }
+
+    func detach() {
+        changed = { _ in }; ended = { _ in }
+        removeGestures()
+    }
+    private func removeGestures() {
+        gestureRoot?.removeGestureRecognizer(edge)
+        gestureRoot?.removeGestureRecognizer(close)
+        gestureRoot = nil
+    }
+
+    func gestureRecognizer(_ gesture: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        let point = touch.location(in: self)
+        if gesture === edge {
+            guard let root = gestureRoot, point.y >= 0, point.y <= bounds.height else { return false }
+            let frame = convert(bounds, to: root)
+            // Include landscape safe-area margins, but do not open an inset, nested sidebar.
+            let reachesEdge = hiddenSign < 0 ? frame.minX <= root.safeAreaInsets.left + 1
+                : frame.maxX >= root.bounds.width - root.safeAreaInsets.right - 1
+            let start = touch.location(in: root)
+            // Restrict the ordinary pan to the physical edge, including indirect touches.
+            return reachesEdge && (hiddenSign < 0 ? start.x <= 20 : start.x >= root.bounds.width - 20)
+        }
+        guard bounds.contains(point) else { return false }
+        guard hiddenSign < 0 ? point.x <= panelWidth : point.x >= bounds.width - panelWidth else { return false }
+        // Value controls and horizontal scroll views keep their own drag gestures.
+        var view = touch.view
+        while let current = view, current !== gestureRoot {
+            if current is UITextView { return false }
+            if current is UIControl && !(current is UIButton) { return false }
+            if let scroll = current as? UIScrollView,
+               scroll.alwaysBounceHorizontal || scroll.contentSize.width > scroll.bounds.width + 1 { return false }
+            view = current.superview
+        }
+        return true
+    }
+
+    override func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {
+        guard let pan = gesture as? UIPanGestureRecognizer else { return false }
+        let velocity = pan.velocity(in: self)
+        let sign = gesture === edge ? -hiddenSign : hiddenSign
+        return sign * velocity.x > 0 && abs(velocity.x) > abs(velocity.y) * 1.5
+    }
+
+    func gestureRecognizer(_ gesture: UIGestureRecognizer,
+                           shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+        // A vertical scroll view must not prevent a horizontal drawer drag over its rows.
+        guard let scroll = other.view as? UIScrollView else { return false }
+        return other === scroll.panGestureRecognizer && !scroll.alwaysBounceHorizontal
+            && scroll.contentSize.width <= scroll.bounds.width + 1
+    }
+
+    @objc private func panned(_ gesture: UIPanGestureRecognizer) {
+        let opening = gesture === edge
+        let sign = opening ? -hiddenSign : hiddenSign
+        let distance = min(panelWidth, max(0, sign * gesture.translation(in: self).x))
+        switch gesture.state {
+        case .began, .changed:
+            changed(sign * distance)
+        case .ended:
+            let projected = distance + sign * gesture.velocity(in: self).x * 0.18
+            let complete = projected > panelWidth * 0.35
+            ended(opening ? complete : !complete)
+        case .cancelled, .failed:
+            ended(presented)
+        default: break
+        }
+    }
+}
+#endif

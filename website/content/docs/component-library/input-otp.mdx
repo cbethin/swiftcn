@@ -35,9 +35,9 @@ Uses one native text field. ASCII digits are normalized and truncated on edit an
 
 ## Style and compose
 
-Visual recipes use `.tw` classes. Append `classes:` to override a recipe locally, or change the recipe in `TWGlobalRules.named` for your subtree. Native layout and interaction modifiers remain SwiftUI APIs. For control colors, append `cn-tint-[primary]`, another theme token, or an interpolated `Color`.
+Visual recipes use `.tw` classes. Append `classes:` to override a recipe locally, or extend the inherited recipe with `.twRules(overrides: TWRuleOverrides(named: ...))` for your subtree. Use `replacing:` for a complete recipe replacement. Native layout and interaction modifiers remain SwiftUI APIs. For control colors, append `cn-tint-[primary]`, another theme token, or an interpolated `Color`.
 
-Motion recipes are editable too: `control-motion` uses a 150 ms smooth response, `disclosure-motion` uses a 250 ms spring, and `feedback-motion` uses a 200 ms smooth response. Set a recipe to `animate-none` in your global rules to turn it off. Presets respect Reduce Motion. Static components stay still; native scrolling, drag tracking, and platform presentation keep their own gestures.
+Motion recipes are editable too: `control-motion` uses immediate feedback, `disclosure-motion` uses a 250 ms spring, and `feedback-motion` uses a 200 ms smooth response. Set a recipe to `animate-none` in your global rules to turn it off. Presets respect Reduce Motion. Static components stay still; native scrolling, drag tracking, and platform presentation keep their own gestures.
 
 Action groups and card, dialog, and questionnaire footers stack when their content does not fit. The native layout preserves the same child controls during this change.
 
@@ -87,7 +87,7 @@ public struct CNTextarea: View {
     }
     public var body: some View {
         TextEditor(text: $text).scrollContentBackground(.hidden).focused(focus ?? $isFocused)
-            .modifier(TWFieldControlModifier(style: .classes(cn("textarea min-h-[100]", classes)), state: .init(isFocused: focus?.wrappedValue ?? isFocused)))
+            .modifier(TWFieldControlModifier(style: .classes(cn("textarea", classes)), state: .init(isFocused: focus?.wrappedValue ?? isFocused)))
             .modifier(CNInputActivationSurface(focus: focus ?? $isFocused))
             .accessibilityLabel(title)
     }
@@ -107,6 +107,26 @@ public struct CNInputGroup<Content: View>: View {
             .modifier(TWFieldControlModifier(style: .classes(cn("input-group", classes)), state: .init(isFocused: focus?.wrappedValue ?? isFocused)))
             .environment(\.twInputGroupFocus, focus ?? $isFocused)
             .modifier(CNInputActivationSurface(focus: focus ?? $isFocused))
+    }
+}
+
+/// A native inset action with a complete hit area and corners supplied by its input group.
+public struct CNInputGroupButton<Label: View>: View {
+    private let classes: TWClasses
+    private let action: () -> Void
+    private let label: Label
+    @FocusState private var focused: Bool
+
+    public init(classes: TWClasses = "", action: @escaping () -> Void, @ViewBuilder label: () -> Label) {
+        self.classes = classes
+        self.action = action
+        self.label = label()
+    }
+
+    public var body: some View {
+        Button(action: action) { label }
+            .focused($focused)
+            .buttonStyle(.tw(cn("input-group-button", classes), state: .init(isFocused: focused)))
     }
 }
 public struct CNInputGroupField: View {

@@ -80,7 +80,7 @@ private struct VisualFixture: View {
 
     private var buttons: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Apple draws each variant; the theme supplies its tint and label color.
+            // Standard variants draw matching theme fills and label colors.
             ForEach(["button-primary", "button-secondary", "button-outline", "button-destructive", "button-ghost", "button-link"],
                     id: \.self) { name in
                 HStack(spacing: 8) {
@@ -89,8 +89,8 @@ private struct VisualFixture: View {
                   }
               }
             HStack(spacing: 8) {
-                Button("Small") {}.buttonStyle(.tw("button-primary control-sm"))
-                Button("Large") {}.buttonStyle(.tw("button-primary control-lg"))
+                CNButton("Small", size: .small) {}
+                CNButton("Large", size: .large) {}
                 Button("Pill") {}.buttonStyle(.tw("button-outline rounded-full"))
               }
             Button("Typed style") {}.buttonStyle(.tw(.primaryButton, .px(6), .animation(.snappy)))
@@ -178,8 +178,7 @@ private struct VisualFixture: View {
                 CNCardTitle("Your theme, everywhere")
                 CNCardDescription("Shared surfaces, native controls, and quiet interaction states.")
             }
-            // The content's native controls show the theme as a key window does; the footer's
-            // native buttons keep the snapshot window's real state, which AppKit draws before macOS 26.
+            // The content's native controls show the theme as a key window does.
             CNCardContent {
                 CNInput("Project name", text: .constant("Design system"))
                 CNInput("Unavailable", text: .constant("Disabled field")).disabled(true)

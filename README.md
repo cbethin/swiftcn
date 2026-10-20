@@ -446,6 +446,23 @@ TextField("Email", text: $email)
         state: TWState(isFocused: emailFocused))
 ```
 
+## Native macOS windows
+
+Use `.cnWindowStyle()` on a macOS `WindowGroup` or `Window` and `.cnWindowContent()` on its root view.
+The title bar disappears while the native traffic lights keep their normal behavior.
+`CNWindowHeader` supplies a themed header with space for those controls.
+Its empty background supports window dragging on macOS 15 and later.
+
+Use `CNWindowControlsSpacer(axis: .vertical)` above a sidebar header.
+Set `CNWindowHeader(reservesWindowControls: false)` while that sidebar occupies the physical left edge.
+Reserve the controls again when the sidebar is hidden, uses a compact drawer, or sits on the right.
+The header keeps native window-control space on the physical left in right-to-left layouts.
+The content modifier preserves iOS safe areas, and the spacers collapse on iOS.
+
+The gallery includes a native **Settings…** window on **⌘,**, built with SwiftCN controls.
+Appearance, the default view mode, and preview-grid visibility save automatically.
+See the [complete native window example](website/content/docs/native-windows.mdx).
+
 ## Native animation classes
 
 Use animation classes to animate changes to the modifiers that `.tw` owns:
@@ -812,7 +829,13 @@ npm run dev
 
 ### Native component library
 
-SwiftCN includes 64 native component catalog entries, from buttons and composable card parts to searchable commands, data tables, charts, and questionnaires. Each uses `.tw` class recipes and caller-owned bindings.
+SwiftCN includes 65 native component catalog entries, from buttons and composable card parts to searchable commands, data tables, charts, and questionnaires. Each uses `.tw` class recipes and caller-owned bindings.
+
+Extend inherited recipes with `TWRuleOverrides(named:)`, or replace a complete recipe with `replacing:`.
+Use `TWTheme.controls` and SwiftUI's `.controlSize` to share control dimensions.
+`selected:` utilities style selection without changing bindings.
+Compose `CNSegmentedControl` with `CNSegment` labels; toggle groups and sidebar rows also accept custom label builders.
+See the [customization documentation](website/content/docs/customization.mdx) for a complete example.
 
 Direct native controls use the same recipes through `.buttonStyle(.tw(...))`, `.textFieldStyle(.tw(...))`, `.toggleStyle(.tw(...))`, and `.labelStyle(.tw(...))`. `CNDrawerContent` styles a caller-owned sheet; `CNDrawer` adds native defaults with typed detents, selection, and dismissal callbacks. Native navigation and desktop split examples use SwiftUI containers directly. The gallery's **Native composition** section includes all four complete, copyable examples. See the [native composition documentation source](website/content/docs/native-composition.mdx).
 

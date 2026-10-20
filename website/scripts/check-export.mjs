@@ -28,7 +28,7 @@ for (const page of pages) {
 }
 const index = JSON.parse(await readFile(join(root, 'search-index.json'), 'utf8'));
 const text = JSON.stringify(index).toLowerCase();
-for (const term of ['shared elements', 'global rules', 'tracking', 'installation', 'quick start', 'troubleshooting', 'native modifier plugins', 'typed interpolation', 'composable components', 'cnfieldcontrol']) {
+for (const term of ['shared elements', 'global rules', 'tracking', 'installation', 'quick start', 'troubleshooting', 'native modifier plugins', 'typed interpolation', 'composable components', 'cnfieldcontrol', 'twruleoverrides', 'cnsegmentedcontrol']) {
   assert(text.includes(term), `Missing search content: ${term}`);
 }
 for (const filename of ['llms.txt', 'llms-full.txt', 'llms.mdx/docs/quick-start/content.md']) {
@@ -43,14 +43,14 @@ assert(pages.length >= 12, 'Missing documentation pages');
 console.log(`Verified ${pages.length} HTML pages, ${checked} local links/assets, and search content.`);
 
 const catalog = JSON.parse(await readFile(resolve('../Components/catalog.json'), 'utf8'));
-assert.equal(catalog.length, 64);
+assert.equal(catalog.length, 65);
 for (const component of catalog) {
   assert(text.includes(component.name.toLowerCase()), `Missing component search entry: ${component.name}`);
   assert(text.includes(component.symbol.toLowerCase()), `Missing component API search entry: ${component.symbol}`);
   const source = await readFile(join(root, 'registry', component.source), 'utf8');
   assert(source.includes(`struct ${component.symbol}`), `Missing copyable source: ${component.source}`);
 }
-console.log('Verified all 64 catalog entries, APIs, and downloadable component sources.');
+console.log(`Verified all ${catalog.length} catalog entries, APIs, and downloadable component sources.`);
 
 const nativeExamples = JSON.parse(await readFile(resolve('../Components/native-examples.json'), 'utf8'));
 const nativePage = await readFile(join(root, 'docs', 'native-composition', 'index.html'), 'utf8');

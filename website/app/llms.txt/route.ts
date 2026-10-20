@@ -7,7 +7,7 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 // Notes that keep coding agents inside swiftcn's actual vocabulary.
 const preamble = `# swiftcn
 
-> Typed utility styling and editable component recipes for native SwiftUI. Tailwind-style classes such as \`.tw("p-4 bg-surface rounded-lg")\` resolve to ordinary SwiftUI modifiers, button classes select Apple's native button styles, and 64 components are source you can copy and edit. Swift 6, iOS 17+, macOS 14+, no runtime dependencies.
+> Typed utility styling and editable component recipes for native SwiftUI. Tailwind-style classes such as \`.tw("p-4 bg-surface rounded-lg")\` resolve to ordinary SwiftUI modifiers, button recipes combine custom surfaces with native SwiftUI activation, and 65 components are source you can copy and edit. Swift 6, iOS 17+, macOS 14+, no runtime dependencies.
 
 Notes for writing swiftcn code:
 

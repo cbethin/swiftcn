@@ -72,7 +72,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=["record", "verify", "capture"], nargs="?", default="verify")
     parser.add_argument("profile", choices=["local", "ci"], nargs="?", default="local")
-    parser.add_argument("--components", action="store_true", help="Capture all 64 component examples")
+    parser.add_argument("--components", action="store_true", help="Capture all 65 component examples")
     parser.add_argument("--duo", action="store_true", help="Capture the actual Duo simulator with the matching SDK runtime")
     parser.add_argument("--shard", default="0/1", metavar="INDEX/COUNT", help="Split capture-only catalog runs into disjoint jobs")
     parser.add_argument("--only", nargs="+", metavar="SLUG", help="Capture selected component slugs for a focused review")

@@ -116,8 +116,19 @@ public struct CNButtonToggleStyle: ToggleStyle {
     private let classes: TWClasses
     public init(classes: TWClasses = "") { self.classes = classes }
     public func makeBody(configuration: Configuration) -> some View {
+        CNButtonToggleBody(configuration: configuration, classes: classes)
+    }
+}
+private struct CNButtonToggleBody: View {
+    let configuration: ToggleStyleConfiguration
+    let classes: TWClasses
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
         Button { configuration.isOn.toggle() } label: { configuration.label }
-            .buttonStyle(.tw(cn("bezel-prominent rounded-md text-sm font-semibold", configuration.isOn ? "toggle-selected" : "toggle-unselected", classes)))
+            .focused($isFocused)
+            .buttonStyle(.tw(cn("toggle-button", classes),
+                             state: .init(isSelected: configuration.isOn, isFocused: isFocused)))
             .accessibilityValue(configuration.isOn ? Text("On") : Text("Off"))
             .accessibilityAddTraits(configuration.isOn ? .isSelected : [])
     }
@@ -125,17 +136,23 @@ public struct CNButtonToggleStyle: ToggleStyle {
 public struct CNToggleGroup<ID: Hashable & Sendable>: View {
     private let options: [CNOption<ID>]
     @Binding private var selection: Set<ID>
+    private let label: (CNOption<ID>) -> AnyView
     private let classes: TWClasses
     private let axis: Axis
-    public init(_ options: [CNOption<ID>], selection: Binding<Set<ID>>, axis: Axis = .horizontal, classes: TWClasses = "") {
-        self.options = options; _selection = selection; self.axis = axis; self.classes = classes
+    public init<Label: View>(_ options: [CNOption<ID>], selection: Binding<Set<ID>>, axis: Axis = .horizontal,
+                classes: TWClasses = "", @ViewBuilder label: @escaping (CNOption<ID>) -> Label) {
+        self.options = options; _selection = selection; self.axis = axis; self.classes = classes; self.label = { AnyView(label($0)) }
+    }
+    public init(_ options: [CNOption<ID>], selection: Binding<Set<ID>>, axis: Axis = .horizontal,
+                classes: TWClasses = "") {
+        self.init(options, selection: selection, axis: axis, classes: classes) { Text($0.title) }
     }
     public var body: some View {
         CNButtonGroup(axis: axis, classes: classes) {
             ForEach(options) { option in
                 CNToggle(isOn: Binding(get: { selection.contains(option.id) }, set: { on in
                     if on { selection.insert(option.id) } else { selection.remove(option.id) }
-                })) { Text(option.title) }.disabled(option.isDisabled)
+                })) { label(option) }.disabled(option.isDisabled)
             }
         }
     }

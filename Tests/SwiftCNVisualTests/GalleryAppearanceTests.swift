@@ -13,12 +13,30 @@ struct GalleryAppearanceTests {
     @Test func firstPanelInheritsLightAppearanceBeforePresentation() throws {
         let app = NSApplication.shared
         let saved = app.appearance
-        defer { app.appearance = saved }
+        let savedPreference = UserDefaults.standard.object(forKey: GalleryPreferences.darkKey)
+        defer {
+            app.appearance = saved
+            UserDefaults.standard.set(savedPreference, forKey: GalleryPreferences.darkKey)
+        }
+        UserDefaults.standard.set(false, forKey: GalleryPreferences.darkKey)
         app.appearance = NSAppearance(named: .darkAqua)
         #expect(newPanelAppearance() == .darkAqua)
         _ = SwiftCNComponentGalleryApp()
         #expect(newPanelAppearance() == .aqua,
                 "The first native panel must already be light before SwiftUI installs a preferred color scheme.")
+    }
+
+    @Test func firstPanelUsesTheSavedDarkPreference() {
+        let app = NSApplication.shared
+        let saved = app.appearance
+        let savedPreference = UserDefaults.standard.object(forKey: GalleryPreferences.darkKey)
+        defer {
+            app.appearance = saved
+            UserDefaults.standard.set(savedPreference, forKey: GalleryPreferences.darkKey)
+        }
+        UserDefaults.standard.set(true, forKey: GalleryPreferences.darkKey)
+        _ = SwiftCNComponentGalleryApp()
+        #expect(newPanelAppearance() == .darkAqua)
     }
 
     @Test func galleryToggleUpdatesTheSourceOfFutureNativePanels() {
@@ -27,8 +45,7 @@ struct GalleryAppearanceTests {
         defer { app.appearance = saved }
         _ = SwiftCNComponentGalleryApp()
         let model = GalleryAppearanceModel()
-        let host = NSHostingView(rootView: ComponentGalleryView(dark: Binding(
-            get: { model.dark }, set: { model.dark = $0 })))
+        let host = NSHostingView(rootView: GalleryAppearanceHarness(model: model))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.contentView = host
@@ -56,5 +73,12 @@ struct GalleryAppearanceTests {
 }
 @MainActor @Observable private final class GalleryAppearanceModel {
     var dark = false
+}
+private struct GalleryAppearanceHarness: View {
+    let model: GalleryAppearanceModel
+    var body: some View {
+        ComponentGalleryView(dark: Binding(get: { model.dark }, set: { model.dark = $0 }))
+            .modifier(GalleryAppearanceSync(dark: model.dark))
+    }
 }
 #endif

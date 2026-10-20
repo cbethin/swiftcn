@@ -54,6 +54,8 @@ for entry in json.loads((repo/'Components/native-examples.json').read_text()):
     (repo/'Tests/SourceOwnership/MixedDropdownParts.swift').read_bytes())
 (scratch/'component-copy'/'MixedSidebarParts.swift').write_bytes(
     (repo/'Tests/SourceOwnership/MixedSidebarParts.swift').read_bytes())
+(scratch/'component-copy'/'MixedSegmentedParts.swift').write_bytes(
+    (repo/'Tests/SourceOwnership/MixedSegmentedParts.swift').read_bytes())
 (scratch/'component-copy'/'MixedPresentationParts.swift').write_bytes(
     (repo/'Tests/SourceOwnership/MixedPresentationParts.swift').read_bytes())
 PYTHON

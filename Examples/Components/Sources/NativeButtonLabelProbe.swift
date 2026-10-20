@@ -24,4 +24,21 @@ struct NativeButtonLabelProbe: View {
         .tw("p-4 bg-background")
     }
 }
+#if os(macOS)
+/// A real scene verifies caller-owned focus with the direct style adapter.
+struct NativeButtonFocusProbe: View {
+    @FocusState private var focused: Bool
+    var body: some View {
+        HStack {
+            Button("Focus styled button") { focused = true }
+            Button("Styled focus target") {}
+                .buttonStyle(.tw("button-primary bg-[#ff0000] focus:bg-[#00ff00]",
+                                 state: .init(isFocused: focused)))
+                // Test focus styling independently of the host's Keyboard Navigation preference.
+                .focusable()
+                .focused($focused)
+        }
+    }
+}
+#endif
 #endif

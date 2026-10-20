@@ -141,7 +141,7 @@
     "symbol": "CNCombobox",
     "source": "Command.swift",
     "example": "ComboboxExample.swift",
-    "notes": "A searchable custom SwiftUI popover selects stable option IDs. Empty results and disabled options are handled. The selected value remains in the caller binding. Hosted popovers keep their intrinsic size until the host bounds limit them. A native scroll viewport makes oversized content reachable without replacing child controls during resizing."
+    "notes": "Stable option IDs and the caller binding own selection. Automatic presentation uses a native sheet on compact iOS and an anchored popover elsewhere. Cancel or swipe dismissal does not change selection. iOS search focuses only when tapped; set autofocusSearch to override. Configure presentation, popupWidth, maximumListHeight, and searchPrompt. Use classes for the trigger and contentClasses, searchClasses, and itemClasses for popup parts. One list owns scrolling; the search field stays visible above the keyboard. Selected rows show a checkmark and a selected accessibility trait. The default trigger is 200 points wide. Its popover matches the rendered trigger width; use popupWidth for an explicit override."
   },
   {
     "name": "Command",
@@ -149,7 +149,7 @@
     "symbol": "CNCommand",
     "source": "Command.swift",
     "example": "CommandExample.swift",
-    "notes": "Search filters titles and details. Disabled options cannot activate. Native search and buttons share one pointer and keyboard highlight. Arrow keys reveal the active result; Return chooses it. The host owns command effects. Pass `query: $query` to own the search text. Use `.itemContent { option, selected in ... } empty: { ... }` to customize native button labels and the empty state. The component retains filtering, stable IDs, activation, and keyboard navigation. Avoid interactive controls inside an item label. See the complete observable-model example in native composition."
+    "notes": "Search filters titles and details. Disabled options cannot activate. Native search and buttons share one pointer and keyboard highlight. Arrow keys reveal the active result; Return chooses it. The host owns command effects. Pass `query: $query` to own the search text. Use `.itemContent { option, selected in ... } empty: { ... }` to customize native button labels and the empty state. The component retains filtering, stable IDs, activation, and keyboard navigation. Avoid interactive controls inside an item label. See the complete observable-model example in native composition. Configure searchPrompt, autofocusSearch, maximumListHeight, searchClasses, and itemClasses. The list fits its results and scrolls within the available height. On iOS, Return dismisses search unless arrow-key navigation has highlighted an option. Autocorrection and automatic capitalization are disabled."
   },
   {
     "name": "Context Menu",
@@ -245,7 +245,7 @@
     "symbol": "CNInputGroup",
     "source": "Input.swift",
     "example": "InputGroupExample.swift",
-    "notes": "Compose CNInputGroupField with icons, addons, or native actions. Decoration gaps focus the native editor; child buttons retain their own events. Pass focus: when the host controls focus."
+    "notes": "Compose CNInputGroupField with icons, addons, or native actions. CNInputGroupButton provides a square action surface with corners that follow the group and its inset. Use rounded-container for other custom inset fills. Decoration gaps focus the native editor; child buttons retain their own events. Pass focus: when the host controls focus."
   },
   {
     "name": "Input OTP",
@@ -384,6 +384,15 @@
     "notes": "A native ScrollView supports vertical, horizontal, or combined axes and optional indicators. Child controls retain their gestures. Compose lazy stacks when the collection is large; the host owns scroll-position policies."
   },
   {
+    "name": "Segmented Control",
+    "slug": "segmented-control",
+    "symbol": "CNSegmentedControl",
+    "source": "SegmentedControl.swift",
+    "example": "SegmentedControlExample.swift",
+    "preview": false,
+    "notes": "Bind one selection to stable values and compose CNSegment labels with native SwiftUI views. Arrow keys follow layout direction and skip disabled segments. The control preserves labels and focus during selection changes. Use segmented, segmented-item, and segmented-indicator recipes for scoped overrides. The caller owns the selected content."
+  },
+  {
     "name": "Select",
     "slug": "select",
     "symbol": "CNSelect",
@@ -413,7 +422,7 @@
     "symbol": "CNSidebar",
     "source": "Sidebar.swift",
     "example": "SidebarExample.swift",
-    "notes": "A custom SwiftUI sidebar composes pinned headers and footers, scrollable groups, selected menu buttons, badges, and nested menus. Desktop visibility supports icon rails, offcanvas collapse, or a fixed panel. Compact widths use a separate controlled or local drawer state; outside activation, menu selection, Escape, and a horizontal swipe dismiss it. Native buttons retain focus, disabled state, roles, and accessibility. The detail and sidebar remain mounted through reversible transitions. Set sidebar-motion to animate-none in global rules to disable motion; presets also respect Reduce Motion. The host owns navigation destinations and selection. Swipe dismissal uses a background surface along the outer 24-point edge. Native controls in front keep their gestures."
+    "notes": "A custom SwiftUI sidebar composes pinned headers and footers, scrollable groups, selected menu buttons, badges, and nested menus. Desktop visibility supports icon rails, offcanvas collapse, or a fixed panel. Compact widths use a separate controlled or local drawer state; outside activation, menu selection, Escape, and a horizontal swipe dismiss it. Native buttons retain focus, disabled state, roles, and accessibility. The detail and sidebar remain mounted through reversible transitions. Set sidebar-motion to animate-none in global rules to disable motion; presets also respect Reduce Motion. The host owns navigation destinations and selection. On iOS, pull inward from the drawer edge to open it and swipe outward over its content to close it. The drawer follows the finger and settles using distance and release speed. Native value controls and horizontal scrolling keep their gestures. Leading and trailing edges follow layout direction. Regular-width sidebars retain their visibility controls."
   },
   {
     "name": "Skeleton",

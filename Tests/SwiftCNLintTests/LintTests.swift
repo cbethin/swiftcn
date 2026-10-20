@@ -24,6 +24,17 @@ struct LintTests {
             == "View.swift:2:14: error: Unknown swiftcn class 'bg-surfce'. Did you mean 'bg-surface'? [swiftcn-lint]")
     }
 
+    @Test func overrideRecipesLearnNamesAndValidateSelectedValues() {
+        let source = """
+        let style = TWRuleOverrides(named: ["custom-item": "selected:bg-accent"],
+                                    replacing: ["custom-indicator": "rounded-container bg-surfce"])
+        Text("Choice").tw("custom-item custom-indicator")
+        """
+        let diagnostics = lint(source)
+        #expect(diagnostics.count == 1)
+        #expect(diagnostics.first?.token == "bg-surfce")
+    }
+
     @Test func everyCatalogEntryParsesWithTheLinterRules() throws {
         let rules = SwiftCNLinter().rules
         let names = TWClassCatalog.exactClasses + TWClassCatalog.suggestionCandidates
@@ -44,7 +55,15 @@ struct LintTests {
         Button("Save") {}.buttonStyle(.tw("tint-[#ff5a36] glass-prominent control-xl rounded-full"))
         VStack {}.tw("p-7 surface-floating rounded-[44] animate-bouncy duration-200 shared-[cover]/hero")
         VStack {}.tw("glass rounded-t-[28] rounded-b-lg motion-reduce:pressed:scale-[1] motion-safe:pressed:scale-[0.94]")
+        VStack {}.tw("rounded-xl p-1 bg-surface")
+        Text("Inset").tw("rounded-container hover:bg-accent")
         """).isEmpty)
+    }
+
+    @Test func containerCornerClassReceivesTypoSuggestions() {
+        let diagnostics = lint(#"VStack {}.tw("rounded-contaner")"#)
+        #expect(diagnostics.count == 1)
+        #expect(diagnostics.first?.suggestion == "rounded-container")
     }
 
     @Test func reportsVariantsValuesAndArgumentPrefixes() {

@@ -32,8 +32,12 @@ targets:
   GalleryMac:
     templates: [Gallery]
     platform: macOS
+    sources:
+      - path: Resources/SwiftCNAppIcon.icns
+        buildPhase: resources
     settings:
       base:
+        INFOPLIST_KEY_CFBundleIconFile: SwiftCNAppIcon.icns
         ENABLE_APP_SANDBOX: NO
         CODE_SIGNING_ALLOWED: YES
         CODE_SIGN_IDENTITY: "-"
@@ -41,10 +45,17 @@ targets:
   GalleryIOS:
     templates: [Gallery]
     platform: iOS
+    sources:
+      - path: Resources/Assets.xcassets
+        buildPhase: resources
     settings:
       base:
         TARGETED_DEVICE_FAMILY: "1,2"
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_CFBundleDisplayName: SwiftCN
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "0.1.0"
   InteractionTestsMac:
     templates: [InteractionTests]
     platform: macOS

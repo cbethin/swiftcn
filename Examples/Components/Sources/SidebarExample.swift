@@ -90,8 +90,16 @@ private struct SidebarNavigationExample: View {
         }
         CNSidebarFooter {
             CNSeparator()
-            CNSidebarMenuButton("Charles Bethin", systemImage: "person.crop.circle", dismissOnSelect: false,
-                                action: { selection = "Account" })
+            CNSidebarMenuButton(dismissOnSelect: false, action: { selection = "Account" }) { context in
+                HStack(spacing: 10) {
+                    Image(systemName: "person.crop.circle").accessibilityHidden(true)
+                    if !context.isCollapsed {
+                        Text("Charles Bethin")
+                        Spacer()
+                        CNBadge("Pro", variant: .outline)
+                    }
+                }
+            }.accessibilityLabel("Charles Bethin account")
         }
     }
     private func item(_ title: String, icon: String, badge: String? = nil) -> some View {
