@@ -196,6 +196,7 @@ private struct CNCommandBody<ID: Hashable & Sendable, Item: View, Empty: View>: 
                     }.tw("p-[6]")
                         .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { listHeight = $0 }
                 }
+                .accessibilityIdentifier("cn-command-list")
                 .scrollBounceBehavior(.basedOnSize)
                 #if os(iOS)
                 .scrollDismissesKeyboard(.interactively)

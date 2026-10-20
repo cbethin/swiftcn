@@ -440,8 +440,6 @@ private struct CNSidebarSwipeBridge: UIViewRepresentable {
     func updateUIView(_ view: CNSidebarSwipeView, context: Context) {
         view.presented = presented; view.panelWidth = panelWidth; view.hiddenSign = hiddenSign
         view.changed = changed; view.ended = ended
-        let edge: UIRectEdge = hiddenSign < 0 ? .left : .right
-        if view.edge.edges != edge { view.edge.edges = edge }
         if view.edge.isEnabled != (enabled && !presented) { view.edge.isEnabled = enabled && !presented }
         if view.close.isEnabled != (enabled && presented) { view.close.isEnabled = enabled && presented }
         view.attach()
@@ -456,13 +454,12 @@ private final class CNSidebarSwipeView: UIView, UIGestureRecognizerDelegate {
     var changed: (CGFloat) -> Void = { _ in }
     var ended: (Bool) -> Void = { _ in }
     private weak var gestureRoot: UIView?
-    let edge = UIScreenEdgePanGestureRecognizer()
+    let edge = UIPanGestureRecognizer()
     let close = UIPanGestureRecognizer()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         isUserInteractionEnabled = false
-        edge.edges = .left
         for gesture in [edge, close] {
             gesture.addTarget(self, action: #selector(panned(_:)))
             gesture.delegate = self
@@ -523,8 +520,11 @@ private final class CNSidebarSwipeView: UIView, UIGestureRecognizerDelegate {
             guard let root = gestureRoot, point.y >= 0, point.y <= bounds.height else { return false }
             let frame = convert(bounds, to: root)
             // Include landscape safe-area margins, but do not open an inset, nested sidebar.
-            return hiddenSign < 0 ? frame.minX <= root.safeAreaInsets.left + 1
+            let reachesEdge = hiddenSign < 0 ? frame.minX <= root.safeAreaInsets.left + 1
                 : frame.maxX >= root.bounds.width - root.safeAreaInsets.right - 1
+            let start = touch.location(in: root)
+            // Restrict the ordinary pan to the physical edge, including indirect touches.
+            return reachesEdge && (hiddenSign < 0 ? start.x <= 20 : start.x >= root.bounds.width - 20)
         }
         guard bounds.contains(point) else { return false }
         guard hiddenSign < 0 ? point.x <= panelWidth : point.x >= bounds.width - panelWidth else { return false }

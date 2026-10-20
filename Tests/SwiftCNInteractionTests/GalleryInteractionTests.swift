@@ -89,16 +89,19 @@ final class GalleryInteractionTests: XCTestCase {
         guard app.buttons["Cancel"].exists else {
             throw XCTSkip("This regression covers compact iPhone sheets; regular-width choices use an anchored popover.")
         }
-        let list = app.scrollViews.containing(.button, identifier: "Workspace 1").firstMatch
+        let list = app.scrollViews["cn-command-list"]
         XCTAssertTrue(list.exists)
-        let frame = list.frame
         let origin = app.coordinate(withNormalizedOffset: .zero)
-        let start = origin.withOffset(CGVector(dx: frame.midX, dy: frame.maxY - 20))
-        let end = origin.withOffset(CGVector(dx: frame.midX, dy: frame.minY + 20))
         let last = app.buttons["Workspace 40"]
         for _ in 0..<20 {
             if last.isHittable { break }
+            // Stay inside the visible list, away from the home indicator and sheet edges.
+            // Resolve each frame again because a native sheet can change its detent.
+            let frame = list.frame.intersection(app.windows.firstMatch.frame.insetBy(dx: 0, dy: 44))
+            let start = origin.withOffset(CGVector(dx: frame.midX, dy: frame.minY + frame.height * 0.75))
+            let end = origin.withOffset(CGVector(dx: frame.midX, dy: frame.minY + frame.height * 0.25))
             start.press(forDuration: 0.05, thenDragTo: end)
+            XCTAssertTrue(search.exists, "Scrolling choices must not activate a row or dismiss the sheet.")
         }
         XCTAssertTrue(last.isHittable, "The final row must be reachable by scrolling the choices.")
         activate(last)
