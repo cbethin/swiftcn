@@ -28,6 +28,7 @@ final class TWExpansionCache: @unchecked Sendable {
         let target: TWTarget?
         let rules: UInt64
         let theme: UInt64
+        var ordered = false
     }
 
     static let shared = TWExpansionCache()

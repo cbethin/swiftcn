@@ -45,6 +45,10 @@ struct GallerySearchField: View {
             }.keyboardShortcut("k", modifiers: .command).accessibilityLabel("Search components")
             CNInputGroupField("Search components…", text: $query)
                 .accessibilityIdentifier("gallery-search")
+                .autocorrectionDisabled()
+                #if os(iOS)
+                .textInputAutocapitalization(.never)
+                #endif
             if !query.isEmpty {
                 CNInputGroupButton(action: clear) {
                     Image(systemName: "xmark.circle.fill").tw("text-mutedForeground")

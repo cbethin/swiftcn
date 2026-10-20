@@ -108,7 +108,11 @@ struct TWModifier: ViewModifier {
             .transaction { transaction in
                 transaction[TWCallerAnimationKey.self] = TWCallerAnimation(animation: transaction.animation)
             }
-            .onHover { isHovered = $0 }
+            // Keep one modifier structure for editors, but do not invalidate static
+            // labels and surfaces when the pointer passes over them.
+            .onHover { hovering in
+                if appearance.tracksHover || isHovered { isHovered = appearance.tracksHover && hovering }
+            }
             .onChange(of: declaresForeground, initial: true) { _, declares in
                 if declares { installsForeground = true }
             }

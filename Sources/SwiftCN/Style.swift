@@ -63,7 +63,10 @@ struct TWRule: Sendable {
     let property: TWProperty
     var conditions: Set<TWCondition> = []
     var groupConditions: Set<TWGroupCondition> = []
-    var priority: Int { (conditions.map(\.rawValue) + groupConditions.map { $0.condition.rawValue }).max() ?? 0 }
+    var priority: Int {
+        max(conditions.reduce(0) { max($0, $1.rawValue) },
+            groupConditions.reduce(0) { max($0, $1.condition.rawValue) })
+    }
     var conditionCount: Int { conditions.count + groupConditions.count }
 }
 

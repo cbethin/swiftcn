@@ -45,8 +45,7 @@ struct GalleryAppearanceTests {
         defer { app.appearance = saved }
         _ = SwiftCNComponentGalleryApp()
         let model = GalleryAppearanceModel()
-        let host = NSHostingView(rootView: ComponentGalleryView(dark: Binding(
-            get: { model.dark }, set: { model.dark = $0 })))
+        let host = NSHostingView(rootView: GalleryAppearanceHarness(model: model))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.contentView = host
@@ -74,5 +73,12 @@ struct GalleryAppearanceTests {
 }
 @MainActor @Observable private final class GalleryAppearanceModel {
     var dark = false
+}
+private struct GalleryAppearanceHarness: View {
+    let model: GalleryAppearanceModel
+    var body: some View {
+        ComponentGalleryView(dark: Binding(get: { model.dark }, set: { model.dark = $0 }))
+            .modifier(GalleryAppearanceSync(dark: model.dark))
+    }
 }
 #endif

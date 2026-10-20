@@ -10,13 +10,15 @@ struct GalleryCodePanel: View {
     let source: String
     var fileName = "Example.swift"
     var fillsWidth = false
+    var isVisible = true
     @State private var copied = false
     @State private var copyReset: Task<Void, Never>?
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        let document = GalleryCodeDocument.cached(source)
+        // Keep the focus tree stable across workspace modes, without preparing hidden code.
+        let document = isVisible ? GalleryCodeDocument.cached(source) : nil
         CNCard("shadow-none rounded-xl") {
             HStack(spacing: 8) {
                 Image(systemName: "swift").foregroundStyle(.orange).accessibilityHidden(true)
@@ -34,15 +36,14 @@ struct GalleryCodePanel: View {
             CNSeparator()
             ScrollView([.horizontal, .vertical]) {
                 HStack(alignment: .top, spacing: 18) {
-                    Text(document.lineNumbers)
+                    Text(document?.lineNumbers ?? "")
                         .foregroundStyle(.secondary.opacity(0.5))
                         .multilineTextAlignment(.trailing)
                         .accessibilityHidden(true)
                         .textSelection(.disabled)
-                    Text(document.highlighted(dark: scheme == .dark))
+                    Text(document?.highlighted(dark: scheme == .dark) ?? AttributedString())
                         .textSelection(.enabled)
                         .fixedSize(horizontal: true, vertical: true)
-                        .accessibilityLabel(source)
                 }
                 .font(.system(size: 11, design: .monospaced)).lineSpacing(5)
                 .padding(20).frame(maxWidth: .infinity, alignment: .topLeading)
@@ -51,7 +52,7 @@ struct GalleryCodePanel: View {
             .tw("bg-muted")
             CNSeparator()
             HStack(spacing: 6) {
-                Text("\(document.lineCount) lines · Swift")
+                Text("\(document?.lineCount ?? 0) lines · Swift")
                 Spacer()
                 Text(copied ? "Copied to clipboard" : "Complete example")
             }.font(.system(size: 10)).tw("text-mutedForeground")

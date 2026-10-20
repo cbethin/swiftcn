@@ -2,6 +2,7 @@ import SwiftUI
 import os
 
 struct TWResolvedStyle {
+    var tracksHover = false
     var padding = EdgeInsets()
     var font: Font?
     var weight: Font.Weight?
@@ -73,47 +74,42 @@ struct TWResolvedStyle {
 enum TWStyleResolver {
     static func resolve(_ style: TWStyle, theme: TWTheme, scheme: ColorScheme, state: TWState,
                         globalRules: TWGlobalRules = TWGlobalRules(), groupStates: [String: TWState] = [:], target: TWTarget? = .view, controlSize: ControlSize = .regular) -> TWResolvedStyle {
-        let expanded: TWStyle
+        let expanded: [TWRule]
         do {
-            expanded = try TWClassParser.expand(style, rules: globalRules, theme: theme, target: target)
+            expanded = try TWClassParser.ordered(style, rules: globalRules, theme: theme, target: target)
         } catch {
             Logger(subsystem: "swiftcn", category: "classes").error("\(String(describing: error), privacy: .public)")
             var invalid = TWResolvedStyle()
             invalid.nativeSlots = globalRules.nativeSlots
             return invalid
         }
-        let rules = expanded.rules.enumerated()
+        let rules = expanded
             .filter {
-                $0.element.conditions.allSatisfy { $0.matches(state) } && $0.element.groupConditions.allSatisfy {
+                $0.conditions.allSatisfy { $0.matches(state) } && $0.groupConditions.allSatisfy {
                     guard let group = groupStates[$0.name ?? ""] else { return false }
                     return $0.condition.matches(group)
                 }
             }
-            .sorted { lhs, rhs in
-                if lhs.element.priority != rhs.element.priority {
-                    return lhs.element.priority < rhs.element.priority
-                }
-                if lhs.element.conditionCount != rhs.element.conditionCount {
-                    return lhs.element.conditionCount < rhs.element.conditionCount
-                }
-                return lhs.offset < rhs.offset
-            }
         let effectiveSize = rules.compactMap { entry -> ControlSize? in
-            if case .controlSize(let value) = entry.element.property { return value }
+            if case .controlSize(let value) = entry.property { return value }
             return nil
         }.last ?? controlSize
         var result = TWResolvedStyle()
         var usesControlMetrics = false
         // Decided before state filtering, so hover or focus variants never add or remove the modifier.
-        result.inheritsForeground = !expanded.rules.contains {
+        result.tracksHover = expanded.contains {
+            if case .group = $0.property { return true }
+            return $0.conditions.contains(.hovered)
+        }
+        result.inheritsForeground = !expanded.contains {
             if case .foreground = $0.property { true } else { false }
         }
-        result.inheritsTint = !expanded.rules.contains {
+        result.inheritsTint = !expanded.contains {
             if case .glassTint = $0.property { true } else { false }
         }
         var selectedNative: [String: (name: String, argument: TWArgument?)] = [:]
         for entry in rules {
-            switch entry.element.property {
+            switch entry.property {
             case .native(let name, let argument):
                 let key = globalRules.modifiers[name]?.conflictKey ?? name
                 selectedNative[key] = (name, argument)
@@ -174,14 +170,14 @@ enum TWStyleResolver {
             case .shadow(let token): result.shadow = theme.shadow(token)
             case .surface(let role):
                 result.surface = role
-                if entry.element.conditionCount == 0 { result.buttonSurface = role }
+                if entry.conditionCount == 0 { result.buttonSurface = role }
             case .glassInteractive(let value): result.glassInteractive = value
             case .glassTint(let source): result.glassTint = color(source, theme: theme, scheme: scheme)
             case .prominent(let value):
                 result.prominent = value
-                if entry.element.conditionCount == 0 { result.buttonProminent = value }
+                if entry.conditionCount == 0 { result.buttonProminent = value }
             // The bezel selects the native style type, so only unconditioned classes choose it.
-            case .bezel(let value): if entry.element.conditionCount == 0 { result.bezel = value }
+            case .bezel(let value): if entry.conditionCount == 0 { result.bezel = value }
             case .controlSize(let value): result.controlSize = value
             case .controlMetrics(let role):
                 usesControlMetrics = true
@@ -218,7 +214,7 @@ enum TWStyleResolver {
             case .animation(let preset):
                 result.motion.preset = preset
                 // An animation written for reduced motion is the one to run under it.
-                if entry.element.conditions.contains(.reducedMotion) { result.motion.runsWithReducedMotion = true }
+                if entry.conditions.contains(.reducedMotion) { result.motion.runsWithReducedMotion = true }
             case .animationDuration(let duration): result.motion.duration = duration
             case .animationDelay(let delay): result.motion.delay = delay
             case .group(let name): result.group = name

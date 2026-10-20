@@ -4,6 +4,18 @@ import Testing
 
 @Suite("Utility resolution")
 struct StyleResolverTests {
+    @Test func onlyHoverStylesAndGroupSourcesTrackThePointer() {
+        #expect(!resolve("text-sm text-mutedForeground").tracksHover)
+        #expect(!resolve("p-4 bg-surface rounded-lg border").tracksHover)
+        #expect(!resolve("group-hover:text-primary").tracksHover)
+        #expect(resolve("hover:bg-accent").tracksHover)
+        #expect(resolve("group/card").tracksHover)
+        #expect(resolve("disabled:hover:bg-accent").tracksHover)
+        let rules = TWGlobalRules(named: ["hover-label": "hover:text-primary"])
+        #expect(TWStyleResolver.resolve("hover-label", theme: .standard, scheme: .light,
+                                       state: .init(), globalRules: rules).tracksHover)
+    }
+
     private func resolve(_ style: TWStyle, theme: TWTheme = .standard, state: TWState = .init()) -> TWResolvedStyle {
         TWStyleResolver.resolve(style, theme: theme, scheme: .light, state: state)
     }

@@ -73,9 +73,6 @@ struct ComponentGalleryView: View {
         .cnPopoverHost().cnPresentationHost()
         #if os(macOS)
         .frame(minWidth: 680, minHeight: 560)
-        .onChange(of: dark, initial: true) { _, dark in
-            NSApplication.shared.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
-        }
         #endif
     }
 
@@ -340,7 +337,7 @@ private struct GalleryWorkspace: View {
                     .disabled(mode == .code)
                     .allowsHitTesting(mode != .code).accessibilityHidden(mode == .code)
                 GalleryCodePanel(source: selection.source, fileName: selection.fileName,
-                                 fillsWidth: mode == .code)
+                                 fillsWidth: mode == .code, isVisible: mode != .preview)
                     .frame(width: horizontal ? 360 : nil)
                     .frame(maxWidth: horizontal ? nil : .infinity)
                     .frame(height: mode == .preview ? 0 : nil)
@@ -397,11 +394,13 @@ private struct GalleryPreviewGrid: View {
     var body: some View {
         Canvas { context, size in
             let color = theme.color(.mutedForeground, scheme: scheme).opacity(0.12)
+            var dots = Path()
             for x in stride(from: 12.0, to: size.width, by: 20) {
                 for y in stride(from: 12.0, to: size.height, by: 20) {
-                    context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 1, height: 1)), with: .color(color))
+                    dots.addEllipse(in: CGRect(x: x, y: y, width: 1, height: 1))
                 }
             }
+            context.fill(dots, with: .color(color))
         }.accessibilityHidden(true).allowsHitTesting(false)
     }
 }

@@ -50,9 +50,6 @@ struct GallerySettingsView: View {
         .cnWindowContent()
         .frame(width: 620, height: 576)
         .preferredColorScheme(dark ? .dark : .light)
-        .onChange(of: dark, initial: true) { _, dark in
-            NSApplication.shared.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
-        }
         .galleryChrome()
     }
 
