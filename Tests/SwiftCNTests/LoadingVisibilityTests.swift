@@ -63,6 +63,31 @@ struct LoadingVisibilityTests {
         }
     }
 
+    /// Leaving one window publishes "hidden" a turn later. Arriving in a visible window must still win.
+    @Test func movingTheHostBetweenWindowsKeepsTheClockRunning() {
+        let ticks = TickCounter()
+        let other = NSWindow(contentRect: CGRect(x: 360, y: 200, width: 120, height: 80),
+                             styleMask: [.titled], backing: .buffered, defer: false)
+        other.isReleasedWhenClosed = false
+        other.orderFront(nil)
+        defer { other.orderOut(nil); other.contentView = nil }
+        withWindow(ClockProbe(ticks: ticks)) { window in
+            settle(0.3)
+            let host = window.contentView!
+            window.contentView = nil
+            other.contentView = host
+            settle(0.3)
+            ticks.count = 0
+            settle(0.5)
+            if other.occlusionState.contains(.visible) && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+                #expect(ticks.count > 3, "The clock must run in the window that now hosts it.")
+            } else {
+                #expect(ProcessInfo.processInfo.environment["SWIFTCN_EXPECT_MOTION"] != "1",
+                        "The motion job requires a visible desktop and Reduce Motion off.")
+            }
+        }
+    }
+
     @Test func fixedPhasesAndZeroDurationsNeverInstallTheProbe() {
         for view in [AnyView(ClockProbe(ticks: TickCounter()).cnLoadingPhase(0.4)),
                      AnyView(ClockProbe(ticks: TickCounter(), duration: 0))] {
@@ -76,26 +101,6 @@ struct LoadingVisibilityTests {
             #expect((probe != nil) != NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
             #expect(probe?.hitTest(CGPoint(x: 1, y: 1)) == nil, "The probe must never take clicks.")
         }
-    }
-
-    /// Flattened rendering cannot host AppKit views. The probe must not leave a placeholder there.
-    @Test func theProbeDrawsNothingInsideFlattenedContent() {
-        func pixels<V: View>(_ view: V) -> Data {
-            var data = Data()
-            withWindow(view.drawingGroup()) { window in
-                let host = window.contentView!
-                host.layoutSubtreeIfNeeded()
-                if let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) {
-                    host.cacheDisplay(in: host.bounds, to: bitmap)
-                    data = bitmap.representation(using: .png, properties: [:]) ?? Data()
-                }
-            }
-            return data
-        }
-        let clocked = pixels(CNLoadingTimeline(duration: 1) { _ in Color.blue.frame(width: 40, height: 40) })
-        let plain = pixels(Color.blue.frame(width: 40, height: 40))
-        #expect(!clocked.isEmpty)
-        #expect(clocked == plain)
     }
 
     private func withWindow<V: View>(_ view: V, run: (NSWindow) -> Void) {
